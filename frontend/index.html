@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MARH — Suite de RH</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<section id="view-login" class="center">
+  <div class="login-card card">
+    <div class="brand"><div class="logo"></div><div><div class="pill">Protótipo • Full-stack</div><h2>MARH — Suite de RH</h2></div></div>
+    <div class="mt1"><label>E-mail</label><input id="login-email" class="input" value="admin@marh.local"></div>
+    <div class="mt1"><label>Senha</label><input id="login-pass" class="input" type="password" value="123"></div>
+    <div class="mt2 right"><button id="btn-login" class="btn ok">Entrar</button></div>
+    <div class="note mt1"><b>Usuários:</b> admin@marh.local, rh@marh.local, gestor@marh.local, colab@marh.local (senha: 123)</div>
+    <div id="login-msg" class="note mt1 hidden"></div>
+  </div>
+</section>
+
+<section id="view-mfa" class="center hidden">
+  <div class="login-card card">
+    <div class="brand"><div class="logo"></div><div><div class="pill">MFA</div><h3>Verificação em 2 etapas</h3></div></div>
+    <div class="mt1"><label>Código</label><input id="mfa-code" class="input mono" maxlength="6"></div>
+    <div id="mfa-hint" class="note mt1">—</div>
+    <div class="mt2 right"><button id="btn-verify" class="btn ok">Verificar</button></div>
+  </div>
+</section>
+
+<section id="app" class="hidden">
+  <header class="top">
+    <div class="brand"><div class="logo"></div><div><div class="pill">MARH</div><div id="user-ctx" class="note" style="padding:.2rem .4rem"></div></div></div>
+    <div class="toolbar" style="min-width:40%">
+      <div class="search"><input id="global-search" class="input" placeholder="Buscar..."><button id="btn-search" class="btn">Buscar</button></div>
+      <button id="btn-print" class="btn">Imprimir</button>
+      <button id="btn-logout" class="btn bad">Sair</button>
+    </div>
+  </header>
+  <div class="wrap">
+    <aside>
+      <div class="section">Navegação</div>
+      <nav id="menu"></nav>
+      <div class="section">Sessão</div>
+      <div class="card">
+        <div class="mb1">Usuário: <b id="who"></b></div>
+        <div class="mb1">Perfil: <span id="role" class="badge"></span></div>
+      </div>
+    </aside>
+    <main>
+      <div id="view-dashboard" class="hidden">
+        <div class="kpis">
+          <div class="kpi"><div class="s">Colaboradores</div><div id="kpi-emp" class="v">0</div></div>
+          <div class="kpi"><div class="s">Ativos</div><div id="kpi-ativos" class="v">0</div></div>
+          <div class="kpi"><div class="s">Afastados/Férias</div><div id="kpi-leave" class="v">0</div></div>
+          <div class="kpi"><div class="s">Vagas abertas</div><div id="kpi-jobs" class="v">0</div></div>
+        </div>
+        <div class="grid mt2">
+          <div class="card"><b>Impressão</b><div class="mt1">Use o botão <span class="badge">Imprimir</span> no topo para gerar PDF.</div></div>
+          <div class="card"><b>Logs recentes</b><div id="log-recent" class="mt1"></div></div>
+        </div>
+      </div>
+
+      <div id="view-employees" class="hidden">
+        <div class="toolbar mb1"><button id="new-emp" class="btn ok">Novo colaborador</button><a id="exp-emp" class="btn" href="#">Exportar CSV</a></div>
+        <div class="card"><table id="tbl-emp"><thead><tr><th>Nome</th><th>E-mail</th><th>Departamento</th><th>Cargo</th><th>Salário</th><th>Status</th><th></th></tr></thead><tbody></tbody></table></div>
+      </div>
+
+      <div id="view-depts" class="hidden">
+        <div class="toolbar mb1"><button id="new-dept" class="btn ok">Novo departamento</button><a id="exp-dept" class="btn" href="#">Exportar CSV</a></div>
+        <div class="card"><table id="tbl-dept"><thead><tr><th>Nome</th><th>Centro de custo</th><th></th></tr></thead><tbody></tbody></table></div>
+      </div>
+
+      <div id="view-att" class="hidden">
+        <div class="toolbar mb1"><button id="new-att" class="btn ok">Registrar ponto</button><a id="exp-att" class="btn" href="#">Exportar CSV</a></div>
+        <div class="card"><table id="tbl-att"><thead><tr><th>Colaborador</th><th>Data</th><th>Entrada</th><th>Saída</th><th>Status</th><th></th></tr></thead><tbody></tbody></table></div>
+      </div>
+
+      <div id="view-leaves" class="hidden">
+        <div class="toolbar mb1"><button id="new-leave" class="btn ok">Novo afastamento/férias</button><a id="exp-leave" class="btn" href="#">Exportar CSV</a></div>
+        <div class="card"><table id="tbl-leave"><thead><tr><th>Colaborador</th><th>Tipo</th><th>Início</th><th>Fim</th><th>Status</th><th></th></tr></thead><tbody></tbody></table></div>
+      </div>
+
+      <div id="view-payroll" class="hidden">
+        <div class="toolbar mb1"><button id="new-pay" class="btn ok">Nova folha</button><a id="exp-pay" class="btn" href="#">Exportar CSV</a></div>
+        <div class="card"><table id="tbl-pay"><thead><tr><th>Colaborador</th><th>Referência</th><th>Bruto</th><th>Descontos</th><th>Líquido</th><th></th></tr></thead><tbody></tbody></table></div>
+      </div>
+
+      <div id="view-reviews" class="hidden">
+        <div class="toolbar mb1"><button id="new-review" class="btn ok">Nova avaliação</button><a id="exp-review" class="btn" href="#">Exportar CSV</a></div>
+        <div class="card"><table id="tbl-review"><thead><tr><th>Colaborador</th><th>Período</th><th>Score</th><th>Notas</th><th></th></tr></thead><tbody></tbody></table></div>
+      </div>
+
+      <div id="view-train" class="hidden">
+        <div class="toolbar mb1"><button id="new-train" class="btn ok">Novo treinamento</button><a id="exp-train" class="btn" href="#">Exportar CSV</a></div>
+        <div class="card"><table id="tbl-train"><thead><tr><th>Título</th><th>Data</th><th>Vagas</th><th>Inscritos</th><th></th></tr></thead><tbody></tbody></table></div>
+      </div>
+
+      <div id="view-jobs" class="hidden">
+        <div class="toolbar mb1"><button id="new-job" class="btn ok">Nova vaga</button><a id="exp-job" class="btn" href="#">Exportar CSV</a></div>
+        <div class="card"><table id="tbl-job"><thead><tr><th>Título</th><th>Depto</th><th>Abertas</th><th>Status</th><th></th></tr></thead><tbody></tbody></table></div>
+      </div>
+
+      <div id="view-cand" class="hidden">
+        <div class="toolbar mb1"><button id="new-cand" class="btn ok">Novo candidato</button><a id="exp-cand" class="btn" href="#">Exportar CSV</a></div>
+        <div class="card"><table id="tbl-cand"><thead><tr><th>Nome</th><th>E-mail</th><th>Vaga</th><th>Etapa</th><th></th></tr></thead><tbody></tbody></table></div>
+      </div>
+
+      <div id="view-reports" class="hidden">
+        <div class="card">
+          <b>Relatórios rápidos</b>
+          <div class="row mt1">
+            <a class="btn" id="dl-employees" href="#">CSV Colaboradores</a>
+            <a class="btn" id="dl-att" href="#">CSV Presenças</a>
+            <a class="btn" id="dl-leaves" href="#">CSV Afastamentos</a>
+            <a class="btn" id="dl-payroll" href="#">CSV Folha</a>
+            <a class="btn" id="dl-reviews" href="#">CSV Avaliações</a>
+            <a class="btn" id="dl-trainings" href="#">CSV Treinamentos</a>
+            <a class="btn" id="dl-jobs" href="#">CSV Vagas</a>
+            <a class="btn" id="dl-candidates" href="#">CSV Candidatos</a>
+          </div>
+        </div>
+      </div>
+
+      <div id="view-audit" class="hidden">
+        <div class="card"><table id="tbl-logs"><thead><tr><th>Quando</th><th>Quem</th><th>Ação</th><th>Detalhes</th></tr></thead><tbody></tbody></table></div>
+      </div>
+
+      <div id="view-settings" class="hidden">
+        <div class="card">
+          <div class="toolbar mb1"><button id="new-user" class="btn ok">Novo usuário</button></div>
+          <table id="tbl-users"><thead><tr><th>E-mail</th><th>Nome</th><th>Papel</th><th>Status</th><th></th></tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+    </main>
+  </div>
+</section>
+
+<script>
+const API = location.origin + '/api';
+let TOKEN = localStorage.getItem('MARH_TOKEN') || null;
+let ROLE = null;
+let WHO = null;
+
+function qs(s){return document.querySelector(s)} function qsa(s){return Array.from(document.querySelectorAll(s))}
+function brl(v){return (v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+async function api(path, method='GET', body=null){
+  const res = await fetch(API+path,{method,headers:{'Content-Type':'application/json', ...(TOKEN? {'Authorization':'Bearer '+TOKEN}:{})},body:body?JSON.stringify(body):null});
+  if(!res.ok){ throw new Error(await res.text()) }
+  const ct = res.headers.get('content-type')||''; return ct.includes('application/json')? res.json(): res.text();
+}
+
+// Login
+qs('#btn-login').onclick = async ()=>{
+  const email = qs('#login-email').value.trim(); const password = qs('#login-pass').value;
+  try{ const r = await api('/login','POST',{email,password});
+    qs('#login-msg').classList.remove('hidden'); qs('#login-msg').textContent = 'Código MFA (demo): '+r.demoCode;
+    qs('#view-login').classList.add('hidden'); qs('#view-mfa').classList.remove('hidden'); qs('#mfa-hint').textContent='Digite o código exibido acima.'; sessionStorage.setItem('MFA_EMAIL', email);
+  }catch(e){ alert('Falha no login'); }
+};
+qs('#btn-verify').onclick = async ()=>{
+  try{
+    const email = sessionStorage.getItem('MFA_EMAIL'); const code = qs('#mfa-code').value.trim();
+    const r = await api('/mfa','POST',{email, code});
+    TOKEN = r.token; ROLE = r.role; WHO = r.name; localStorage.setItem('MARH_TOKEN', TOKEN); initApp();
+  }catch(e){ alert('Código inválido'); }
+};
+
+function initApp(){
+  qs('#view-mfa').classList.add('hidden'); qs('#app').classList.remove('hidden');
+  qs('#user-ctx').textContent = WHO + ' • ' + ROLE;
+  buildMenu(); bindCommon(); openView('view-dashboard');
+}
+function buildMenu(){
+  const NAV = {
+    ADMIN: [['view-dashboard','📊 Dashboard'],['view-employees','👥 Colaboradores'],['view-depts','🏢 Departamentos'],['view-att','🕒 Presenças'],['view-leaves','🏖️ Afastamentos'],['view-payroll','💸 Folha'],['view-reviews','📈 Avaliações'],['view-train','🎓 Treinamentos'],['view-jobs','📋 Vagas'],['view-cand','🧑‍💼 Candidatos'],['view-reports','📑 Relatórios'],['view-audit','🗂️ Logs'],['view-settings','⚙️ Usuários']],
+    RH: [['view-dashboard','📊 Dashboard'],['view-employees','👥 Colaboradores'],['view-depts','🏢 Departamentos'],['view-att','🕒 Presenças'],['view-leaves','🏖️ Afastamentos'],['view-payroll','💸 Folha'],['view-reviews','📈 Avaliações'],['view-train','🎓 Treinamentos'],['view-jobs','📋 Vagas'],['view-cand','🧑‍💼 Candidatos'],['view-reports','📑 Relatórios'],['view-audit','🗂️ Logs']],
+    GESTOR: [['view-dashboard','📊 Dashboard'],['view-employees','👥 Colaboradores'],['view-att','🕒 Presenças'],['view-leaves','🏖️ Afastamentos'],['view-reviews','📈 Avaliações'],['view-reports','📑 Relatórios']],
+    COLAB: [['view-dashboard','📊 Dashboard'],['view-att','🕒 Presenças'],['view-leaves','🏖️ Afastamentos'],['view-payroll','💸 Folha'],['view-reviews','📈 Avaliações']]
+  };
+  const menu = qs('#menu'); menu.innerHTML='';
+  (NAV[ROLE]||NAV.ADMIN).forEach(([id,label])=>{
+    const a = document.createElement('a'); a.href='#'+id; a.textContent=label; a.onclick=(ev)=>{ev.preventDefault(); openView(id); qsa('nav a').forEach(n=>n.classList.remove('active')); a.classList.add('active');}; menu.appendChild(a);
+  });
+}
+function bindCommon(){
+  qs('#btn-print').onclick = ()=> window.print();
+  qs('#btn-logout').onclick = ()=> { localStorage.removeItem('MARH_TOKEN'); location.reload(); };
+  qs('#btn-search').onclick = ()=> alert('Busca global (demo)');
+  ['employees','attendance','leaves','payroll','reviews','trainings','jobs','candidates'].forEach(ent=>{
+    const a = qs('#dl-'+ent); if(a) a.onclick = (e)=>{e.preventDefault(); window.open(API+`/export/${ent}.csv`,'_blank'); };
+  });
+}
+
+async function openView(id){
+  qsa('main>div').forEach(v=>v.classList.add('hidden')); qs('#'+id).classList.remove('hidden');
+  if(id==='view-dashboard'){
+    const s = await api('/summary'); qs('#kpi-emp').textContent = s.totalEmp; qs('#kpi-ativos').textContent = s.ativos; qs('#kpi-leave').textContent = s.onLeave; qs('#kpi-jobs').textContent = s.openJobs;
+    try{ const logs = await api('/logs'); renderLogs(logs);}catch{ qs('#log-recent').textContent='Logs restritos ao ADMIN/RH'; }
+  }
+  if(id==='view-employees') renderEmployees();
+  if(id==='view-depts') renderDepts();
+  if(id==='view-att') renderAtt();
+  if(id==='view-leaves') renderLeaves();
+  if(id==='view-payroll') renderPayroll();
+  if(id==='view-reviews') renderReviews();
+  if(id==='view-train') renderTrain();
+  if(id==='view-jobs') renderJobs();
+  if(id==='view-cand') renderCandidates();
+  if(id==='view-audit'){ try{ const logs = await api('/logs'); renderAudit(logs);}catch{ alert('Sem permissão'); openView('view-dashboard'); } }
+  if(id==='view-settings') renderUsers();
+}
+function renderLogs(logs){ qs('#log-recent').innerHTML = (logs||[]).slice(0,8).map(l=>`<div class="mb1"><span class="tag">${l.at}</span> — <b>${l.who}</b> • ${l.action} <span class="note" style="display:inline-block;padding:.1rem .3rem">${l.details||''}</span></div>`).join('') || '<i class="muted">Sem registros</i>'; }
+function renderAudit(logs){ qs('#tbl-logs tbody').innerHTML = logs.map(l=> `<tr><td>${l.at}</td><td>${l.who}</td><td>${l.action}</td><td>${l.details||''}</td></tr>`).join(''); }
+
+function btn(label, fn, kind){ const b=document.createElement('button'); b.textContent=label; b.className='btn small'+(kind?' '+kind:''); b.onclick=fn; return b; }
+async function post(path, method='POST', body=null){ return api(path, method, body); }
+async function del(path){ return api(path,'DELETE'); }
+
+let DEPTS = []; let EMPS = [];
+async function refreshLookups(){ DEPTS = await api('/departments'); EMPS = await api('/employees'); }
+
+// Employees
+async function renderEmployees(){
+  await refreshLookups();
+  const body = qs('#tbl-emp tbody'); body.innerHTML='';
+  const deptName = id=> (DEPTS.find(d=>d.id===id)||{}).name || '-';
+  EMPS.forEach(e=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${e.name}</td><td>${e.email}</td><td>${deptName(e.deptId)}</td><td>${e.roleTitle||''}</td><td>${brl(e.salary||0)}</td><td>${e.status}</td><td class="right"></td>`;
+    const td = tr.querySelector('td:last-child');
+    if(['ADMIN','RH','GESTOR'].includes(ROLE)){
+      td.append(btn('Editar', ()=>editEmp(e)));
+      if(ROLE==='ADMIN') td.append(btn('Excluir', ()=>del(`/employees/${e.id}`).then(renderEmployees),'bad'));
+    }
+    body.append(tr);
+  });
+  qs('#new-emp').onclick = async ()=>{
+    const name = prompt('Nome:'); if(!name) return;
+    const email = prompt('E-mail:','nome@empresa.com');
+    const deptId = (DEPTS[0]||{}).id || prompt('DeptId:','D1');
+    const roleTitle = prompt('Cargo:','Analista');
+    const salary = parseFloat(prompt('Salário:','5000')||'0');
+    await post('/employees','POST',{name,email,deptId,roleTitle,salary,status:'ATIVO'}); renderEmployees();
+  };
+  qs('#exp-emp').onclick = (e)=>{ e.preventDefault(); window.open(API+'/export/employees.csv','_blank'); };
+}
+async function editEmp(e){
+  const name = prompt('Nome:', e.name)||e.name;
+  const email = prompt('E-mail:', e.email)||e.email;
+  const deptId = prompt('DeptId:', e.deptId)||e.deptId;
+  const roleTitle = prompt('Cargo:', e.roleTitle||'')||e.roleTitle;
+  const salary = parseFloat(prompt('Salário:', e.salary||0)||e.salary||0);
+  await post(`/employees/${e.id}`,'PUT',{name,email,deptId,roleTitle,salary}); renderEmployees();
+}
+
+// Departments
+async function renderDepts(){
+  const data = await api('/departments'); const body = qs('#tbl-dept tbody'); body.innerHTML='';
+  data.forEach(d=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${d.name}</td><td>${d.costCenter}</td><td class="right"></td>`;
+    const td = tr.querySelector('td:last-child');
+    if(['ADMIN','RH'].includes(ROLE)){
+      td.append(btn('Editar', ()=>editDept(d))); if(ROLE==='ADMIN') td.append(btn('Excluir', ()=>del(`/departments/${d.id}`).then(renderDepts),'bad'));
+    }
+    body.append(tr);
+  });
+  qs('#new-dept').onclick = async ()=>{
+    const name = prompt('Nome:'); if(!name) return;
+    const costCenter = prompt('Centro de custo:','0000');
+    await post('/departments','POST',{name,costCenter}); renderDepts();
+  };
+  qs('#exp-dept').onclick = (e)=>{ e.preventDefault(); window.open(API+'/export/departments.csv','_blank'); };
+}
+async function editDept(d){
+  const name = prompt('Nome:', d.name)||d.name;
+  const costCenter = prompt('Centro de custo:', d.costCenter)||d.costCenter;
+  await post(`/departments/${d.id}`,'PUT',{name,costCenter}); renderDepts();
+}
+
+// Attendance
+async function renderAtt(){
+  await refreshLookups();
+  const data = await api('/attendance'); const body = qs('#tbl-att tbody'); body.innerHTML='';
+  const empName = id=> (EMPS.find(e=>e.id===id)||{}).name || '-';
+  data.forEach(a=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${empName(a.empId)}</td><td>${a.date}</td><td>${a.clockIn||''}</td><td>${a.clockOut||''}</td><td>${a.status||''}</td><td class="right"></td>`;
+    const td = tr.querySelector('td:last-child');
+    if(['ADMIN','RH','GESTOR'].includes(ROLE)) td.append(btn('Editar', ()=>editAtt(a)));
+    if(ROLE==='ADMIN') td.append(btn('Excluir', ()=>del(`/attendance/${a.id}`).then(renderAtt),'bad'));
+    body.append(tr);
+  });
+  qs('#new-att').onclick = async ()=>{
+    const empId = prompt('EmpID (ex.: E1):',(EMPS[0]||{}).id||'E1');
+    const date = prompt('Data (YYYY-MM-DD):', new Date().toISOString().slice(0,10));
+    const clockIn = prompt('Entrada (HH:MM):','09:00');
+    const clockOut = prompt('Saída (HH:MM):','18:00');
+    const status = 'OK';
+    await post('/attendance','POST',{empId,date,clockIn,clockOut,status}); renderAtt();
+  };
+  qs('#exp-att').onclick = (e)=>{ e.preventDefault(); window.open(API+'/export/attendance.csv','_blank'); };
+}
+async function editAtt(a){
+  const clockIn = prompt('Entrada (HH:MM):', a.clockIn||'')||a.clockIn;
+  const clockOut = prompt('Saída (HH:MM):', a.clockOut||'')||a.clockOut;
+  const status = prompt('Status:', a.status||'OK')||a.status||'OK';
+  await post(`/attendance/${a.id}`,'PUT',{clockIn,clockOut,status}); renderAtt();
+}
+
+// Leaves
+async function renderLeaves(){
+  await refreshLookups();
+  const data = await api('/leaves'); const body = qs('#tbl-leave tbody'); body.innerHTML='';
+  const empName = id=> (EMPS.find(e=>e.id===id)||{}).name || '-';
+  data.forEach(l=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${empName(l.empId)}</td><td>${l.type}</td><td>${l.start}</td><td>${l.end}</td><td>${l.status}</td><td class="right"></td>`;
+    const td = tr.querySelector('td:last-child');
+    if(['ADMIN','RH','GESTOR'].includes(ROLE)) td.append(btn('Editar', ()=>editLeave(l)));
+    if(ROLE==='ADMIN') td.append(btn('Excluir', ()=>del(`/leaves/${l.id}`).then(renderLeaves),'bad'));
+    body.append(tr);
+  });
+  qs('#new-leave').onclick = async ()=>{
+    const empId = prompt('EmpID (ex.: E1):',(EMPS[0]||{}).id||'E1');
+    const type = prompt('Tipo (FÉRIAS/ATESTADO/OUTROS):','FÉRIAS');
+    const start = prompt('Início (YYYY-MM-DD):','2025-09-01');
+    const end = prompt('Fim (YYYY-MM-DD):','2025-09-15');
+    await post('/leaves','POST',{empId,type,start,end,status:'EM ANÁLISE'}); renderLeaves();
+  };
+  qs('#exp-leave').onclick = (e)=>{ e.preventDefault(); window.open(API+'/export/leaves.csv','_blank'); };
+}
+async function editLeave(l){
+  const status = prompt('Status (EM ANÁLISE/APROVADO/NEGADO):', l.status||'EM ANÁLISE')||l.status||'EM ANÁLISE';
+  await post(`/leaves/${l.id}`,'PUT',{status}); renderLeaves();
+}
+
+// Payroll
+async function renderPayroll(){
+  await refreshLookups();
+  const data = await api('/payroll'); const body = qs('#tbl-pay tbody'); body.innerHTML='';
+  const empName = id=> (EMPS.find(e=>e.id===id)||{}).name || '-';
+  data.forEach(p=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${empName(p.empId)}</td><td>${p.refMonth}</td><td>${brl(p.gross||0)}</td><td>${brl(p.deductions||0)}</td><td>${brl(p.net||0)}</td><td class="right"></td>`;
+    const td = tr.querySelector('td:last-child');
+    if(['ADMIN','RH'].includes(ROLE)) td.append(btn('Editar', ()=>editPay(p)));
+    if(ROLE==='ADMIN') td.append(btn('Excluir', ()=>del(`/payroll/${p.id}`).then(renderPayroll),'bad'));
+    body.append(tr);
+  });
+  qs('#new-pay').onclick = async ()=>{
+    const empId = prompt('EmpID (ex.: E1):',(EMPS[0]||{}).id||'E1');
+    const refMonth = prompt('Referência (YYYY-MM):','2025-08');
+    const gross = parseFloat(prompt('Bruto:','5000')||'0'); const deductions = parseFloat(prompt('Descontos:','1000')||'0'); const net = gross - deductions;
+    await post('/payroll','POST',{empId,refMonth,gross,deductions,net,items:[{"type":"PROVENTO","desc":"Salário","amount":gross},{"type":"DESCONTO","desc":"Descontos","amount":deductions}]}); renderPayroll();
+  };
+  qs('#exp-pay').onclick = (e)=>{ e.preventDefault(); window.open(API+'/export/payroll.csv','_blank'); };
+}
+async function editPay(p){
+  const gross = parseFloat(prompt('Bruto:', p.gross||0)||p.gross||0);
+  const deductions = parseFloat(prompt('Descontos:', p.deductions||0)||p.deductions||0);
+  const net = gross - deductions;
+  await post(`/payroll/${p.id}`,'PUT',{gross,deductions,net}); renderPayroll();
+}
+
+// Reviews
+async function renderReviews(){
+  await refreshLookups();
+  const data = await api('/reviews'); const body = qs('#tbl-review tbody'); body.innerHTML='';
+  const empName = id=> (EMPS.find(e=>e.id===id)||{}).name || '-';
+  data.forEach(r=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${empName(r.empId)}</td><td>${r.period}</td><td>${r.score}</td><td>${r.notes||''}</td><td class="right"></td>`;
+    const td = tr.querySelector('td:last-child');
+    if(['ADMIN','RH','GESTOR'].includes(ROLE)) td.append(btn('Editar', ()=>editReview(r)));
+    if(ROLE==='ADMIN') td.append(btn('Excluir', ()=>del(`/reviews/${r.id}`).then(renderReviews),'bad'));
+    body.append(tr);
+  });
+  qs('#new-review').onclick = async ()=>{
+    const empId = prompt('EmpID (ex.: E1):',(EMPS[0]||{}).id||'E1');
+    const period = prompt('Período (ex.: 2025-S2):','2025-S2');
+    const score = parseFloat(prompt('Score (0–5):','4.0')||'0');
+    const notes = prompt('Notas:','');
+    await post('/reviews','POST',{empId,period,score,notes}); renderReviews();
+  };
+  qs('#exp-review').onclick = (e)=>{ e.preventDefault(); window.open(API+'/export/reviews.csv','_blank'); };
+}
+async function editReview(r){
+  const score = parseFloat(prompt('Score:', r.score||0)||r.score||0);
+  const notes = prompt('Notas:', r.notes||'')||r.notes||'';
+  await post(`/reviews/${r.id}`,'PUT',{score,notes}); renderReviews();
+}
+
+// Trainings
+async function renderTrain(){
+  const data = await api('/trainings'); const body = qs('#tbl-train tbody'); body.innerHTML='';
+  data.forEach(t=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${t.title}</td><td>${t.date}</td><td>${t.seats}</td><td>${(t.enrolled||[]).length}</td><td class="right"></td>`;
+    const td = tr.querySelector('td:last-child');
+    if(['ADMIN','RH','GESTOR'].includes(ROLE)) td.append(btn('Editar', ()=>editTrain(t)));
+    if(ROLE==='ADMIN') td.append(btn('Excluir', ()=>del(`/trainings/${t.id}`).then(renderTrain),'bad'));
+    body.append(tr);
+  });
+  qs('#new-train').onclick = async ()=>{
+    const title = prompt('Título:'); if(!title) return;
+    const date = prompt('Data (YYYY-MM-DD):','2025-09-10');
+    const seats = parseInt(prompt('Vagas:','20')||'0',10);
+    await post('/trainings','POST',{title,date,seats,enrolled:[]}); renderTrain();
+  };
+  qs('#exp-train').onclick = (e)=>{ e.preventDefault(); window.open(API+'/export/trainings.csv','_blank'); };
+}
+async function editTrain(t){
+  const title = prompt('Título:', t.title)||t.title;
+  const date = prompt('Data (YYYY-MM-DD):', t.date)||t.date;
+  const seats = parseInt(prompt('Vagas:', t.seats)||t.seats,10);
+  await post(`/trainings/${t.id}`,'PUT',{title,date,seats}); renderTrain();
+}
+
+// Jobs
+async function renderJobs(){
+  await refreshLookups();
+  const data = await api('/jobs'); const body = qs('#tbl-job tbody'); body.innerHTML='';
+  const deptName = id=> (DEPTS.find(d=>d.id===id)||{}).name || '-';
+  data.forEach(j=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${j.title}</td><td>${deptName(j.deptId)}</td><td>${j.openings}</td><td>${j.status}</td><td class="right"></td>`;
+    const td = tr.querySelector('td:last-child');
+    if(['ADMIN','RH'].includes(ROLE)) td.append(btn('Editar', ()=>editJob(j)));
+    if(ROLE==='ADMIN') td.append(btn('Excluir', ()=>del(`/jobs/${j.id}`).then(renderJobs),'bad'));
+    body.append(tr);
+  });
+  qs('#new-job').onclick = async ()=>{
+    const title = prompt('Título:'); if(!title) return;
+    const deptId = prompt('DeptId:','D2');
+    const openings = parseInt(prompt('Vagas:','1')||'0',10);
+    await post('/jobs','POST',{title,deptId,openings,status:'ABERTA'}); renderJobs();
+  };
+  qs('#exp-job').onclick = (e)=>{ e.preventDefault(); window.open(API+'/export/jobs.csv','_blank'); };
+}
+async function editJob(j){
+  const title = prompt('Título:', j.title)||j.title;
+  const openings = parseInt(prompt('Vagas:', j.openings)||j.openings,10);
+  const status = prompt('Status (ABERTA/FECHADA):', j.status)||j.status;
+  await post(`/jobs/${j.id}`,'PUT',{title,openings,status}); renderJobs();
+}
+
+// Candidates
+async function renderCandidates(){
+  await refreshLookups(); const jobs = await api('/jobs');
+  const jobTitle = id=> (jobs.find(j=>j.id===id)||{}).title || '-';
+  const data = await api('/candidates'); const body = qs('#tbl-cand tbody'); body.innerHTML='';
+  data.forEach(c=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${c.name}</td><td>${c.email}</td><td>${jobTitle(c.jobId)}</td><td>${c.stage}</td><td class="right"></td>`;
+    const td = tr.querySelector('td:last-child');
+    if(['ADMIN','RH'].includes(ROLE)) td.append(btn('Editar', ()=>editCand(c)));
+    if(ROLE==='ADMIN') td.append(btn('Excluir', ()=>del(`/candidates/${c.id}`).then(renderCandidates),'bad'));
+    body.append(tr);
+  });
+  qs('#new-cand').onclick = async ()=>{
+    const name = prompt('Nome:'); if(!name) return;
+    const email = prompt('E-mail:','');
+    const jobId = prompt('JobId (ex.: J1):','J1');
+    await post('/candidates','POST',{name,email,jobId,stage:'TRIAGEM',notes:''}); renderCandidates();
+  };
+  qs('#exp-cand').onclick = (e)=>{ e.preventDefault(); window.open(API+'/export/candidates.csv','_blank'); };
+}
+async function editCand(c){
+  const stage = prompt('Etapa (TRIAGEM/ENTREVISTA/PROPOSTA/RECUSADO):', c.stage)||c.stage;
+  const notes = prompt('Notas:', c.notes||'')||c.notes||'';
+  await post(`/candidates/${c.id}`,'PUT',{stage,notes}); renderCandidates();
+}
+
+// Users
+async function renderUsers(){
+  if(ROLE!=='ADMIN'){ qs('#view-settings').innerHTML='<div class="card">Apenas ADMIN</div>'; return; }
+  const data = await api('/users'); const body = qs('#tbl-users tbody'); body.innerHTML='';
+  data.forEach(u=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${u.email}</td><td>${u.name}</td><td>${u.role}</td><td>${u.active?'Ativo':'Inativo'}</td><td class="right"></td>`;
+    const td = tr.querySelector('td:last-child');
+    td.append(btn('Editar', async ()=>{
+      const name = prompt('Nome:', u.name)||u.name;
+      const role = prompt('Papel (ADMIN/RH/GESTOR/COLAB):', u.role)||u.role;
+      const active = confirm('Ativo? (OK=Sim, Cancel=Não)');
+      await post(`/users/${u.id}`,'PUT',{name,role,active}); renderUsers();
+    }));
+    td.append(btn('Excluir', ()=>del(`/users/${u.id}`).then(renderUsers),'bad'));
+    body.append(tr);
+  });
+  qs('#new-user').onclick = async ()=>{
+    const email = prompt('E-mail:'); if(!email) return;
+    const name = prompt('Nome:','Usuário');
+    const role = prompt('Papel (ADMIN/RH/GESTOR/COLAB):','RH');
+    const pass = prompt('Senha:','123');
+    await post('/users','POST',{email,name,role,pass,active:true}); renderUsers();
+  };
+}
+
+// Bootstrap
+if(TOKEN){
+  fetch(API+'/summary',{headers:{'Authorization':'Bearer '+TOKEN}}).then(r=>{ if(r.ok){ ROLE='ADMIN'; WHO='Sessão'; initApp(); } }).catch(()=>{});
+}
+</script>
+</body>
+</html>
