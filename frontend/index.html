@@ -736,6 +736,14 @@
 </section>
 
 <script>
+// Limpar storage antigo para reset
+if (location.hash === '#reset') {
+  localStorage.clear();
+  sessionStorage.clear();
+  location.hash = '';
+  location.reload();
+}
+
 const API = 'https://marhbackend-production.up.railway.app/api';
 let TOKEN = localStorage.getItem('MARH_TOKEN') || null;
 let ROLE = null;
@@ -751,28 +759,38 @@ async function api(path, method='GET', body=null){
 
 // Login
 qs('#btn-login').onclick = async ()=>{
-  const email = qs('#login-email').value.trim(); const password = qs('#login-pass').value;
-  try{ const r = await api('/login','POST',{email,password});
-    // Mostrar código MFA em alert destacado
-    alert('🔐 CÓDIGO DE VERIFICAÇÃO EM 2 ETAPAS\n\n' + 
-          '📱 Seu código MFA é: ' + r.demoCode + '\n\n' +
-          '⚠️  Digite este código na próxima tela para continuar');
-    
-    qs('#login-msg').classList.remove('hidden'); qs('#login-msg').textContent = 'Código MFA (demo): '+r.demoCode;
-    qs('#view-login').classList.add('hidden'); qs('#view-mfa').classList.remove('hidden'); qs('#mfa-hint').textContent='Digite o código: ' + r.demoCode; sessionStorage.setItem('MFA_EMAIL', email);
-  }catch(e){ alert('Falha no login'); }
+  const email = qs('#login-email').value.trim(); 
+  const password = qs('#login-pass').value;
+  try{ 
+    const r = await api('/login','POST',{email,password});
+    alert('🔐 Código MFA: ' + r.demoCode);
+    qs('#view-login').classList.add('hidden'); 
+    qs('#view-mfa').classList.remove('hidden'); 
+    qs('#mfa-hint').textContent='Digite o código: ' + r.demoCode; 
+    sessionStorage.setItem('MFA_EMAIL', email);
+  }catch(e){ 
+    alert('Falha no login: ' + e.message); 
+  }
 };
 qs('#btn-verify').onclick = async ()=>{
   try{
-    const email = sessionStorage.getItem('MFA_EMAIL'); const code = qs('#mfa-code').value.trim();
+    const email = sessionStorage.getItem('MFA_EMAIL'); 
+    const code = qs('#mfa-code').value.trim();
     const r = await api('/mfa','POST',{email, code});
-    TOKEN = r.token; ROLE = r.role; WHO = r.name; localStorage.setItem('MARH_TOKEN', TOKEN); initApp();
-  }catch(e){ alert('Código inválido'); }
+    TOKEN = r.token; 
+    ROLE = r.role; 
+    WHO = r.name; 
+    localStorage.setItem('MARH_TOKEN', TOKEN); 
+    initApp();
+  }catch(e){ 
+    alert('Código inválido: ' + e.message); 
+  }
 };
 
 function initApp(){
   qs('#view-mfa').classList.add('hidden'); qs('#app').classList.remove('hidden');
   qs('#who').textContent = WHO;
+  qs('#role').textContent = ROLE;
   buildMenu(); bindCommon(); openView('view-dashboard');
 }
 function buildMenu(){
@@ -2162,8 +2180,17 @@ function printDocReceipt(){
 
 // Bootstrap
 if(TOKEN){
-  fetch(API+'/summary',{headers:{'Authorization':'Bearer '+TOKEN}}).then(r=>{ if(r.ok){ ROLE='ADMIN'; WHO='Sessão'; initApp(); } }).catch(()=>{
-    // Token inválido, limpar
+  fetch(API+'/summary',{headers:{'Authorization':'Bearer '+TOKEN}}).then(r=>{ 
+    if(r.ok){ 
+      return r.json(); 
+    } else {
+      throw new Error('Token inválido');
+    }
+  }).then(data => {
+    ROLE = 'ADMIN'; 
+    WHO = 'Admin MARH'; 
+    initApp();
+  }).catch(()=>{
     localStorage.removeItem('MARH_TOKEN');
     TOKEN = null;
   });
