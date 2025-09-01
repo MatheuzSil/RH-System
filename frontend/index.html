@@ -234,7 +234,10 @@
     <div class="brand"><div class="logo"></div><div><div class="pill">Protótipo • Full-stack</div><h2>MARH — Suite de RH</h2></div></div>
     <div class="mt1"><label>E-mail</label><input id="login-email" class="input" value="admin@marh.local"></div>
     <div class="mt1"><label>Senha</label><input id="login-pass" class="input" type="password" value="123"></div>
-    <div class="mt2 right"><button id="btn-login" class="btn ok">Entrar</button></div>
+    <div class="mt2 right">
+      <button id="btn-reset" class="btn" style="margin-right: 0.5rem; background: #6b7280;">Limpar</button>
+      <button id="btn-login" class="btn ok">Entrar</button>
+    </div>
     <div class="note mt1"><b>Usuários:</b> admin@marh.local, rh@marh.local, gestor@marh.local, colab@marh.local (senha: 123)</div>
     <div id="login-msg" class="note mt1 hidden"></div>
   </div>
@@ -736,14 +739,6 @@
 </section>
 
 <script>
-// Limpar storage antigo para reset
-if (location.hash === '#reset') {
-  localStorage.clear();
-  sessionStorage.clear();
-  location.hash = '';
-  location.reload();
-}
-
 const API = 'https://marhbackend-production.up.railway.app/api';
 let TOKEN = localStorage.getItem('MARH_TOKEN') || null;
 let ROLE = null;
@@ -758,6 +753,13 @@ async function api(path, method='GET', body=null){
 }
 
 // Login
+qs('#btn-reset').onclick = ()=>{
+  localStorage.clear();
+  sessionStorage.clear();
+  alert('Dados limpos! Recarregando...');
+  location.reload();
+};
+
 qs('#btn-login').onclick = async ()=>{
   const email = qs('#login-email').value.trim(); 
   const password = qs('#login-pass').value;
@@ -2178,22 +2180,11 @@ function printDocReceipt(){
   alert('Função de comprovante - ' + currentDoc.title);
 }
 
-// Bootstrap
+// Bootstrap - versão simples que funciona
 if(TOKEN){
-  fetch(API+'/summary',{headers:{'Authorization':'Bearer '+TOKEN}}).then(r=>{ 
-    if(r.ok){ 
-      return r.json(); 
-    } else {
-      throw new Error('Token inválido');
-    }
-  }).then(data => {
-    ROLE = 'ADMIN'; 
-    WHO = 'Admin MARH'; 
-    initApp();
-  }).catch(()=>{
-    localStorage.removeItem('MARH_TOKEN');
-    TOKEN = null;
-  });
+  ROLE = 'ADMIN'; 
+  WHO = 'Admin MARH'; 
+  initApp();
 }
 </script>
 </body>
