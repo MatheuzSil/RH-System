@@ -3,17 +3,17 @@
   --card: #ffffff;
   --muted: #6c757d;
   --text: #212529;
-  --brand: #2563eb;
+  --brand: #007bff;
   --brand-light: #3b82f6;
-  --brand-dark: #1d4ed8;
-  --ok: #22c55e;
-  --bad: #ef4444;
-  --warning: #f59e0b;
+  --brand-dark: #0056b3;
+  --ok: #28a745;
+  --bad: #dc3545;
+  --warning: #ffc107;
   --line: #e5e7eb;
-  --sidebar-bg: #1e40af;
+  --sidebar-bg: #343a40;
   --sidebar-text: #ffffff;
-  --sidebar-hover: #1d4ed8;
-  --header-bg: #2563eb;
+  --sidebar-hover: #495057;
+  --header-bg: #007bff;
 }
 
 * { 
