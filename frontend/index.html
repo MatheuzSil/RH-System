@@ -7,9 +7,197 @@
 <link rel="stylesheet" href="styles.css">
 <style>
 .protocol-section { margin-top: 1rem; }
-#protocol-tabs button { margin-right: 0.5rem; margin-bottom: 0.5rem; }
-#protocol-tabs button.active { background-color: #0056b3; color: white; }
-.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }
+#protocol-tabs button { 
+  margin-right: 0.5rem; 
+  margin-bottom: 0.5rem; 
+  padding: 0.5rem 1rem;
+  border: 1px solid #e5e7eb;
+  background: white;
+  color: #6c757d;
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+}
+#protocol-tabs button.active { 
+  background-color: #2563eb; 
+  color: white; 
+  border-color: #2563eb;
+}
+#protocol-tabs button:hover {
+  background-color: #f8fafc;
+  border-color: #2563eb;
+}
+.grid { 
+  display: grid; 
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+  gap: 1rem; 
+}
+
+/* Modal styles */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal.hidden {
+  display: none;
+}
+.modal-content {
+  background: white;
+  max-width: 800px;
+  width: 90%;
+  max-height: 90%;
+  overflow-y: auto;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  padding: 2rem;
+}
+.modal-content.large {
+  max-width: 900px;
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 1rem;
+}
+.btn-close {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  color: #6c757d;
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+.btn-close:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+/* Small button styles */
+.btn-small {
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  border: 1px solid #e5e7eb;
+  background: #f8fafc;
+  border-radius: 0.4rem;
+  cursor: pointer;
+  color: #6c757d;
+  transition: all 0.2s;
+}
+.btn-small:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+.btn-small.danger {
+  color: #ef4444;
+  border-color: #ef4444;
+}
+.btn-small.danger:hover {
+  background: #ef4444;
+  color: white;
+}
+
+/* Tab styles for employee modal */
+.emp-tab-content.hidden {
+  display: none;
+}
+.emp-tabs {
+  display: flex;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 1.5rem;
+}
+.emp-tabs .emp-tab-btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  background: none;
+  border-bottom: 2px solid transparent;
+  color: #6c757d;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+.emp-tabs .emp-tab-btn.active {
+  border-bottom-color: #2563eb;
+  color: #2563eb;
+}
+.emp-tabs .emp-tab-btn:hover {
+  color: #374151;
+}
+
+/* General styles */
+.note {
+  color: #6c757d;
+  font-style: italic;
+  padding: 1rem;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+}
+
+/* Employee card styles */
+.emp-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  cursor: pointer;
+}
+.emp-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+  border-color: #2563eb;
+}
+
+/* Form styling */
+.form-section {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  background: white;
+}
+.form-section h3 {
+  margin: 0 0 1rem 0;
+  color: #1f2937;
+  font-size: 1.1rem;
+  border-bottom: 1px solid #f3f4f6;
+  padding-bottom: 0.5rem;
+}
+
+/* Right align utility */
+.right {
+  text-align: right;
+}
+
+/* Badge styles */
+.badge {
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  background: #e9ecef;
+  color: #495057;
+}
+.badge.active { 
+  background: #d4edda; 
+  color: #155724; 
+}
+.badge.inactive { 
+  background: #f8d7da; 
+  color: #721c24; 
+}
 </style>
 </head>
 <body>
@@ -35,10 +223,16 @@
 
 <section id="app" class="hidden">
   <header class="top">
-    <div class="brand"><div class="logo"></div><div><div class="pill">MARH</div><div id="user-ctx" class="note" style="padding:.2rem .4rem"></div></div></div>
+    <div class="brand">
+      <div class="logo">M</div>
+      <div>
+        <div style="font-weight:700;font-size:1.1rem;">MARH</div>
+        <div style="font-size:0.8rem;opacity:0.9;">Sistema de RH</div>
+      </div>
+    </div>
     <div class="toolbar" style="min-width:40%">
       <div class="search"><input id="global-search" class="input" placeholder="Buscar..."><button id="btn-search" class="btn">Buscar</button></div>
-      <button id="btn-print" class="btn">Imprimir</button>
+      <button id="btn-print" class="btn">🖨️ Imprimir</button>
       <button id="btn-logout" class="btn bad">Sair</button>
     </div>
   </header>
@@ -47,9 +241,9 @@
       <div class="section">Navegação</div>
       <nav id="menu"></nav>
       <div class="section">Sessão</div>
-      <div class="card">
-        <div class="mb1">Usuário: <b id="who"></b></div>
-        <div class="mb1">Perfil: <span id="role" class="badge"></span></div>
+      <div class="card" style="background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.2);">
+        <div class="mb1" style="color: rgba(255, 255, 255, 0.9);">Usuário: <b id="who" style="color: white;"></b></div>
+        <div class="mb1" style="color: rgba(255, 255, 255, 0.9);">Perfil: <span id="role" class="badge" style="background: rgba(255, 255, 255, 0.2); color: white; border: 1px solid rgba(255, 255, 255, 0.3);"></span></div>
       </div>
     </aside>
     <main>
@@ -67,8 +261,218 @@
       </div>
 
       <div id="view-employees" class="hidden">
-        <div class="toolbar mb1"><button id="new-emp" class="btn ok">Novo colaborador</button><a id="exp-emp" class="btn" href="#">Exportar CSV</a></div>
-        <div class="card"><table id="tbl-emp"><thead><tr><th>Nome</th><th>E-mail</th><th>Departamento</th><th>Cargo</th><th>Salário</th><th>Status</th><th></th></tr></thead><tbody></tbody></table></div>
+        <div class="toolbar mb1">
+          <button id="new-emp" class="btn ok">Novo colaborador</button>
+          <a id="exp-emp" class="btn" href="#">Exportar CSV</a>
+          <button id="toggle-emp-view" class="btn">👥 Cartões</button>
+        </div>
+        
+        <!-- Visualização em tabela (padrão) -->
+        <div id="emp-table-view" class="card">
+          <table id="tbl-emp">
+            <thead>
+              <tr><th>Nome</th><th>E-mail</th><th>Departamento</th><th>Cargo</th><th>Salário</th><th>Status</th><th></th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        
+        <!-- Visualização em cards -->
+        <div id="emp-cards-view" class="hidden">
+          <div id="emp-cards-container" class="grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1rem;"></div>
+        </div>
+      </div>
+
+      <!-- Modal para detalhes do colaborador -->
+      <div id="emp-modal" class="modal hidden">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2 id="emp-modal-title">Detalhes do Colaborador</h2>
+            <button id="close-emp-modal" class="btn-close">✕</button>
+          </div>
+          <div id="emp-modal-content"></div>
+        </div>
+      </div>
+
+      <!-- Modal para adicionar/editar colaborador -->
+      <div id="emp-form-modal" class="modal hidden">
+        <div class="modal-content large">
+          <div class="modal-header">
+            <h2 id="emp-form-title">Novo Colaborador</h2>
+            <button id="close-emp-form-modal" class="btn-close">✕</button>
+          </div>
+            </div>
+            <form id="emp-form">
+              <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <!-- Informações Básicas -->
+                <div class="card">
+                  <h3>📋 Informações Básicas</h3>
+                  <div class="mt1">
+                    <label>Tipo de Funcionário</label>
+                    <select id="emp-type" class="input">
+                      <option value="Funcionário">Funcionário</option>
+                      <option value="Terceirizado">Terceirizado</option>
+                      <option value="Estagiário">Estagiário</option>
+                    </select>
+                  </div>
+                  <div class="mt1">
+                    <label>Nome Completo *</label>
+                    <input id="emp-name" class="input" required>
+                  </div>
+                  <div class="mt1">
+                    <label>CPF *</label>
+                    <input id="emp-cpf" class="input" placeholder="000.000.000-00" required>
+                  </div>
+                  <div class="mt1">
+                    <label>E-mail *</label>
+                    <input id="emp-email" class="input" type="email" required>
+                  </div>
+                  <div class="mt1">
+                    <label>Telefone</label>
+                    <input id="emp-phone" class="input" placeholder="(00) 00000-0000">
+                  </div>
+                  <div class="mt1">
+                    <label>Sexo</label>
+                    <select id="emp-gender" class="input">
+                      <option value="">Selecione</option>
+                      <option value="Masculino">Masculino</option>
+                      <option value="Feminino">Feminino</option>
+                      <option value="Outro">Outro</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Informações Pessoais -->
+                <div class="card">
+                  <h3>👤 Informações Pessoais</h3>
+                  <div class="mt1">
+                    <label>Estado Civil</label>
+                    <select id="emp-marital" class="input">
+                      <option value="">Selecione</option>
+                      <option value="Solteiro">Solteiro</option>
+                      <option value="Casado">Casado</option>
+                      <option value="Divorciado">Divorciado</option>
+                      <option value="Viúvo">Viúvo</option>
+                      <option value="União Estável">União Estável</option>
+                    </select>
+                  </div>
+                  <div class="mt1">
+                    <label>Possui Filhos</label>
+                    <select id="emp-has-children" class="input">
+                      <option value="Não">Não</option>
+                      <option value="Sim">Sim</option>
+                    </select>
+                  </div>
+                  <div class="mt1">
+                    <label>Quantidade de Filhos</label>
+                    <input id="emp-children-count" class="input" type="number" min="0" value="0">
+                  </div>
+                  <div class="mt1">
+                    <label>Matrícula</label>
+                    <input id="emp-registration" class="input">
+                  </div>
+                  <div class="mt1">
+                    <label>Status</label>
+                    <select id="emp-status" class="input">
+                      <option value="Ativo">Ativo</option>
+                      <option value="Inativo">Inativo</option>
+                      <option value="Afastado">Afastado</option>
+                      <option value="Férias">Férias</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Informações Profissionais -->
+                <div class="card">
+                  <h3>💼 Informações Profissionais</h3>
+                  <div class="mt1">
+                    <label>Data de Admissão</label>
+                    <input id="emp-admission-date" class="input" type="date">
+                  </div>
+                  <div class="mt1">
+                    <label>Início das Atividades</label>
+                    <input id="emp-start-date" class="input" type="date">
+                  </div>
+                  <div class="mt1">
+                    <label>Data de Demissão</label>
+                    <input id="emp-dismissal-date" class="input" type="date">
+                  </div>
+                  <div class="mt1">
+                    <label>Departamento *</label>
+                    <select id="emp-dept" class="input" required>
+                      <option value="">Selecione</option>
+                    </select>
+                  </div>
+                  <div class="mt1">
+                    <label>Cargo *</label>
+                    <input id="emp-role" class="input" required>
+                  </div>
+                  <div class="mt1">
+                    <label>Salário *</label>
+                    <input id="emp-salary" class="input" type="number" step="0.01" min="0" required>
+                  </div>
+                </div>
+
+                <!-- Hierarquia e Contatos -->
+                <div class="card">
+                  <h3>👥 Hierarquia e Contatos</h3>
+                  <div class="mt1">
+                    <label>Supervisor</label>
+                    <select id="emp-supervisor" class="input">
+                      <option value="">Nenhum</option>
+                    </select>
+                  </div>
+                  <div class="mt1">
+                    <label>Coordenador</label>
+                    <select id="emp-coordinator" class="input">
+                      <option value="">Nenhum</option>
+                    </select>
+                  </div>
+                  <div class="mt1">
+                    <label>Gerente</label>
+                    <select id="emp-manager" class="input">
+                      <option value="">Nenhum</option>
+                    </select>
+                  </div>
+                  <div class="mt1">
+                    <label>Empresa</label>
+                    <input id="emp-company" class="input" placeholder="Nome da empresa">
+                  </div>
+                  <div class="mt1">
+                    <label>Filial</label>
+                    <input id="emp-branch" class="input" placeholder="Filial/Unidade">
+                  </div>
+                  <div class="mt1">
+                    <label>Tags</label>
+                    <input id="emp-tags" class="input" placeholder="Separar por vírgula">
+                  </div>
+                </div>
+              </div>
+              
+              <div class="card mt1">
+                <h3>📧 Configurações do Sistema</h3>
+                <div class="mt1">
+                  <label>E-mail para avisos do sistema</label>
+                  <input id="emp-system-email" class="input" type="email" placeholder="Mesmo e-mail ou alternativo">
+                </div>
+                <div class="mt1">
+                  <label>Marcação de Ponto</label>
+                  <select id="emp-time-tracking" class="input">
+                    <option value="Manual">Manual</option>
+                    <option value="Biométrico">Biométrico</option>
+                    <option value="Cartão">Cartão</option>
+                    <option value="App">Aplicativo</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="mt2 right">
+                <button type="button" id="cancel-emp-form" class="btn">Cancelar</button>
+                <button type="submit" class="btn ok">Salvar Colaborador</button>
+              </div>
+            </form>
+          </div>
+        </div>
       </div>
 
       <div id="view-depts" class="hidden">
@@ -393,38 +797,723 @@ async function del(path){ return api(path,'DELETE'); }
 let DEPTS = []; let EMPS = [];
 async function refreshLookups(){ DEPTS = await api('/departments'); EMPS = await api('/employees'); }
 
+// Employee Document Management Functions
+function bindEmployeeModalTabs(empId) {
+  // Tab switching
+  document.querySelectorAll('.emp-tab-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const tab = e.target.dataset.tab;
+      switchEmployeeTab(tab);
+    });
+  });
+  
+  // Load documents when modal opens
+  loadEmployeeDocuments(empId);
+  
+  // Document upload form
+  const form = document.getElementById('doc-upload-form');
+  if (form) {
+    form.addEventListener('submit', handleDocumentUpload);
+  }
+}
+
+function switchEmployeeTab(tab) {
+  // Remove active from all tabs
+  document.querySelectorAll('.emp-tab-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  
+  // Hide all tab contents
+  document.querySelectorAll('.emp-tab-content').forEach(content => {
+    content.classList.add('hidden');
+  });
+  
+  // Activate selected tab
+  const activeBtn = document.querySelector(`[data-tab="${tab}"]`);
+  if (activeBtn) {
+    activeBtn.classList.add('active');
+  }
+  
+  // Show selected content
+  const activeContent = document.getElementById(`emp-tab-${tab}`);
+  if (activeContent) {
+    activeContent.classList.remove('hidden');
+  }
+}
+
+function loadEmployeeDocuments(empId) {
+  const docsList = document.getElementById('emp-docs-list');
+  if (!docsList) return;
+  
+  docsList.innerHTML = '<div class="note">Carregando documentos...</div>';
+  
+  // Make API call to load real documents
+  api(`/employees/${empId}/documents`)
+    .then(documents => {
+      if (documents.length === 0) {
+        docsList.innerHTML = '<div class="note">Nenhum documento encontrado.</div>';
+        return;
+      }
+      
+      docsList.innerHTML = documents.map(doc => {
+        const isExpired = doc.isExpired;
+        const today = new Date();
+        const expirationDate = doc.expirationDate ? new Date(doc.expirationDate) : null;
+        const daysToExpiration = expirationDate ? Math.ceil((expirationDate - today) / (1000 * 60 * 60 * 24)) : null;
+        
+        let expirationStatus = '';
+        let borderColor = '#dee2e6';
+        let backgroundColor = '#f8f9fa';
+        let textColor = '#0056b3';
+        
+        if (isExpired) {
+          expirationStatus = ' <span style="color: #dc3545; font-size: 0.8em; font-weight: bold;">[EXPIRADO]</span>';
+          borderColor = '#dc3545';
+          backgroundColor = '#fff5f5';
+          textColor = '#dc3545';
+        } else if (daysToExpiration !== null && daysToExpiration <= 30 && daysToExpiration > 0) {
+          expirationStatus = ` <span style="color: #ffc107; font-size: 0.8em; font-weight: bold;">[EXPIRA EM ${daysToExpiration} DIAS]</span>`;
+          borderColor = '#ffc107';
+          backgroundColor = '#fffbf0';
+          textColor = '#856404';
+        }
+        
+        const expirationInfo = doc.expirationDate ? 
+          `📅 Expira: ${doc.expirationDate}${isExpired ? ' ⚠️ EXPIRADO' : (daysToExpiration !== null && daysToExpiration <= 30 && daysToExpiration > 0) ? ` ⏰ ${daysToExpiration} dias` : ''}` : 
+          '📅 Sem expiração';
+        
+        return `
+          <div class="doc-item" style="display: flex; align-items: center; justify-content: space-between; padding: 10px; border: 1px solid ${borderColor}; border-radius: 4px; margin-bottom: 8px; background: ${backgroundColor};">
+            <div style="flex: 1;">
+              <div style="font-weight: 500; color: ${textColor};">
+                📄 ${doc.description || doc.type}${expirationStatus}
+              </div>
+              <div style="font-size: 0.85em; color: #6c757d;">
+                📅 Upload: ${doc.uploadDate} • 📦 ${doc.size || formatFileSize(doc.fileSize)}
+              </div>
+              <div style="font-size: 0.8em; color: ${isExpired ? '#dc3545' : (daysToExpiration !== null && daysToExpiration <= 30 && daysToExpiration > 0) ? '#856404' : '#6c757d'}; margin-top: 2px;">
+                ${expirationInfo}
+              </div>
+              ${doc.notes ? `<div style="font-size: 0.8em; color: #28a745; margin-top: 2px;">💬 ${doc.notes}</div>` : ''}
+            </div>
+            <div style="display: flex; gap: 5px;">
+              <button class="btn-small" onclick="viewDocument('${doc.id}', '${doc.fileName || doc.description}')" title="Visualizar">👁️</button>
+              <button class="btn-small" onclick="downloadDocument('${doc.id}', '${doc.fileName || doc.description}')" title="Download">⬇️</button>
+              ${['ADMIN','RH'].includes(ROLE) ? `<button class="btn-small danger" onclick="deleteDocument('${doc.id}', '${empId}')" title="Excluir">🗑️</button>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    })
+    .catch(error => {
+      console.error('Erro ao carregar documentos:', error);
+      docsList.innerHTML = '<div class="note" style="color: #dc3545;">Erro ao carregar documentos</div>';
+    });
+}
+
+function handleDocumentUpload(e) {
+  e.preventDefault();
+  
+  const empId = document.getElementById('doc-emp-id').value;
+  const docType = document.getElementById('doc-type').value;
+  const description = document.getElementById('doc-description').value;
+  const expirationDate = document.getElementById('doc-expiration').value;
+  const fileInput = document.getElementById('doc-file');
+  const notes = document.getElementById('doc-notes').value;
+  
+  if (!docType || !fileInput.files[0]) {
+    alert('⚠️ Preencha todos os campos obrigatórios');
+    return;
+  }
+  
+  const file = fileInput.files[0];
+  
+  // Validate file type
+  if (file.type !== 'application/pdf') {
+    alert('⚠️ Apenas arquivos PDF são aceitos');
+    return;
+  }
+  
+  // Validate file size (10MB = 10 * 1024 * 1024)
+  if (file.size > 10 * 1024 * 1024) {
+    alert('⚠️ Arquivo muito grande. Tamanho máximo: 10MB');
+    return;
+  }
+  
+  // Prepare FormData for multipart upload
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('empId', empId);
+  formData.append('type', docType);
+  formData.append('description', description);
+  if (expirationDate) {
+    formData.append('expirationDate', expirationDate);
+  }
+  formData.append('notes', notes);
+  
+  const loadingBtn = e.target.querySelector('button[type="submit"]');
+  const originalText = loadingBtn.innerHTML;
+  loadingBtn.innerHTML = '⏳ Enviando...';
+  loadingBtn.disabled = true;
+  
+  // Upload to API
+  fetch(`${API_URL}/employees/${empId}/documents`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${TOKEN}`
+    },
+    body: formData
+  })
+  .then(response => {
+    if (!response.ok) {
+      return response.json().then(err => Promise.reject(err));
+    }
+    return response.json();
+  })
+  .then(result => {
+    alert('✅ Documento enviado com sucesso!');
+    
+    // Reset form
+    e.target.reset();
+    
+    // Reload documents list
+    loadEmployeeDocuments(empId);
+    
+    // Reset button
+    loadingBtn.innerHTML = originalText;
+    loadingBtn.disabled = false;
+  })
+  .catch(error => {
+    console.error('Erro no upload:', error);
+    alert(`❌ Erro ao enviar documento: ${error.error || 'Erro desconhecido'}`);
+    
+    // Reset button
+    loadingBtn.innerHTML = originalText;
+    loadingBtn.disabled = false;
+  });
+}
+
+function viewDocument(docId, fileName) {
+  // Open document in new tab for viewing
+  const url = `${API_URL}/documents/${docId}/view`;
+  window.open(url, '_blank');
+}
+
+function downloadDocument(docId, fileName) {
+  // Create download link
+  const url = `${API_URL}/documents/${docId}/download`;
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName;
+  link.style.display = 'none';
+  
+  // Add authorization header via fetch and blob
+  fetch(url, {
+    headers: {
+      'Authorization': `Bearer ${TOKEN}`
+    }
+  })
+  .then(response => response.blob())
+  .then(blob => {
+    const downloadUrl = window.URL.createObjectURL(blob);
+    link.href = downloadUrl;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(downloadUrl);
+  })
+  .catch(error => {
+    console.error('Erro no download:', error);
+    alert('❌ Erro ao baixar documento');
+  });
+}
+
+function deleteDocument(docId, empId) {
+  if (!confirm('❓ Tem certeza que deseja excluir este documento?\n\nEsta ação não pode ser desfeita.')) {
+    return;
+  }
+  
+  // Call API to delete document
+  fetch(`${API_URL}/documents/${docId}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${TOKEN}`,
+      'Content-Type': 'application/json'
+    }
+  })
+  .then(response => {
+    if (!response.ok) {
+      return response.json().then(err => Promise.reject(err));
+    }
+    return response.json();
+  })
+  .then(() => {
+    alert('🗑️ Documento excluído com sucesso!');
+    // Reload documents list
+    loadEmployeeDocuments(empId);
+  })
+  .catch(error => {
+    console.error('Erro ao excluir documento:', error);
+    alert(`❌ Erro ao excluir documento: ${error.error || 'Erro desconhecido'}`);
+  });
+}
+
+// Helper function to format file size
+function formatFileSize(bytes) {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+function closePdfViewer() {
+  document.getElementById('pdf-viewer').classList.add('hidden');
+}
+
 // Employees
+// Employee management with enhanced features
+let empViewMode = 'table'; // 'table' or 'cards'
+let currentEditingEmp = null;
+
 async function renderEmployees(){
   await refreshLookups();
-  const body = qs('#tbl-emp tbody'); body.innerHTML='';
-  const deptName = id=> (DEPTS.find(d=>d.id===id)||{}).name || '-';
+  
+  // Populate department dropdown
+  const deptSelect = qs('#emp-dept');
+  deptSelect.innerHTML = '<option value="">Selecione</option>' + 
+    DEPTS.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+  
+  // Populate supervisor/coordinator/manager dropdowns
+  const supervisorOptions = '<option value="">Nenhum</option>' + 
+    EMPS.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+  qs('#emp-supervisor').innerHTML = supervisorOptions;
+  qs('#emp-coordinator').innerHTML = supervisorOptions;
+  qs('#emp-manager').innerHTML = supervisorOptions;
+  
+  // Render based on current view mode
+  if(empViewMode === 'table') {
+    renderEmployeesTable();
+  } else {
+    renderEmployeesCards();
+  }
+  
+  // Bind events
+  bindEmployeeEvents();
+}
+
+function renderEmployeesTable(){
+  qs('#emp-table-view').classList.remove('hidden');
+  qs('#emp-cards-view').classList.add('hidden');
+  qs('#toggle-emp-view').textContent = '👥 Cartões';
+  
+  const body = qs('#tbl-emp tbody'); 
+  body.innerHTML = '';
+  const deptName = id => (DEPTS.find(d=>d.id===id)||{}).name || '-';
+  
   EMPS.forEach(e=>{
     const tr = document.createElement('tr');
     tr.innerHTML = `<td>${e.name}</td><td>${e.email}</td><td>${deptName(e.deptId)}</td><td>${e.roleTitle||''}</td><td>${brl(e.salary||0)}</td><td>${e.status}</td><td class="right"></td>`;
     const td = tr.querySelector('td:last-child');
+    
+    td.append(btn('Ver', ()=>showEmployeeDetails(e)));
     if(['ADMIN','RH','GESTOR'].includes(ROLE)){
-      td.append(btn('Editar', ()=>editEmp(e)));
-      if(ROLE==='ADMIN') td.append(btn('Excluir', ()=>del(`/employees/${e.id}`).then(renderEmployees),'bad'));
+      td.append(btn('Editar', ()=>editEmployee(e)));
+      if(ROLE==='ADMIN') td.append(btn('Excluir', ()=>deleteEmployee(e.id),'bad'));
     }
     body.append(tr);
   });
-  qs('#new-emp').onclick = async ()=>{
-    const name = prompt('Nome:'); if(!name) return;
-    const email = prompt('E-mail:','nome@empresa.com');
-    const deptId = (DEPTS[0]||{}).id || prompt('DeptId:','D1');
-    const roleTitle = prompt('Cargo:','Analista');
-    const salary = parseFloat(prompt('Salário:','5000')||'0');
-    await post('/employees','POST',{name,email,deptId,roleTitle,salary,status:'ATIVO'}); renderEmployees();
-  };
-  qs('#exp-emp').onclick = (e)=>{ e.preventDefault(); window.open(API+'/export/employees.csv','_blank'); };
 }
-async function editEmp(e){
-  const name = prompt('Nome:', e.name)||e.name;
-  const email = prompt('E-mail:', e.email)||e.email;
-  const deptId = prompt('DeptId:', e.deptId)||e.deptId;
-  const roleTitle = prompt('Cargo:', e.roleTitle||'')||e.roleTitle;
-  const salary = parseFloat(prompt('Salário:', e.salary||0)||e.salary||0);
-  await post(`/employees/${e.id}`,'PUT',{name,email,deptId,roleTitle,salary}); renderEmployees();
+
+function renderEmployeesCards(){
+  qs('#emp-table-view').classList.add('hidden');
+  qs('#emp-cards-view').classList.remove('hidden');
+  qs('#toggle-emp-view').textContent = '📊 Tabela';
+  
+  const container = qs('#emp-cards-container');
+  container.innerHTML = '';
+  const deptName = id => (DEPTS.find(d=>d.id===id)||{}).name || '-';
+  
+  EMPS.forEach(emp=>{
+    const card = document.createElement('div');
+    card.className = 'card emp-card';
+    card.style.cursor = 'pointer';
+    card.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+        <div>
+          <h3 style="margin: 0; color: #333;">${emp.name}</h3>
+          <div class="badge ${emp.status === 'Ativo' ? 'active' : 'inactive'}" style="margin-top: 5px;">${emp.status}</div>
+        </div>
+        <div style="text-align: right; font-size: 12px; color: #666;">
+          ${emp.registration || 'N/A'}
+        </div>
+      </div>
+      <div style="font-size: 14px; color: #666; line-height: 1.4;">
+        <div><strong>📧</strong> ${emp.email}</div>
+        <div><strong>🏢</strong> ${deptName(emp.deptId)}</div>
+        <div><strong>💼</strong> ${emp.roleTitle || 'N/A'}</div>
+        <div><strong>💰</strong> ${brl(emp.salary||0)}</div>
+        ${emp.phone ? `<div><strong>📱</strong> ${emp.phone}</div>` : ''}
+      </div>
+      <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #eee; display: flex; gap: 10px;">
+        <button class="btn small view-btn">👁️ Ver</button>
+        ${['ADMIN','RH','GESTOR'].includes(ROLE) ? `<button class="btn small edit-btn">✏️ Editar</button>` : ''}
+        ${ROLE==='ADMIN' ? `<button class="btn small bad delete-btn">🗑️</button>` : ''}
+      </div>
+    `;
+    
+    // Bind events
+    card.querySelector('.view-btn').onclick = (e) => {
+      e.stopPropagation();
+      showEmployeeDetails(emp.id);
+    };
+    
+    const editBtn = card.querySelector('.edit-btn');
+    if(editBtn) {
+      editBtn.onclick = (e) => {
+        e.stopPropagation();
+        editEmployee(emp.id);
+      };
+    }
+    
+    const deleteBtn = card.querySelector('.delete-btn');
+    if(deleteBtn) {
+      deleteBtn.onclick = (e) => {
+        e.stopPropagation();
+        deleteEmployee(emp.id);
+      };
+    }
+    
+    card.onclick = (e) => {
+      if(!e.target.classList.contains('btn')) {
+        showEmployeeDetails(emp.id);
+      }
+    };
+    
+    container.appendChild(card);
+  });
+}
+
+function bindEmployeeEvents(){
+  // Toggle view mode
+  qs('#toggle-emp-view').onclick = () => {
+    empViewMode = empViewMode === 'table' ? 'cards' : 'table';
+    renderEmployees();
+  };
+  
+  // New employee button
+  qs('#new-emp').onclick = () => {
+    currentEditingEmp = null;
+    qs('#emp-form-title').textContent = 'Novo Colaborador';
+    clearEmployeeForm();
+    qs('#emp-form-modal').classList.remove('hidden');
+  };
+  
+  // Export button
+  qs('#exp-emp').onclick = (e) => {
+    e.preventDefault(); 
+    window.open(API+'/export/employees.csv','_blank');
+  };
+  
+  // Modal close buttons
+  qs('#close-emp-modal').onclick = () => {
+    qs('#emp-modal').classList.add('hidden');
+  };
+  
+  qs('#close-emp-form-modal').onclick = () => {
+    qs('#emp-form-modal').classList.add('hidden');
+  };
+  
+  qs('#cancel-emp-form').onclick = () => {
+    qs('#emp-form-modal').classList.add('hidden');
+  };
+  
+  // Form submission
+  qs('#emp-form').onsubmit = handleEmployeeFormSubmit;
+  
+  // Modal background click to close
+  qs('#emp-modal').onclick = (e) => {
+    if(e.target === qs('#emp-modal')) {
+      qs('#emp-modal').classList.add('hidden');
+    }
+  };
+  
+  qs('#emp-form-modal').onclick = (e) => {
+    if(e.target === qs('#emp-form-modal')) {
+      qs('#emp-form-modal').classList.add('hidden');
+    }
+  };
+}
+
+function showEmployeeDetails(empId){
+  const emp = EMPS.find(e => e.id === empId);
+  if(!emp) return;
+  
+  const deptName = (DEPTS.find(d=>d.id===emp.deptId)||{}).name || 'N/A';
+  const supervisorName = emp.supervisorId ? (EMPS.find(e=>e.id===emp.supervisorId)||{}).name || 'N/A' : 'N/A';
+  
+  qs('#emp-modal-content').innerHTML = `
+    <!-- Tabs -->
+    <div class="emp-tabs">
+      <button class="emp-tab-btn active" data-tab="info">
+        📋 Informações
+      </button>
+      <button class="emp-tab-btn" data-tab="docs">
+        📁 Documentos
+      </button>
+    </div>
+    
+    <!-- Tab Content: Informações -->
+    <div id="emp-tab-info" class="emp-tab-content">
+      <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 2rem;">
+        <div>
+          <div class="card">
+            <h3>📋 Informações Básicas</h3>
+            <div style="line-height: 1.6;">
+              <div><strong>Tipo:</strong> ${emp.type || 'Funcionário'}</div>
+              <div><strong>Nome:</strong> ${emp.name}</div>
+              <div><strong>CPF:</strong> ${emp.cpf || 'N/A'}</div>
+              <div><strong>E-mail:</strong> ${emp.email}</div>
+              <div><strong>Telefone:</strong> ${emp.phone || 'N/A'}</div>
+              <div><strong>Sexo:</strong> ${emp.gender || 'N/A'}</div>
+            </div>
+          </div>
+          
+          <div class="card mt1">
+            <h3>👤 Informações Pessoais</h3>
+            <div style="line-height: 1.6;">
+              <div><strong>Estado Civil:</strong> ${emp.maritalStatus || 'N/A'}</div>
+              <div><strong>Possui Filhos:</strong> ${emp.hasChildren || 'N/A'}</div>
+              <div><strong>Qtde de Filhos:</strong> ${emp.childrenCount || '0'}</div>
+              <div><strong>Matrícula:</strong> ${emp.registration || 'N/A'}</div>
+              <div><strong>Status:</strong> <span class="badge">${emp.status}</span></div>
+            </div>
+          </div>
+        </div>
+        
+        <div>
+          <div class="card">
+            <h3>💼 Informações Profissionais</h3>
+            <div style="line-height: 1.6;">
+              <div><strong>Data de Admissão:</strong> ${emp.admissionDate || 'N/A'}</div>
+              <div><strong>Início das Atividades:</strong> ${emp.startDate || 'N/A'}</div>
+              <div><strong>Data de Demissão:</strong> ${emp.dismissalDate || 'N/A'}</div>
+              <div><strong>Departamento:</strong> ${deptName}</div>
+              <div><strong>Cargo:</strong> ${emp.roleTitle || 'N/A'}</div>
+              <div><strong>Salário:</strong> ${brl(emp.salary||0)}</div>
+            </div>
+          </div>
+          
+          <div class="card mt1">
+            <h3>👥 Hierarquia e Empresa</h3>
+            <div style="line-height: 1.6;">
+              <div><strong>Supervisor:</strong> ${supervisorName}</div>
+              <div><strong>Coordenador:</strong> ${emp.coordinatorName || 'N/A'}</div>
+              <div><strong>Gerente:</strong> ${emp.managerName || 'N/A'}</div>
+              <div><strong>Empresa:</strong> ${emp.company || 'N/A'}</div>
+              <div><strong>Filial:</strong> ${emp.branch || 'N/A'}</div>
+              <div><strong>Tags:</strong> ${emp.tags || 'N/A'}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="card mt1">
+        <h3>📧 Configurações do Sistema</h3>
+        <div style="line-height: 1.6;">
+          <div><strong>E-mail para avisos:</strong> ${emp.systemEmail || emp.email}</div>
+          <div><strong>Marcação de Ponto:</strong> ${emp.timeTracking || 'Manual'}</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Tab Content: Documentos -->
+    <div id="emp-tab-docs" class="emp-tab-content hidden">
+      <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 2rem;">
+        <!-- Upload de documento -->
+        <div class="card">
+          <h3>📤 Adicionar Documento</h3>
+          <form id="doc-upload-form" enctype="multipart/form-data">
+            <input type="hidden" id="doc-emp-id" value="${emp.id}">
+            <div class="mt1">
+              <label>Tipo de Documento *</label>
+              <select id="doc-type" class="input" required>
+                <option value="">Selecione o tipo</option>
+                <option value="RG">RG - Registro Geral</option>
+                <option value="CPF">CPF - Cadastro de Pessoa Física</option>
+                <option value="CNH">CNH - Carteira de Habilitação</option>
+                <option value="CTPS">CTPS - Carteira de Trabalho</option>
+                <option value="TITULO">Título de Eleitor</option>
+                <option value="CERTIFICADO_RESERVISTA">Certificado de Reservista</option>
+                <option value="COMPROVANTE_RESIDENCIA">Comprovante de Residência</option>
+                <option value="CERTIDAO_NASCIMENTO">Certidão de Nascimento</option>
+                <option value="CERTIDAO_CASAMENTO">Certidão de Casamento</option>
+                <option value="DIPLOMA">Diploma/Certificado</option>
+                <option value="ATESTADO_SAUDE">Atestado de Saúde Ocupacional</option>
+                <option value="EXAME_ADMISSIONAL">Exame Admissional</option>
+                <option value="CONTRATO">Contrato de Trabalho</option>
+                <option value="TERMO_RESPONSABILIDADE">Termo de Responsabilidade</option>
+                <option value="OUTROS">Outros</option>
+              </select>
+            </div>
+            <div class="mt1">
+              <label>Descrição</label>
+              <input id="doc-description" class="input" placeholder="Descrição opcional do documento">
+            </div>
+            <div class="mt1">
+              <label>Data de Expiração</label>
+              <input type="date" id="doc-expiration" class="input" placeholder="Data de expiração (opcional)">
+              <div class="note mt1">Data em que o documento expira (opcional)</div>
+            </div>
+            <div class="mt1">
+              <label>Arquivo PDF *</label>
+              <input type="file" id="doc-file" class="input" accept=".pdf" required>
+              <div class="note mt1">Apenas arquivos PDF são aceitos. Tamanho máximo: 10MB</div>
+            </div>
+            <div class="mt1">
+              <label>Observações</label>
+              <textarea id="doc-notes" class="input" rows="3" placeholder="Observações sobre o documento"></textarea>
+            </div>
+            <div class="mt2">
+              <button type="submit" class="btn ok">📤 Fazer Upload</button>
+            </div>
+          </form>
+        </div>
+        
+        <!-- Lista de documentos -->
+        <div class="card">
+          <h3>📁 Documentos do Funcionário</h3>
+          <div id="emp-docs-list" style="max-height: 400px; overflow-y: auto;">
+            <div class="note">Carregando documentos...</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Visualizador de PDF -->
+      <div id="pdf-viewer" class="card mt1 hidden">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <h3 id="pdf-title">Visualizador de Documento</h3>
+          <button class="btn" onclick="closePdfViewer()">✕ Fechar</button>
+        </div>
+        <div style="text-align: center; border: 1px solid #dee2e6; border-radius: 4px; min-height: 500px; background: #f8f9fa;">
+          <iframe id="pdf-frame" style="width: 100%; height: 600px; border: none;"></iframe>
+        </div>
+      </div>
+    </div>
+    
+    <div class="mt2 right">
+      ${['ADMIN','RH','GESTOR'].includes(ROLE) ? `<button class="btn ok" onclick="editEmployee('${emp.id}')">Editar Colaborador</button>` : ''}
+    </div>
+  `;
+  
+  // Bind tab events
+  bindEmployeeModalTabs(emp.id);
+  
+  qs('#emp-modal').classList.remove('hidden');
+}
+
+function editEmployee(empId){
+  const emp = EMPS.find(e => e.id === empId);
+  if(!emp) return;
+  
+  currentEditingEmp = emp;
+  qs('#emp-form-title').textContent = 'Editar Colaborador';
+  
+  // Populate form with employee data
+  qs('#emp-type').value = emp.type || 'Funcionário';
+  qs('#emp-name').value = emp.name || '';
+  qs('#emp-cpf').value = emp.cpf || '';
+  qs('#emp-email').value = emp.email || '';
+  qs('#emp-phone').value = emp.phone || '';
+  qs('#emp-gender').value = emp.gender || '';
+  qs('#emp-marital').value = emp.maritalStatus || '';
+  qs('#emp-has-children').value = emp.hasChildren || 'Não';
+  qs('#emp-children-count').value = emp.childrenCount || 0;
+  qs('#emp-registration').value = emp.registration || '';
+  qs('#emp-status').value = emp.status || 'Ativo';
+  qs('#emp-admission-date').value = emp.admissionDate || '';
+  qs('#emp-start-date').value = emp.startDate || '';
+  qs('#emp-dismissal-date').value = emp.dismissalDate || '';
+  qs('#emp-dept').value = emp.deptId || '';
+  qs('#emp-role').value = emp.roleTitle || '';
+  qs('#emp-salary').value = emp.salary || '';
+  qs('#emp-supervisor').value = emp.supervisorId || '';
+  qs('#emp-coordinator').value = emp.coordinatorId || '';
+  qs('#emp-manager').value = emp.managerId || '';
+  qs('#emp-company').value = emp.company || '';
+  qs('#emp-branch').value = emp.branch || '';
+  qs('#emp-tags').value = emp.tags || '';
+  qs('#emp-system-email').value = emp.systemEmail || '';
+  qs('#emp-time-tracking').value = emp.timeTracking || 'Manual';
+  
+  qs('#emp-modal').classList.add('hidden');
+  qs('#emp-form-modal').classList.remove('hidden');
+}
+
+function clearEmployeeForm(){
+  qs('#emp-form').reset();
+  qs('#emp-type').value = 'Funcionário';
+  qs('#emp-status').value = 'Ativo';
+  qs('#emp-has-children').value = 'Não';
+  qs('#emp-children-count').value = 0;
+  qs('#emp-time-tracking').value = 'Manual';
+}
+
+async function handleEmployeeFormSubmit(e){
+  e.preventDefault();
+  
+  const formData = {
+    type: qs('#emp-type').value,
+    name: qs('#emp-name').value,
+    cpf: qs('#emp-cpf').value,
+    email: qs('#emp-email').value,
+    phone: qs('#emp-phone').value,
+    gender: qs('#emp-gender').value,
+    maritalStatus: qs('#emp-marital').value,
+    hasChildren: qs('#emp-has-children').value,
+    childrenCount: parseInt(qs('#emp-children-count').value) || 0,
+    registration: qs('#emp-registration').value,
+    status: qs('#emp-status').value,
+    admissionDate: qs('#emp-admission-date').value,
+    startDate: qs('#emp-start-date').value,
+    dismissalDate: qs('#emp-dismissal-date').value,
+    deptId: qs('#emp-dept').value,
+    roleTitle: qs('#emp-role').value,
+    salary: parseFloat(qs('#emp-salary').value) || 0,
+    supervisorId: qs('#emp-supervisor').value || null,
+    coordinatorId: qs('#emp-coordinator').value || null,
+    managerId: qs('#emp-manager').value || null,
+    company: qs('#emp-company').value,
+    branch: qs('#emp-branch').value,
+    tags: qs('#emp-tags').value,
+    systemEmail: qs('#emp-system-email').value,
+    timeTracking: qs('#emp-time-tracking').value
+  };
+  
+  try {
+    if(currentEditingEmp) {
+      await post(`/employees/${currentEditingEmp.id}`, 'PUT', formData);
+    } else {
+      await post('/employees', 'POST', formData);
+    }
+    
+    qs('#emp-form-modal').classList.add('hidden');
+    renderEmployees();
+    
+  } catch(error) {
+    alert('Erro ao salvar colaborador: ' + error.message);
+  }
+}
+
+async function deleteEmployee(empId){
+  if(!confirm('Tem certeza que deseja excluir este colaborador?')) return;
+  
+  try {
+    await del(`/employees/${empId}`);
+    renderEmployees();
+  } catch(error) {
+    alert('Erro ao excluir colaborador: ' + error.message);
+  }
 }
 
 // Departments
