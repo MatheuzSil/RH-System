@@ -635,7 +635,7 @@ const del = (path) => api(path, 'DELETE');
 // Login
 qs('#btn-login').onclick = async ()=>{
   const email = qs('#login-email').value.trim(); const password = qs('#login-pass').value;
-  try{ const r = await api('/login','POST',{email,password});
+  try{ const r = await post('/login', {email,password});
     // Mostrar código MFA em alert destacado
     alert('🔐 CÓDIGO DE VERIFICAÇÃO EM 2 ETAPAS\n\n' + 
           '📱 Seu código MFA é: ' + r.demoCode + '\n\n' +
@@ -643,14 +643,14 @@ qs('#btn-login').onclick = async ()=>{
     
     qs('#login-msg').classList.remove('hidden'); qs('#login-msg').textContent = 'Código MFA (demo): '+r.demoCode;
     qs('#view-login').classList.add('hidden'); qs('#view-mfa').classList.remove('hidden'); qs('#mfa-hint').textContent='Digite o código: ' + r.demoCode; sessionStorage.setItem('MFA_EMAIL', email);
-  }catch(e){ alert('Falha no login'); }
+  }catch(e){ alert('Falha no login: ' + e.message); }
 };
 qs('#btn-verify').onclick = async ()=>{
   try{
     const email = sessionStorage.getItem('MFA_EMAIL'); const code = qs('#mfa-code').value.trim();
-    const r = await api('/mfa','POST',{email, code});
+    const r = await post('/mfa', {email, code});
     TOKEN = r.token; ROLE = r.role; WHO = r.name; localStorage.setItem('MARH_TOKEN', TOKEN); initApp();
-  }catch(e){ alert('Código inválido'); }
+  }catch(e){ alert('Código inválido: ' + e.message); }
 };
 
 function initApp(){
