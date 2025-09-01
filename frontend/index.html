@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MARH — Suite de RH</title>
 <link rel="stylesheet" href="styles.css">
+<style>
+.protocol-section { margin-top: 1rem; }
+#protocol-tabs button { margin-right: 0.5rem; margin-bottom: 0.5rem; }
+#protocol-tabs button.active { background-color: #0056b3; color: white; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }
+</style>
 </head>
 <body>
 <section id="view-login" class="center">
@@ -121,6 +127,168 @@
         </div>
       </div>
 
+      <div id="view-protocol" class="hidden">
+        <div class="grid mt2">
+          <!-- Sistema de Protocolo completo -->
+          <div class="card">
+            <b>e-Protocolo - Sistema Completo</b>
+            <div class="mt1">Sistema de controle de documentos, protocolos e movimentações</div>
+            <div class="mt1">
+              <div class="tabs" id="protocol-tabs">
+                <button class="btn small" data-tab="docs">📄 Documentos</button>
+                <button class="btn small" data-tab="boxes">📦 Caixas</button>
+                <button class="btn small" data-tab="scan">📱 Leitura</button>
+                <button class="btn small" data-tab="protocol-reports">📊 Relatórios</button>
+                <button class="btn small" data-tab="protocol-data">💾 Dados</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Documentos -->
+          <div id="protocol-docs" class="protocol-section">
+            <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="card">
+                <b>Novo Documento</b>
+                <div class="mt1">
+                  <label>Filial</label>
+                  <select id="doc-branch" class="input">
+                    <option value="MATRIZ">MATRIZ — Matriz</option>
+                  </select>
+                </div>
+                <div class="mt1">
+                  <label>Título</label>
+                  <input id="doc-title" class="input" placeholder="Nome do documento">
+                </div>
+                <div class="mt1">
+                  <label>Tipo</label>
+                  <input id="doc-type" class="input" placeholder="PRONTUARIO, CONTRATO, NF...">
+                </div>
+                <div class="mt1">
+                  <label>Referência externa</label>
+                  <input id="doc-ext" class="input" placeholder="Número de referência">
+                </div>
+                <div class="mt1">
+                  <button id="btn-doc-save" class="btn ok">Criar Documento</button>
+                  <button id="btn-doc-reset" class="btn">Limpar</button>
+                </div>
+                <div id="doc-created" class="mt1 note"></div>
+                <div id="doc-label" class="mt1" style="text-align:center;" hidden>
+                  <img id="doc-qr" style="width:164px;height:164px;border:1px solid #ccc;border-radius:8px;" alt="QR Code"/>
+                  <div class="mt1">
+                    <button id="btn-doc-print" class="btn">🖨️ Imprimir etiqueta</button>
+                    <button id="btn-doc-comprovante" class="btn">📄 Comprovante</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card">
+                <b>Lista de Documentos</b>
+                <div class="mt1">
+                  <input id="q-doc" class="input" placeholder="Buscar documentos...">
+                  <button id="btn-doc-search" class="btn">Buscar</button>
+                </div>
+                <div id="list-docs" class="mt1" style="max-height:300px;overflow:auto;border:1px solid #ddd;border-radius:4px;"></div>
+              </div>
+            </div>
+
+            <div class="card mt1">
+              <b>Detalhes & Movimentações</b>
+              <div id="doc-detail" class="mt1 note">Selecione um documento na lista acima.</div>
+              <div class="mt1" style="display:flex;gap:0.5rem;">
+                <select id="move-type" class="input" style="flex:1;">
+                  <option value="TRANSFER">Transferência</option>
+                  <option value="SAIDA">Saída</option>
+                  <option value="DEVOLUCAO">Devolução</option>
+                  <option value="INVENTARIO">Inventário</option>
+                </select>
+                <input id="move-notes" class="input" placeholder="Observações/Local destino" style="flex:2;">
+                <button id="btn-move" class="btn ok">Registrar</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Caixas -->
+          <div id="protocol-boxes" class="card protocol-section hidden">
+            <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div>
+                <b>Nova Caixa</b>
+                <div class="mt1">
+                  <label>Filial</label>
+                  <select id="box-branch" class="input">
+                    <option value="MATRIZ">MATRIZ — Matriz</option>
+                  </select>
+                </div>
+                <div class="mt1">
+                  <label>Código da caixa</label>
+                  <input id="box-code" class="input" placeholder="Código identificador">
+                </div>
+                <div class="mt1">
+                  <button id="btn-box-save" class="btn ok">Criar Caixa</button>
+                  <button id="btn-box-reset" class="btn">Limpar</button>
+                </div>
+                <div id="box-label" class="mt1" style="text-align:center;" hidden>
+                  <img id="box-qr" style="width:164px;height:164px;border:1px solid #ccc;border-radius:8px;" alt="QR Code"/>
+                  <div class="mt1">
+                    <button id="btn-box-print" class="btn">🖨️ Imprimir etiqueta</button>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <b>Lista de Caixas</b>
+                <div id="list-boxes" class="mt1" style="max-height:400px;overflow:auto;border:1px solid #ddd;border-radius:4px;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Scanner -->
+          <div id="protocol-scan" class="card protocol-section hidden">
+            <b>Leitura por Câmera / Scanner</b>
+            <div class="mt1" style="display:flex;gap:0.5rem;">
+              <button id="btn-cam" class="btn ok">📹 Ativar câmera</button>
+              <input id="scan-input" class="input" placeholder="Ou cole/escaneie código aqui..." style="flex:1;">
+            </div>
+            <video id="protocol-video" playsinline muted style="width:100%;max-width:400px;border-radius:8px;margin-top:10px;" hidden></video>
+            <div id="scan-result" class="card mt1" style="min-height:100px;">
+              <div class="note">Escaneie um código QR ou código de barras para ver os detalhes.</div>
+            </div>
+          </div>
+
+          <!-- Relatórios -->
+          <div id="protocol-reports-section" class="protocol-section hidden">
+            <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="card">
+                <b>KPIs por Tipo de Documento</b>
+                <div id="rep-types" class="mt1"></div>
+              </div>
+              <div class="card">
+                <b>Extravios (saídas > 30 dias)</b>
+                <div id="rep-lost" class="mt1"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Import/Export -->
+          <div id="protocol-data-section" class="protocol-section hidden">
+            <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="card">
+                <b>Exportar Dados</b>
+                <div class="mt1">
+                  <button id="btn-export" class="btn ok">📥 Baixar JSON</button>
+                </div>
+                <div class="mt1 note">Salva todos os documentos, caixas e movimentações em arquivo JSON.</div>
+              </div>
+              <div class="card">
+                <b>Importar Dados</b>
+                <div class="mt1">
+                  <input type="file" id="file-import" accept="application/json" class="input" />
+                </div>
+                <div class="mt1 note">Carrega dados de um arquivo JSON exportado anteriormente.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div id="view-audit" class="hidden">
         <div class="card"><table id="tbl-logs"><thead><tr><th>Quando</th><th>Quem</th><th>Ação</th><th>Detalhes</th></tr></thead><tbody></tbody></table></div>
       </div>
@@ -172,10 +340,10 @@ function initApp(){
 }
 function buildMenu(){
   const NAV = {
-    ADMIN: [['view-dashboard','📊 Dashboard'],['view-employees','👥 Colaboradores'],['view-depts','🏢 Departamentos'],['view-att','🕒 Presenças'],['view-leaves','🏖️ Afastamentos'],['view-payroll','💸 Folha'],['view-reviews','📈 Avaliações'],['view-train','🎓 Treinamentos'],['view-jobs','📋 Vagas'],['view-cand','🧑‍💼 Candidatos'],['view-reports','📑 Relatórios'],['view-audit','🗂️ Logs'],['view-settings','⚙️ Usuários']],
-    RH: [['view-dashboard','📊 Dashboard'],['view-employees','👥 Colaboradores'],['view-depts','🏢 Departamentos'],['view-att','🕒 Presenças'],['view-leaves','🏖️ Afastamentos'],['view-payroll','💸 Folha'],['view-reviews','📈 Avaliações'],['view-train','🎓 Treinamentos'],['view-jobs','📋 Vagas'],['view-cand','🧑‍💼 Candidatos'],['view-reports','📑 Relatórios'],['view-audit','🗂️ Logs']],
-    GESTOR: [['view-dashboard','📊 Dashboard'],['view-employees','👥 Colaboradores'],['view-att','🕒 Presenças'],['view-leaves','🏖️ Afastamentos'],['view-reviews','📈 Avaliações'],['view-reports','📑 Relatórios']],
-    COLAB: [['view-dashboard','📊 Dashboard'],['view-att','🕒 Presenças'],['view-leaves','🏖️ Afastamentos'],['view-payroll','💸 Folha'],['view-reviews','📈 Avaliações']]
+    ADMIN: [['view-dashboard','📊 Dashboard'],['view-employees','👥 Colaboradores'],['view-depts','🏢 Departamentos'],['view-att','🕒 Presenças'],['view-leaves','🏖️ Afastamentos'],['view-payroll','💸 Folha'],['view-reviews','📈 Avaliações'],['view-train','🎓 Treinamentos'],['view-jobs','📋 Vagas'],['view-cand','🧑‍💼 Candidatos'],['view-protocol','📋 Protocolo'],['view-reports','📑 Relatórios'],['view-audit','🗂️ Logs'],['view-settings','⚙️ Usuários']],
+    RH: [['view-dashboard','📊 Dashboard'],['view-employees','👥 Colaboradores'],['view-depts','🏢 Departamentos'],['view-att','🕒 Presenças'],['view-leaves','🏖️ Afastamentos'],['view-payroll','💸 Folha'],['view-reviews','📈 Avaliações'],['view-train','🎓 Treinamentos'],['view-jobs','📋 Vagas'],['view-cand','🧑‍💼 Candidatos'],['view-protocol','📋 Protocolo'],['view-reports','📑 Relatórios'],['view-audit','🗂️ Logs']],
+    GESTOR: [['view-dashboard','📊 Dashboard'],['view-employees','👥 Colaboradores'],['view-att','🕒 Presenças'],['view-leaves','🏖️ Afastamentos'],['view-reviews','📈 Avaliações'],['view-protocol','📋 Protocolo'],['view-reports','📑 Relatórios']],
+    COLAB: [['view-dashboard','📊 Dashboard'],['view-att','🕒 Presenças'],['view-leaves','🏖️ Afastamentos'],['view-payroll','💸 Folha'],['view-reviews','📈 Avaliações'],['view-protocol','📋 Protocolo']]
   };
   const menu = qs('#menu'); menu.innerHTML='';
   (NAV[ROLE]||NAV.ADMIN).forEach(([id,label])=>{
@@ -206,6 +374,7 @@ async function openView(id){
   if(id==='view-train') renderTrain();
   if(id==='view-jobs') renderJobs();
   if(id==='view-cand') renderCandidates();
+  if(id==='view-protocol') renderProtocol();
   if(id==='view-audit'){ try{ const logs = await api('/logs'); renderAudit(logs);}catch{ alert('Sem permissão'); openView('view-dashboard'); } }
   if(id==='view-settings') renderUsers();
 }
@@ -496,6 +665,377 @@ async function renderUsers(){
     const pass = prompt('Senha:','123');
     await post('/users','POST',{email,name,role,pass,active:true}); renderUsers();
   };
+}
+
+// ===== PROTOCOLO COMPLETO =====
+let protocolDB = JSON.parse(localStorage.getItem('marh_protocol') || '{"documents":[],"boxes":[],"movements":[],"branches":[{"id":"MATRIZ","code":"MATRIZ","name":"Matriz"}]}');
+function saveProtocolDB(){ localStorage.setItem('marh_protocol', JSON.stringify(protocolDB)); }
+function uid_protocol(){ return 'P_' + Math.random().toString(36).slice(2,8).toUpperCase(); }
+function payloadFor(kind, id){ return `urn:${kind}:${id}`; }
+
+let currentDoc = null;
+let currentBox = null;
+
+// QR Code generation
+async function makeQrDataUrl(text, size=164){
+  try{
+    const url = `https://quickchart.io/qr?text=${encodeURIComponent(text)}&size=${size}&margin=1&format=png`;
+    const res = await fetch(url, {mode:'cors'});
+    if(res.ok){
+      const blob = await res.blob();
+      return await new Promise(resolve=>{ const r=new FileReader(); r.onload=()=>resolve(r.result); r.readAsDataURL(blob); });
+    }
+  }catch(e){ }
+  
+  // Fallback: create simple placeholder
+  const canvas = document.createElement('canvas'); 
+  canvas.width=size; canvas.height=size;
+  const ctx = canvas.getContext('2d'); 
+  ctx.fillStyle='#f0f0f0'; ctx.fillRect(0,0,size,size);
+  ctx.fillStyle='#333'; ctx.font='12px monospace'; 
+  ctx.fillText('QR CODE', 10, 20);
+  const lines=[]; for(let i=0;i<text.length;i+=16) lines.push(text.slice(i,i+16));
+  lines.forEach((ln,i)=>ctx.fillText(ln, 6, 40+i*12));
+  return canvas.toDataURL('image/png');
+}
+
+function renderProtocol(){
+  // Inicializar tabs do protocolo
+  const tabs = qs('#protocol-tabs');
+  const sections = qsa('.protocol-section');
+  
+  tabs.querySelectorAll('button').forEach(btn => {
+    btn.onclick = ()=>{
+      tabs.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      sections.forEach(s => s.classList.add('hidden'));
+      
+      const tabName = btn.dataset.tab;
+      if(tabName === 'docs'){
+        qs('#protocol-docs').classList.remove('hidden');
+        listProtocolDocs();
+      } else if(tabName === 'boxes'){
+        qs('#protocol-boxes').classList.remove('hidden');
+        listProtocolBoxes();
+      } else if(tabName === 'scan'){
+        qs('#protocol-scan').classList.remove('hidden');
+      } else if(tabName === 'protocol-reports'){
+        qs('#protocol-reports-section').classList.remove('hidden');
+        renderProtocolReports();
+      } else if(tabName === 'protocol-data'){
+        qs('#protocol-data-section').classList.remove('hidden');
+      }
+    };
+  });
+  
+  // Ativar primeira tab por padrão
+  tabs.querySelector('button').click();
+  
+  // Bind events
+  qs('#btn-doc-save').onclick = createProtocolDoc;
+  qs('#btn-doc-reset').onclick = resetDocForm;
+  qs('#btn-doc-search').onclick = ()=> listProtocolDocs(qs('#q-doc').value);
+  qs('#btn-doc-print').onclick = printDocLabel;
+  qs('#btn-doc-comprovante').onclick = printDocReceipt;
+  qs('#btn-move').onclick = registerMovement;
+  
+  qs('#btn-box-save').onclick = createProtocolBox;
+  qs('#btn-box-reset').onclick = resetBoxForm;
+  qs('#btn-box-print').onclick = printBoxLabel;
+  
+  // Scanner events
+  qs('#btn-cam').onclick = activateCamera;
+  qs('#scan-input').onchange = ()=> handleScan(qs('#scan-input').value);
+  
+  // Import/Export events
+  qs('#btn-export').onclick = exportData;
+  qs('#file-import').onchange = importData;
+}
+
+// === DOCUMENTOS ===
+async function createProtocolDoc(){
+  const doc = {
+    id: uid_protocol(),
+    branchId: qs('#doc-branch').value,
+    title: qs('#doc-title').value || 'Documento sem título',
+    docType: qs('#doc-type').value || 'GERAL',
+    externalRef: qs('#doc-ext').value || '',
+    status: 'ATIVO',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    createdBy: WHO || 'Sistema'
+  };
+  
+  protocolDB.documents.push(doc);
+  saveProtocolDB();
+  listProtocolDocs();
+  
+  qs('#doc-created').textContent = `✅ Documento "${doc.title}" criado! ID: ${doc.id}`;
+  
+  // Generate QR
+  const qrData = await makeQrDataUrl(payloadFor('doc', doc.id));
+  qs('#doc-qr').src = qrData;
+  qs('#doc-label').hidden = false;
+  currentDoc = doc;
+}
+
+function resetDocForm(){
+  ['doc-title','doc-type','doc-ext'].forEach(id => qs('#'+id).value = '');
+  qs('#doc-created').textContent = '';
+  qs('#doc-label').hidden = true;
+  currentDoc = null;
+}
+
+function listProtocolDocs(search = ''){
+  const list = qs('#list-docs');
+  const docs = protocolDB.documents.filter(d => 
+    !search || 
+    d.title.toLowerCase().includes(search.toLowerCase()) ||
+    d.docType.toLowerCase().includes(search.toLowerCase()) ||
+    d.externalRef.toLowerCase().includes(search.toLowerCase())
+  );
+  
+  list.innerHTML = docs.map(d => `
+    <div class="item" data-id="${d.id}" style="padding:8px;border-bottom:1px solid #ddd;cursor:pointer;">
+      <div><strong>${d.title}</strong> <span style="background:#e9ecef;padding:2px 6px;border-radius:12px;font-size:11px;">${d.docType}</span></div>
+      <div style="color:#666;font-size:12px;">${d.externalRef || '—'} • ${payloadFor('doc', d.id)}</div>
+    </div>
+  `).join('') || '<div style="padding:20px;color:#666;text-align:center;">Nenhum documento encontrado</div>';
+  
+  list.querySelectorAll('.item').forEach(el => {
+    el.onclick = ()=> selectProtocolDoc(el.dataset.id);
+  });
+}
+
+async function selectProtocolDoc(id){
+  currentDoc = protocolDB.documents.find(d=>d.id===id);
+  const payload = payloadFor('doc', id);
+  qs('#doc-detail').innerHTML = `
+    <div><strong>Documento:</strong> ${currentDoc.title}</div>
+    <div><strong>Tipo:</strong> ${currentDoc.docType}</div>
+    <div><strong>Payload:</strong> <code>${payload}</code></div>
+    <div><strong>Criado:</strong> ${new Date(currentDoc.createdAt).toLocaleString()}</div>
+  `;
+  
+  const qrData = await makeQrDataUrl(payload);
+  qs('#doc-qr').src = qrData;
+  qs('#doc-label').hidden = false;
+}
+
+function registerMovement(){
+  if(!currentDoc) return alert('Selecione um documento primeiro.');
+  const type = qs('#move-type').value;
+  const notes = qs('#move-notes').value;
+  
+  const movement = {
+    id: Date.now(),
+    documentId: currentDoc.id,
+    type,
+    notes,
+    createdAt: new Date().toISOString(),
+    createdBy: WHO || 'Sistema'
+  };
+  
+  protocolDB.movements.push(movement);
+  saveProtocolDB();
+  
+  alert(`✅ Movimentação "${type}" registrada com sucesso!`);
+  qs('#move-notes').value = '';
+}
+
+// === CAIXAS ===
+async function createProtocolBox(){
+  const box = {
+    id: uid_protocol(),
+    branchId: qs('#box-branch').value,
+    code: qs('#box-code').value || 'CX-' + Math.floor(Math.random()*9999),
+    sealed: false,
+    status: 'ATIVA',
+    createdAt: new Date().toISOString(),
+    createdBy: WHO || 'Sistema'
+  };
+  
+  protocolDB.boxes.push(box);
+  saveProtocolDB();
+  listProtocolBoxes();
+  
+  // Generate QR
+  const qrData = await makeQrDataUrl(payloadFor('box', box.id));
+  qs('#box-qr').src = qrData;
+  qs('#box-label').hidden = false;
+  currentBox = box;
+  
+  alert(`✅ Caixa "${box.code}" criada com sucesso!`);
+}
+
+function resetBoxForm(){
+  qs('#box-code').value = '';
+  qs('#box-label').hidden = true;
+  currentBox = null;
+}
+
+function listProtocolBoxes(){
+  const list = qs('#list-boxes');
+  const boxes = protocolDB.boxes;
+  
+  list.innerHTML = boxes.map(b => `
+    <div class="item" data-id="${b.id}" style="padding:8px;border-bottom:1px solid #ddd;cursor:pointer;">
+      <div><strong>${b.code}</strong> <span style="background:#e9ecef;padding:2px 6px;border-radius:12px;font-size:11px;">${b.status}</span></div>
+      <div style="color:#666;font-size:12px;">ID: ${b.id} • Por: ${b.createdBy}</div>
+      <div style="color:#666;font-size:12px;">Criada: ${new Date(b.createdAt).toLocaleString()}</div>
+    </div>
+  `).join('') || '<div style="padding:20px;color:#666;text-align:center;">Nenhuma caixa encontrada</div>';
+  
+  list.querySelectorAll('.item').forEach(el => {
+    el.onclick = ()=> selectProtocolBox(el.dataset.id);
+  });
+}
+
+async function selectProtocolBox(id){
+  currentBox = protocolDB.boxes.find(b=>b.id===id);
+  const payload = payloadFor('box', id);
+  
+  const qrData = await makeQrDataUrl(payload);
+  qs('#box-qr').src = qrData;
+  qs('#box-label').hidden = false;
+}
+
+// === SCANNER ===
+async function activateCamera(){
+  const video = qs('#protocol-video');
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    video.srcObject = stream;
+    video.hidden = false;
+    await video.play();
+    
+    if('BarcodeDetector' in window){
+      const detector = new window.BarcodeDetector({ formats:['qr_code','code_128','ean_13'] });
+      const tick = async ()=>{
+        try{ 
+          const bmp = await createImageBitmap(video); 
+          const codes = await detector.detect(bmp); 
+          if(codes[0]?.rawValue){ 
+            handleScan(codes[0].rawValue); 
+          } 
+        }catch(e){} 
+        requestAnimationFrame(tick);
+      }; 
+      tick();
+    } else { 
+      alert('BarcodeDetector não suportado. Use o campo de texto para inserir códigos.'); 
+    }
+  }catch(e){ 
+    alert('Erro ao acessar câmera: ' + e.message); 
+  }
+}
+
+function handleScan(text){
+  const parts = String(text).split(':');
+  if(parts.length < 3) {
+    qs('#scan-result').innerHTML = '<div class="note">❌ Código não reconhecido</div>';
+    return;
+  }
+  
+  const kind = parts[1]; 
+  const id = parts[2];
+  
+  if(kind === 'doc'){ 
+    const doc = protocolDB.documents.find(x=>x.id===id); 
+    qs('#scan-result').innerHTML = doc ? 
+      `<div><strong>📄 Documento Encontrado</strong></div>
+       <div><strong>Título:</strong> ${doc.title}</div>
+       <div><strong>Tipo:</strong> ${doc.docType}</div>
+       <div><strong>Ref:</strong> ${doc.externalRef || '—'}</div>` : 
+      '<div class="note">❌ Documento não encontrado</div>'; 
+  }
+  else if(kind === 'box'){ 
+    const box = protocolDB.boxes.find(x=>x.id===id); 
+    qs('#scan-result').innerHTML = box ? 
+      `<div><strong>📦 Caixa Encontrada</strong></div>
+       <div><strong>Código:</strong> ${box.code}</div>
+       <div><strong>Status:</strong> ${box.status}</div>` : 
+      '<div class="note">❌ Caixa não encontrada</div>'; 
+  }
+  else {
+    qs('#scan-result').innerHTML = '<div class="note">❌ Tipo de payload não reconhecido</div>';
+  }
+}
+
+// === RELATÓRIOS ===
+function renderProtocolReports(){
+  // KPIs por tipo
+  const byType = {};
+  protocolDB.documents.forEach(d => {
+    byType[d.docType] = (byType[d.docType] || 0) + 1;
+  });
+  
+  qs('#rep-types').innerHTML = Object.entries(byType).map(([type, count]) => `
+    <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #eee;">
+      <span>${type}</span>
+      <span style="background:#e9ecef;padding:2px 8px;border-radius:12px;font-size:12px;">${count}</span>
+    </div>
+  `).join('') || '<div class="note">Nenhum documento encontrado</div>';
+  
+  // Extravios (saídas > 30 dias)
+  const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+  const lost = protocolDB.movements.filter(m => 
+    m.type === 'SAIDA' && new Date(m.createdAt).getTime() < thirtyDaysAgo
+  );
+  
+  qs('#rep-lost').innerHTML = lost.map(m => {
+    const doc = protocolDB.documents.find(d => d.id === m.documentId);
+    return `
+      <div style="padding:4px 0;border-bottom:1px solid #eee;">
+        <div><strong>${doc ? doc.title : 'Doc ' + m.documentId}</strong></div>
+        <div style="color:#666;font-size:12px;">Saída: ${new Date(m.createdAt).toLocaleString()}</div>
+        <div style="color:#666;font-size:12px;">Obs: ${m.notes || '—'}</div>
+      </div>
+    `;
+  }).join('') || '<div class="note">✅ Nenhum extravio encontrado</div>';
+}
+
+// === IMPORT/EXPORT ===
+function exportData(){
+  const blob = new Blob([JSON.stringify(protocolDB, null, 2)], {type: 'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `marh-protocolo-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+}
+
+async function importData(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  
+  try {
+    const data = JSON.parse(await file.text());
+    protocolDB = Object.assign(protocolDB, data);
+    saveProtocolDB();
+    alert('✅ Dados importados com sucesso!');
+    
+    // Refresh current view
+    if(!qs('#protocol-docs').classList.contains('hidden')) listProtocolDocs();
+    if(!qs('#protocol-boxes').classList.contains('hidden')) listProtocolBoxes();
+  } catch(err) {
+    alert('❌ Erro ao importar: ' + err.message);
+  }
+}
+
+// === IMPRESSÃO ===
+function printDocLabel(){
+  if(!currentDoc) return alert('Selecione um documento primeiro.');
+  alert('Função de impressão de etiqueta - ' + currentDoc.title);
+}
+
+function printBoxLabel(){
+  if(!currentBox) return alert('Selecione uma caixa primeiro.');
+  alert('Função de impressão de etiqueta - ' + currentBox.code);
+}
+
+function printDocReceipt(){
+  if(!currentDoc) return alert('Selecione um documento primeiro.');
+  alert('Função de comprovante - ' + currentDoc.title);
 }
 
 // Bootstrap
