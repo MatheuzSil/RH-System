@@ -772,7 +772,7 @@ qs('#btn-verify').onclick = async ()=>{
 
 function initApp(){
   qs('#view-mfa').classList.add('hidden'); qs('#app').classList.remove('hidden');
-  qs('#user-ctx').textContent = WHO + ' • ' + ROLE;
+  qs('#who').textContent = WHO;
   buildMenu(); bindCommon(); openView('view-dashboard');
 }
 function buildMenu(){
@@ -2162,7 +2162,11 @@ function printDocReceipt(){
 
 // Bootstrap
 if(TOKEN){
-  fetch(API+'/summary',{headers:{'Authorization':'Bearer '+TOKEN}}).then(r=>{ if(r.ok){ ROLE='ADMIN'; WHO='Sessão'; initApp(); } }).catch(()=>{});
+  fetch(API+'/summary',{headers:{'Authorization':'Bearer '+TOKEN}}).then(r=>{ if(r.ok){ ROLE='ADMIN'; WHO='Sessão'; initApp(); } }).catch(()=>{
+    // Token inválido, limpar
+    localStorage.removeItem('MARH_TOKEN');
+    TOKEN = null;
+  });
 }
 </script>
 </body>
