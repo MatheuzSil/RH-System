@@ -1,8 +1,23 @@
-# MARH — Suite de RH (Full-stack)
+# MARH Backend
 
-Como rodar:
-1. Node 18+
-2. `cd backend && npm install && npm start`
-3. Acesse http://localhost:4100
+Sistema de RH - Backend API
 
-Logins (senha: 123): admin@marh.local (ADMIN), rh@marh.local (RH), gestor@marh.local (GESTOR), colab@marh.local (COLAB)
+## Instalação
+
+```bash
+npm install
+```
+
+## Execução
+
+```bash
+npm start
+```
+
+## Desenvolvimento
+
+```bash
+npm run dev
+```
+
+O servidor roda na porta 8080 por padrão.
