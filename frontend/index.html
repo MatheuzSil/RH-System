@@ -626,6 +626,12 @@ async function api(path, method='GET', body=null){
   const ct = res.headers.get('content-type')||''; return ct.includes('application/json')? res.json(): res.text();
 }
 
+// Helper functions for API calls
+const get = (path) => api(path, 'GET');
+const post = (path, body) => api(path, 'POST', body);
+const put = (path, body) => api(path, 'PUT', body);
+const del = (path) => api(path, 'DELETE');
+
 // Login
 qs('#btn-login').onclick = async ()=>{
   const email = qs('#login-email').value.trim(); const password = qs('#login-pass').value;
