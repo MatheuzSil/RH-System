@@ -613,7 +613,8 @@
 </div>
 
 <script>
-const API = 'http://localhost:8080/api';
+const API = 'https://marhbackend-production.up.railway.app/api';
+// Para teste local, altere para: const API = 'http://localhost:8080/api';
 let TOKEN = localStorage.getItem('MARH_TOKEN') || null;
 let ROLE = null;
 let WHO = null;
@@ -633,21 +634,9 @@ const put = (path, body) => api(path, 'PUT', body);
 const del = (path) => api(path, 'DELETE');
 
 // Login
-document.getElementById('btn-login').onclick = async ()=>{
-  console.log('Botão clicado!'); // Debug
-  const email = document.getElementById('login-email').value.trim(); 
-  const password = document.getElementById('login-pass').value;
-  
-  if (!email || !password) {
-    alert('Por favor, preencha email e senha!');
-    return;
-  }
-  
-  try{ 
-    console.log('Fazendo login...'); // Debug
-    const r = await api('/login','POST',{email,password});
-    console.log('Login response:', r); // Debug
-    
+qs('#btn-login').onclick = async ()=>{
+  const email = qs('#login-email').value.trim(); const password = qs('#login-pass').value;
+  try{ const r = await post('/login', {email,password});
     // Mostrar código MFA em alert destacado
     alert('🔐 CÓDIGO DE VERIFICAÇÃO EM 2 ETAPAS\n\n' + 
           '📱 Seu código MFA é: ' + r.demoCode + '\n\n' +
@@ -655,10 +644,7 @@ document.getElementById('btn-login').onclick = async ()=>{
     
     qs('#login-msg').classList.remove('hidden'); qs('#login-msg').textContent = 'Código MFA (demo): '+r.demoCode;
     qs('#view-login').classList.add('hidden'); qs('#view-mfa').classList.remove('hidden'); qs('#mfa-hint').textContent='Digite o código: ' + r.demoCode; sessionStorage.setItem('MFA_EMAIL', email);
-  }catch(e){ 
-    console.error('Erro no login:', e); // Debug
-    alert('Falha no login: ' + e.message); 
-  }
+  }catch(e){ alert('Falha no login: ' + e.message); }
 };
 qs('#btn-verify').onclick = async ()=>{
   try{
