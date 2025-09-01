@@ -10,6 +10,132 @@
 #protocol-tabs button { margin-right: 0.5rem; margin-bottom: 0.5rem; }
 #protocol-tabs button.active { background-color: #0056b3; color: white; }
 .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }
+
+/* Modal styles */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal.hidden {
+  display: none;
+}
+.modal-content {
+  background: white;
+  border-radius: 0.5rem;
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f8fafc;
+  border-radius: 0.5rem 0.5rem 0 0;
+}
+.modal-body {
+  padding: 1.5rem;
+}
+.btn-close {
+  border: none;
+  background: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #6c757d;
+  padding: 0.25rem;
+}
+.btn-close:hover {
+  color: #000;
+}
+
+/* Employee tabs */
+.emp-tabs {
+  display: flex;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 1.5rem;
+  gap: 0;
+  overflow-x: auto;
+}
+.emp-tab-btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  background: none;
+  border-bottom: 2px solid transparent;
+  color: #6c757d;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.emp-tab-btn.active {
+  border-bottom-color: var(--brand);
+  color: var(--brand);
+}
+.emp-tab-btn:hover {
+  color: var(--brand);
+}
+
+/* Tab content */
+.tab-content.hidden {
+  display: none;
+}
+
+/* Form sections */
+.form-section {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  background: white;
+}
+.form-section h3 {
+  margin: 0 0 1rem 0;
+  color: #374151;
+  font-size: 1.1rem;
+  border-bottom: 1px solid #f3f4f6;
+  padding-bottom: 0.5rem;
+}
+
+/* Employee cards */
+.employee-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.employee-card:hover {
+  border-color: var(--brand);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.employee-card h4 {
+  margin: 0 0 0.5rem 0;
+  color: #1f2937;
+  font-size: 1.1rem;
+}
+.employee-card .details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #6b7280;
+}
 </style>
 </head>
 <body>
@@ -67,8 +193,28 @@
       </div>
 
       <div id="view-employees" class="hidden">
-        <div class="toolbar mb1"><button id="new-emp" class="btn ok">Novo colaborador</button><a id="exp-emp" class="btn" href="#">Exportar CSV</a></div>
-        <div class="card"><table id="tbl-emp"><thead><tr><th>Nome</th><th>E-mail</th><th>Departamento</th><th>Cargo</th><th>Salário</th><th>Status</th><th></th></tr></thead><tbody></tbody></table></div>
+        <div class="toolbar mb1">
+          <button id="btn-add-employee" class="btn ok">Novo colaborador</button>
+          <button id="btn-export-employees" class="btn">Exportar CSV</button>
+          <button id="btn-toggle-view" class="btn">📋 Tabela</button>
+        </div>
+        <div id="employees-content">
+          <table id="employees-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Email</th>
+                <th>Departamento</th>
+                <th>Cargo</th>
+                <th>Salário</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+          <div id="employees-cards" class="hidden"></div>
+        </div>
       </div>
 
       <div id="view-depts" class="hidden">
@@ -303,6 +449,169 @@
   </div>
 </section>
 
+<!-- Modal do Colaborador -->
+<div id="employee-modal" class="modal hidden">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 id="modal-title">Colaborador</h3>
+      <button class="btn-close" onclick="closeModal('employee-modal')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div id="employee-tabs" class="emp-tabs">
+        <button class="emp-tab-btn active" data-tab="basic">Informações Básicas</button>
+        <button class="emp-tab-btn" data-tab="professional">Profissional</button>
+        <button class="emp-tab-btn" data-tab="hierarchy">Hierarquia</button>
+        <button class="emp-tab-btn" data-tab="documents">Documentos</button>
+      </div>
+      
+      <form id="employee-form">
+        <input type="hidden" id="emp-id">
+        
+        <div id="tab-basic" class="tab-content">
+          <div class="form-section">
+            <h3>👤 Dados Pessoais</h3>
+            <div class="row">
+              <div>
+                <label>Nome *</label>
+                <input id="emp-name" class="input" required>
+              </div>
+              <div>
+                <label>E-mail *</label>
+                <input id="emp-email" class="input" type="email" required>
+              </div>
+            </div>
+            <div class="row">
+              <div>
+                <label>Telefone</label>
+                <input id="emp-phone" class="input" placeholder="(11) 99999-9999">
+              </div>
+              <div>
+                <label>Sexo</label>
+                <select id="emp-gender" class="input">
+                  <option value="">Selecione...</option>
+                  <option value="Masculino">Masculino</option>
+                  <option value="Feminino">Feminino</option>
+                  <option value="Outro">Outro</option>
+                  <option value="Prefiro não informar">Prefiro não informar</option>
+                </select>
+              </div>
+            </div>
+            <div class="row">
+              <div>
+                <label>Matrícula</label>
+                <input id="emp-badge" class="input" placeholder="N/A" readonly>
+              </div>
+              <div>
+                <label>Status</label>
+                <select id="emp-status" class="input">
+                  <option value="Ativo">Ativo</option>
+                  <option value="Inativo">Inativo</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div id="tab-professional" class="tab-content hidden">
+          <div class="form-section">
+            <h3>💼 Informações Profissionais</h3>
+            <div class="row">
+              <div>
+                <label>Data de Admissão</label>
+                <input id="emp-hire-date" class="input" type="date">
+              </div>
+              <div>
+                <label>Início das Atividades</label>
+                <input id="emp-start-date" class="input" type="date">
+              </div>
+            </div>
+            <div class="row">
+              <div>
+                <label>Data de Demissão</label>
+                <input id="emp-termination-date" class="input" type="date">
+              </div>
+              <div>
+                <label>Departamento *</label>
+                <select id="emp-department" class="input" required>
+                  <option value="">Selecione...</option>
+                </select>
+              </div>
+            </div>
+            <div class="row">
+              <div>
+                <label>Cargo *</label>
+                <input id="emp-position" class="input" required placeholder="ex: Desenvolvedor Sênior">
+              </div>
+              <div>
+                <label>Salário *</label>
+                <input id="emp-salary" class="input" type="number" required placeholder="8000">
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div id="tab-hierarchy" class="tab-content hidden">
+          <div class="form-section">
+            <h3>🏢 Hierarquia e Contatos</h3>
+            <div class="row">
+              <div>
+                <label>Supervisor</label>
+                <select id="emp-supervisor" class="input">
+                  <option value="">Nenhum</option>
+                </select>
+              </div>
+              <div>
+                <label>Coordenador</label>
+                <select id="emp-coordinator" class="input">
+                  <option value="">Nenhum</option>
+                </select>
+              </div>
+            </div>
+            <div class="row">
+              <div>
+                <label>Gerente</label>
+                <select id="emp-manager" class="input">
+                  <option value="">Nenhum</option>
+                </select>
+              </div>
+              <div>
+                <label>Empresa</label>
+                <input id="emp-company" class="input" placeholder="Nome da empresa">
+              </div>
+            </div>
+            <div>
+              <label>Filial</label>
+              <input id="emp-branch" class="input" placeholder="Filial/Unidade">
+            </div>
+            <div>
+              <label>Tags</label>
+              <input id="emp-tags" class="input" placeholder="Separar por vírgula">
+            </div>
+          </div>
+        </div>
+        
+        <div id="tab-documents" class="tab-content hidden">
+          <div class="form-section">
+            <h3>📄 Documentos</h3>
+            <div class="mb1">
+              <button type="button" id="btn-upload-doc" class="btn ok">📤 Upload Documento</button>
+              <input type="file" id="doc-file-input" accept=".pdf" style="display: none;">
+            </div>
+            <div id="employee-documents">
+              <div class="note">Nenhum documento encontrado.</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="mt2">
+          <button type="submit" class="btn ok">Salvar</button>
+          <button type="button" class="btn" onclick="closeModal('employee-modal')">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <script>
 const API = 'https://marhbackend-production.up.railway.app/api';
 let TOKEN = localStorage.getItem('MARH_TOKEN') || null;
@@ -393,39 +702,386 @@ async function del(path){ return api(path,'DELETE'); }
 let DEPTS = []; let EMPS = [];
 async function refreshLookups(){ DEPTS = await api('/departments'); EMPS = await api('/employees'); }
 
-// Employees
-async function renderEmployees(){
-  await refreshLookups();
-  const body = qs('#tbl-emp tbody'); body.innerHTML='';
-  const deptName = id=> (DEPTS.find(d=>d.id===id)||{}).name || '-';
-  EMPS.forEach(e=>{
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${e.name}</td><td>${e.email}</td><td>${deptName(e.deptId)}</td><td>${e.roleTitle||''}</td><td>${brl(e.salary||0)}</td><td>${e.status}</td><td class="right"></td>`;
-    const td = tr.querySelector('td:last-child');
-    if(['ADMIN','RH','GESTOR'].includes(ROLE)){
-      td.append(btn('Editar', ()=>editEmp(e)));
-      if(ROLE==='ADMIN') td.append(btn('Excluir', ()=>del(`/employees/${e.id}`).then(renderEmployees),'bad'));
+// Employee Management
+let employees = [];
+let isCardView = false;
+let currentEmployee = null;
+
+async function renderEmployees() {
+  try {
+    employees = await get('/employees');
+    await loadDepartmentsForSelect();
+    renderEmployeeView();
+    setupEmployeeBindings();
+  } catch(e) {
+    alert('Erro ao carregar colaboradores: ' + e.message);
+  }
+}
+
+function renderEmployeeView() {
+  const tbody = qs('#employees-table tbody');
+  const cardsContainer = qs('#employees-cards');
+  
+  if (isCardView) {
+    qs('#employees-table').classList.add('hidden');
+    cardsContainer.classList.remove('hidden');
+    cardsContainer.innerHTML = employees.map(emp => `
+      <div class="employee-card" onclick="openEmployeeModal('edit', ${emp.id})">
+        <h4>${emp.name}</h4>
+        <div class="details">
+          <div>📧 ${emp.email}</div>
+          <div>🏢 ${emp.department || emp.deptId || 'N/A'}</div>
+          <div>💼 ${emp.position || emp.roleTitle}</div>
+          <div>💰 ${brl(emp.salary)}</div>
+          <div>📞 ${emp.phone || 'N/A'}</div>
+          <div>🏷️ <span class="badge ${(emp.status||'').toLowerCase()}">${emp.status}</span></div>
+        </div>
+      </div>
+    `).join('');
+  } else {
+    qs('#employees-table').classList.remove('hidden');
+    cardsContainer.classList.add('hidden');
+    tbody.innerHTML = employees.map(emp => `
+      <tr onclick="openEmployeeModal('edit', ${emp.id})">
+        <td>${emp.name}</td>
+        <td>${emp.email}</td>
+        <td>${emp.department || getDepartmentName(emp.deptId)}</td>
+        <td>${emp.position || emp.roleTitle}</td>
+        <td>${brl(emp.salary)}</td>
+        <td><span class="badge ${(emp.status||'').toLowerCase()}">${emp.status}</span></td>
+        <td onclick="event.stopPropagation()">
+          <button class="btn small" onclick="openEmployeeModal('edit', ${emp.id})">Editar</button>
+          ${ROLE === 'ADMIN' ? `<button class="btn small bad" onclick="deleteEmployee(${emp.id})">Excluir</button>` : ''}
+        </td>
+      </tr>
+    `).join('');
+  }
+}
+
+function getDepartmentName(deptId) {
+  const dept = DEPTS.find(d => d.id === deptId);
+  return dept ? dept.name : 'N/A';
+}
+
+async function loadDepartmentsForSelect() {
+  try {
+    await refreshLookups();
+    const select = qs('#emp-department');
+    if (select) {
+      select.innerHTML = '<option value="">Selecione...</option>' + 
+        DEPTS.map(dept => `<option value="${dept.name}">${dept.name}</option>`).join('');
     }
-    body.append(tr);
+      
+    // Load employees for hierarchy selects
+    const empSelects = ['#emp-supervisor', '#emp-coordinator', '#emp-manager'];
+    empSelects.forEach(selector => {
+      const select = qs(selector);
+      if (select) {
+        select.innerHTML = '<option value="">Nenhum</option>' + 
+          employees.map(emp => `<option value="${emp.name}">${emp.name}</option>`).join('');
+      }
+    });
+  } catch(e) {
+    console.error('Erro ao carregar departamentos:', e);
+  }
+}
+
+function openEmployeeModal(action, empId = null) {
+  currentEmployee = empId ? employees.find(e => e.id === empId) : null;
+  
+  const modal = qs('#employee-modal');
+  const title = qs('#modal-title');
+  const form = qs('#employee-form');
+  
+  title.textContent = action === 'edit' ? 'Editar Colaborador' : 'Novo Colaborador';
+  modal.classList.remove('hidden');
+  
+  // Reset form
+  form.reset();
+  
+  // Switch to first tab
+  switchEmployeeTab('basic');
+  
+  if (currentEmployee) {
+    // Fill form with employee data
+    qs('#emp-id').value = currentEmployee.id;
+    qs('#emp-name').value = currentEmployee.name || '';
+    qs('#emp-email').value = currentEmployee.email || '';
+    qs('#emp-phone').value = currentEmployee.phone || '';
+    qs('#emp-gender').value = currentEmployee.gender || '';
+    qs('#emp-badge').value = currentEmployee.badge || 'N/A';
+    qs('#emp-status').value = currentEmployee.status || 'Ativo';
+    qs('#emp-hire-date').value = currentEmployee.hireDate || '';
+    qs('#emp-start-date').value = currentEmployee.startDate || '';
+    qs('#emp-termination-date').value = currentEmployee.terminationDate || '';
+    qs('#emp-department').value = currentEmployee.department || '';
+    qs('#emp-position').value = currentEmployee.position || currentEmployee.roleTitle || '';
+    qs('#emp-salary').value = currentEmployee.salary || '';
+    qs('#emp-supervisor').value = currentEmployee.supervisor || '';
+    qs('#emp-coordinator').value = currentEmployee.coordinator || '';
+    qs('#emp-manager').value = currentEmployee.manager || '';
+    qs('#emp-company').value = currentEmployee.company || '';
+    qs('#emp-branch').value = currentEmployee.branch || '';
+    qs('#emp-tags').value = currentEmployee.tags || '';
+    
+    // Load documents if implemented
+    if (typeof loadEmployeeDocuments === 'function') {
+      loadEmployeeDocuments(currentEmployee.id);
+    }
+  }
+}
+
+function switchEmployeeTab(tabName) {
+  // Hide all tabs
+  qsa('.tab-content').forEach(tab => tab.classList.add('hidden'));
+  qsa('.emp-tab-btn').forEach(btn => btn.classList.remove('active'));
+  
+  // Show selected tab
+  qs(`#tab-${tabName}`).classList.remove('hidden');
+  qs(`[data-tab="${tabName}"]`).classList.add('active');
+  
+  // Load documents when documents tab is selected
+  if (tabName === 'documents' && currentEmployee) {
+    loadEmployeeDocuments(currentEmployee.id);
+  }
+}
+
+function closeModal(modalId) {
+  qs(`#${modalId}`).classList.add('hidden');
+  currentEmployee = null;
+}
+
+function setupEmployeeBindings() {
+  // Tab switching
+  qs('#employee-tabs').addEventListener('click', (e) => {
+    if (e.target.dataset.tab) {
+      switchEmployeeTab(e.target.dataset.tab);
+    }
   });
-  qs('#new-emp').onclick = async ()=>{
-    const name = prompt('Nome:'); if(!name) return;
-    const email = prompt('E-mail:','nome@empresa.com');
-    const deptId = (DEPTS[0]||{}).id || prompt('DeptId:','D1');
-    const roleTitle = prompt('Cargo:','Analista');
-    const salary = parseFloat(prompt('Salário:','5000')||'0');
-    await post('/employees','POST',{name,email,deptId,roleTitle,salary,status:'ATIVO'}); renderEmployees();
+
+  // Add employee button
+  qs('#btn-add-employee').onclick = () => openEmployeeModal('add');
+  
+  // Toggle view button
+  qs('#btn-toggle-view').onclick = () => {
+    isCardView = !isCardView;
+    qs('#btn-toggle-view').textContent = isCardView ? '📋 Tabela' : '🗂️ Cards';
+    renderEmployeeView();
   };
-  qs('#exp-emp').onclick = (e)=>{ e.preventDefault(); window.open(API+'/export/employees.csv','_blank'); };
+  
+  // Export button
+  qs('#btn-export-employees').onclick = (e) => {
+    e.preventDefault();
+    window.open(API+'/export/employees.csv','_blank');
+  };
+
+  // Form submission
+  qs('#employee-form').onsubmit = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData.entries());
+    
+    try {
+      const method = data.id ? 'PUT' : 'POST';
+      const url = data.id ? `/employees/${data.id}` : '/employees';
+      
+      // Adapt data for backend compatibility
+      const employeeData = {
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        gender: data.gender,
+        status: data.status,
+        hireDate: data.hireDate,
+        startDate: data.startDate,
+        terminationDate: data.terminationDate,
+        department: data.department,
+        deptId: DEPTS.find(d => d.name === data.department)?.id,
+        position: data.position,
+        roleTitle: data.position, // Backend compatibility
+        salary: parseFloat(data.salary) || 0,
+        supervisor: data.supervisor,
+        coordinator: data.coordinator,
+        manager: data.manager,
+        company: data.company,
+        branch: data.branch,
+        tags: data.tags
+      };
+      
+      await post(url, method, employeeData);
+      
+      alert(data.id ? 'Colaborador atualizado!' : 'Colaborador criado!');
+      closeModal('employee-modal');
+      renderEmployees();
+    } catch(e) {
+      alert('Erro ao salvar: ' + e.message);
+    }
+  };
 }
-async function editEmp(e){
-  const name = prompt('Nome:', e.name)||e.name;
-  const email = prompt('E-mail:', e.email)||e.email;
-  const deptId = prompt('DeptId:', e.deptId)||e.deptId;
-  const roleTitle = prompt('Cargo:', e.roleTitle||'')||e.roleTitle;
-  const salary = parseFloat(prompt('Salário:', e.salary||0)||e.salary||0);
-  await post(`/employees/${e.id}`,'PUT',{name,email,deptId,roleTitle,salary}); renderEmployees();
+
+async function deleteEmployee(id) {
+  if (!confirm('Tem certeza que deseja excluir este colaborador?')) return;
+  try {
+    await del(`/employees/${id}`);
+    alert('Colaborador excluído!');
+    renderEmployees();
+  } catch(e) {
+    alert('Erro ao excluir: ' + e.message);
+  }
 }
+
+// Document Management for Employees
+async function loadEmployeeDocuments(employeeId) {
+  try {
+    const documents = await get(`/employees/${employeeId}/documents`);
+    const container = qs('#employee-documents');
+    
+    if (!documents || documents.length === 0) {
+      container.innerHTML = '<div class="note">Nenhum documento encontrado.</div>';
+      return;
+    }
+    
+    container.innerHTML = documents.map(doc => {
+      const isExpired = doc.isExpired || (doc.expirationDate && new Date(doc.expirationDate) < new Date());
+      const daysToExpiration = doc.expirationDate ? 
+        Math.ceil((new Date(doc.expirationDate) - new Date()) / (1000 * 60 * 60 * 24)) : null;
+      
+      let expirationStatus = '';
+      let borderColor = '#e5e7eb';
+      let backgroundColor = 'white';
+      let textColor = '#374151';
+      
+      if (isExpired) {
+        expirationStatus = ' <span style="color: #dc3545; font-size: 0.8em; font-weight: bold;">[EXPIRADO]</span>';
+        borderColor = '#dc3545';
+        backgroundColor = '#fef2f2';
+        textColor = '#991b1b';
+      } else if (daysToExpiration !== null && daysToExpiration <= 30 && daysToExpiration > 0) {
+        expirationStatus = ` <span style="color: #ffc107; font-size: 0.8em; font-weight: bold;">[EXPIRA EM ${daysToExpiration} DIAS]</span>`;
+        borderColor = '#ffc107';
+        backgroundColor = '#fffbf0';
+        textColor = '#856404';
+      }
+      
+      const expirationInfo = doc.expirationDate ? 
+        `📅 Expira: ${doc.expirationDate}` : '📅 Sem data de expiração';
+      
+      return `
+        <div style="border: 1px solid ${borderColor}; background: ${backgroundColor}; color: ${textColor}; padding: 1rem; margin-bottom: 0.5rem; border-radius: 0.5rem;">
+          <div style="font-weight: 500; margin-bottom: 0.5rem;">
+            📄 ${doc.description || doc.fileName || doc.type}${expirationStatus}
+          </div>
+          <div style="font-size: 0.85em; color: #6c757d;">
+            📅 Upload: ${doc.uploadDate} • 📦 ${doc.size || formatFileSize(doc.fileSize)}
+          </div>
+          <div style="font-size: 0.8em; color: ${isExpired ? '#dc3545' : (daysToExpiration !== null && daysToExpiration <= 30 && daysToExpiration > 0) ? '#856404' : '#6c757d'}; margin-top: 2px;">
+            ${expirationInfo}
+          </div>
+          ${doc.notes ? `<div style="font-size: 0.8em; color: #28a745; margin-top: 2px;">💬 ${doc.notes}</div>` : ''}
+          <div style="margin-top: 0.5rem;">
+            <button class="btn small" onclick="viewDocument('${doc.id}')">👁️ Visualizar</button>
+            <button class="btn small bad" onclick="deleteDocument('${doc.id}')">🗑️ Excluir</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch(e) {
+    qs('#employee-documents').innerHTML = '<div class="note">Erro ao carregar documentos.</div>';
+    console.error('Erro ao carregar documentos:', e);
+  }
+}
+
+function formatFileSize(bytes) {
+  if (!bytes || bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+async function viewDocument(docId) {
+  try {
+    window.open(`${API}/documents/${docId}/view`, '_blank');
+  } catch(e) {
+    alert('Erro ao abrir documento: ' + e.message);
+  }
+}
+
+async function deleteDocument(docId) {
+  if (!confirm('Tem certeza que deseja excluir este documento?')) return;
+  
+  try {
+    await del(`/documents/${docId}`);
+    alert('Documento excluído com sucesso!');
+    if (currentEmployee) {
+      loadEmployeeDocuments(currentEmployee.id);
+    }
+  } catch(e) {
+    alert('Erro ao excluir documento: ' + e.message);
+  }
+}
+
+// Setup document upload functionality
+function setupDocumentUpload() {
+  qs('#btn-upload-doc').onclick = () => {
+    if (!currentEmployee) {
+      alert('Selecione um funcionário primeiro.');
+      return;
+    }
+    qs('#doc-file-input').click();
+  };
+
+  qs('#doc-file-input').onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    if (file.type !== 'application/pdf') {
+      alert('Apenas arquivos PDF são aceitos.');
+      return;
+    }
+    
+    const description = prompt('Descrição do documento:', file.name.replace('.pdf', ''));
+    if (!description) return;
+    
+    const expirationDate = prompt('Data de expiração (YYYY-MM-DD) - opcional:');
+    const notes = prompt('Observações - opcional:');
+    const docType = prompt('Tipo do documento (CONTRATO, CERTIDAO, RG, CPF, OUTROS):', 'OUTROS');
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('description', description);
+    formData.append('type', docType || 'OUTROS');
+    if (expirationDate) formData.append('expirationDate', expirationDate);
+    if (notes) formData.append('notes', notes);
+    
+    try {
+      const response = await fetch(`${API}/employees/${currentEmployee.id}/documents`, {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + TOKEN },
+        body: formData
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro no servidor');
+      }
+      
+      alert('Documento enviado com sucesso!');
+      loadEmployeeDocuments(currentEmployee.id);
+      e.target.value = ''; // Clear input
+    } catch(e) {
+      alert('Erro ao enviar documento: ' + e.message);
+      e.target.value = ''; // Clear input on error too
+    }
+  };
+}
+
+// Initialize document upload when DOM is ready
+setTimeout(() => {
+  if (qs('#btn-upload-doc')) {
+    setupDocumentUpload();
+  }
+}, 100);
 
 // Departments
 async function renderDepts(){
