@@ -1,0 +1,65 @@
+{
+  "users": [
+    {
+      "id": "U_ADMIN01",
+      "email": "admin@marh.local",
+      "pass": "admin123",
+      "name": "Admin MARH",
+      "role": "ADMIN",
+      "active": true
+    },
+    {
+      "id": "U_RH01",
+      "email": "rh@marh.local", 
+      "pass": "rh123",
+      "name": "RH MARH",
+      "role": "RH",
+      "active": true
+    }
+  ],
+  "employees": [
+    {
+      "id": "EMP_001",
+      "name": "João Silva",
+      "email": "joao@marh.local",
+      "phone": "(11) 99999-9999",
+      "position": "Desenvolvedor",
+      "department": "TI",
+      "status": "ATIVO",
+      "hireDate": "2024-01-15",
+      "salary": 5000
+    }
+  ],
+  "departments": [
+    {
+      "id": "DEPT_001",
+      "name": "Tecnologia da Informação",
+      "description": "Departamento de TI",
+      "manager": "EMP_001"
+    }
+  ],
+  "attendance": [],
+  "leaves": [],
+  "payroll": [],
+  "reviews": [],
+  "trainings": [],
+  "jobs": [
+    {
+      "id": "JOB_001",
+      "title": "Desenvolvedor Frontend",
+      "description": "Vaga para desenvolvedor React/Vue",
+      "status": "ABERTA",
+      "department": "TI"
+    },
+    {
+      "id": "JOB_002", 
+      "title": "Analista de RH",
+      "description": "Vaga para analista de recursos humanos",
+      "status": "ABERTA",
+      "department": "RH"
+    }
+  ],
+  "candidates": [],
+  "settings": {},
+  "logs": []
+}
