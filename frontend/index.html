@@ -321,8 +321,13 @@ async function api(path, method='GET', body=null){
 qs('#btn-login').onclick = async ()=>{
   const email = qs('#login-email').value.trim(); const password = qs('#login-pass').value;
   try{ const r = await api('/login','POST',{email,password});
+    // Mostrar código MFA em alert destacado
+    alert('🔐 CÓDIGO DE VERIFICAÇÃO EM 2 ETAPAS\n\n' + 
+          '📱 Seu código MFA é: ' + r.demoCode + '\n\n' +
+          '⚠️  Digite este código na próxima tela para continuar');
+    
     qs('#login-msg').classList.remove('hidden'); qs('#login-msg').textContent = 'Código MFA (demo): '+r.demoCode;
-    qs('#view-login').classList.add('hidden'); qs('#view-mfa').classList.remove('hidden'); qs('#mfa-hint').textContent='Digite o código exibido acima.'; sessionStorage.setItem('MFA_EMAIL', email);
+    qs('#view-login').classList.add('hidden'); qs('#view-mfa').classList.remove('hidden'); qs('#mfa-hint').textContent='Digite o código: ' + r.demoCode; sessionStorage.setItem('MFA_EMAIL', email);
   }catch(e){ alert('Falha no login'); }
 };
 qs('#btn-verify').onclick = async ()=>{
