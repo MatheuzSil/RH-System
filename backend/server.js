@@ -268,7 +268,7 @@ app.get('/api/documents/:docId/download', auth, (req, res) => {
   if (!document.fileData) {
     return res.status(404).json({ error: 'Dados do arquivo não encontrados' });
   }
-  
+
   // Convert base64 back to buffer
   const buffer = Buffer.from(document.fileData, 'base64');
   
@@ -277,7 +277,35 @@ app.get('/api/documents/:docId/download', auth, (req, res) => {
   res.send(buffer);
 });
 
-app.delete('/api/documents/:docId', auth, requireRole('ADMIN', 'RH'), (req, res) => {
+// Simplified download endpoint - returns document data as JSON
+app.get('/api/documents/:docId/data', auth, (req, res) => {
+  const db = loadDB();
+  const docId = req.params.docId;
+  const document = db.documents ? db.documents.find(d => d.id === docId) : null;
+  
+  if (!document) {
+    return res.status(404).json({ error: 'Documento não encontrado' });
+  }
+  
+  // Check permissions
+  if (req.user.role === 'COLAB') {
+    const employee = db.employees.find(e => e.id === document.empId);
+    if (!employee || (employee.userId !== req.user.id && employee.email !== req.user.email)) {
+      return res.status(403).json({ error: 'Sem permissão para baixar documento' });
+    }
+  }
+  
+  if (!document.fileData) {
+    return res.status(404).json({ error: 'Dados do arquivo não encontrados' });
+  }
+  
+  // Return document data as JSON
+  res.json({
+    fileName: document.fileName,
+    mimeType: document.mimeType,
+    fileData: document.fileData
+  });
+});app.delete('/api/documents/:docId', auth, requireRole('ADMIN', 'RH'), (req, res) => {
   const db = loadDB();
   const docId = req.params.docId;
   const documentIndex = db.documents ? db.documents.findIndex(d => d.id === docId) : -1;

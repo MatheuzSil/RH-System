@@ -894,34 +894,39 @@ function getExpiryInfo(expirationDate) {
 
 async function downloadDocument(documentId) {
   try {
-    const response = await fetch(`${API}/documents/${documentId}/download`, {
+    const response = await fetch(`${API}/documents/${documentId}/data`, {
       headers: {
         'Authorization': 'Bearer ' + TOKEN
       }
     });
     
     if (!response.ok) {
-      throw new Error('Erro ao baixar documento');
+      const errorData = await response.json();
+      alert('Erro: ' + (errorData.error || 'Erro ao baixar documento'));
+      return;
     }
     
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
+    const data = await response.json();
+    
+    // Convert base64 to blob and download
+    const byteCharacters = atob(data.fileData);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: data.mimeType });
+    
+    // Create download link
+    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.style.display = 'none';
     a.href = url;
-    
-    // Get filename from Content-Disposition header
-    const disposition = response.headers.get('Content-Disposition');
-    let filename = 'documento';
-    if (disposition && disposition.includes('filename=')) {
-      filename = disposition.split('filename=')[1].replace(/"/g, '');
-    }
-    a.download = filename;
-    
+    a.download = data.fileName;
     document.body.appendChild(a);
     a.click();
-    window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
   } catch (error) {
     console.error('Erro no download:', error);
     alert('Erro ao baixar documento: ' + error.message);
