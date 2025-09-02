@@ -892,21 +892,25 @@ function getExpiryInfo(expirationDate) {
   }
 }
 
-async function downloadDocument(documentId) {
-  try {
-    const response = await fetch(`${API}/documents/${documentId}/data`, {
-      headers: {
-        'Authorization': 'Bearer ' + TOKEN
-      }
-    });
+function downloadDocument(documentId) {
+  console.log('🔄 Iniciando download para documento:', documentId);
+  
+  fetch(`${API}/documents/${documentId}/data`, {
+    headers: {
+      'Authorization': 'Bearer ' + TOKEN
+    }
+  })
+  .then(response => {
+    console.log('📡 Response status:', response.status);
+    console.log('📡 Response ok:', response.ok);
     
     if (!response.ok) {
-      const errorData = await response.json();
-      alert('Erro: ' + (errorData.error || 'Erro ao baixar documento'));
-      return;
+      throw new Error(`HTTP ${response.status}`);
     }
-    
-    const data = await response.json();
+    return response.json();
+  })
+  .then(data => {
+    console.log('📄 Dados recebidos:', data.fileName, 'Size:', data.fileData.length);
     
     // Convert base64 to blob and download
     const byteCharacters = atob(data.fileData);
@@ -927,10 +931,12 @@ async function downloadDocument(documentId) {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     
-  } catch (error) {
-    console.error('Erro no download:', error);
-    alert('Erro ao baixar documento: ' + error.message);
-  }
+    console.log('✅ Download iniciado com sucesso!');
+  })
+  .catch(error => {
+    console.error('❌ Erro no download:', error);
+    alert('Erro no download: ' + error.message);
+  });
 }
 
 async function deleteDocument(documentId) {
