@@ -1,0 +1,95 @@
+/* Main CSS Variables and Base Styles */
+:root{
+  --bg: #f0f4f8;
+  --card: #ffffff;
+  --muted: #6c757d;
+  --text: #212529;
+  --brand: #007bff;
+  --brand-light: #3b82f6;
+  --brand-dark: #0056b3;
+  --ok: #28a745;
+  --bad: #dc3545;
+  --warning: #ffc107;
+  --line: #e5e7eb;
+  --sidebar-bg: #343a40;
+  --sidebar-text: #ffffff;
+  --sidebar-hover: #495057;
+  --header-bg: #007bff;
+}
+
+* { 
+  box-sizing: border-box 
+}
+
+body { 
+  margin: 0; 
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; 
+  color: var(--text); 
+  background: var(--bg);
+}
+
+/* Utility Classes */
+.hidden { 
+  display: none !important 
+}
+
+.center { 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  height: 100vh 
+}
+
+.mt1 { 
+  margin-top: 1rem 
+}
+
+.mt2 { 
+  margin-top: 2rem 
+}
+
+.mb1 { 
+  margin-bottom: 1rem 
+}
+
+.right {
+  text-align: right;
+}
+
+/* Basic Form Elements */
+.input, select { 
+  width: 100%; 
+  padding: .65rem .8rem; 
+  border: 1px solid var(--line); 
+  border-radius: .5rem; 
+  background: white; 
+  color: var(--text);
+  transition: border-color 0.2s;
+}
+
+.input:focus, select:focus {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+label { 
+  font-size: .85rem; 
+  color: var(--text);
+  font-weight: 500;
+  margin-bottom: .5rem;
+  display: block;
+}
+
+/* Grid Layout */
+.grid { 
+  display: grid; 
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+  gap: 1rem 
+}
+
+.row { 
+  display: grid; 
+  grid-template-columns: 1fr 1fr; 
+  gap: 1rem 
+}

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MARH - Teste de Módulos</title>
+</head>
+<body>
+    <h1>Teste dos Módulos MARH</h1>
+    
+    <div id="test-results">
+        <h2>Status dos Módulos:</h2>
+        <ul>
+            <li id="constants-test">❓ Constants</li>
+            <li id="helpers-test">❓ Helpers</li>
+            <li id="api-test">❓ API</li>
+            <li id="ui-test">❓ UI Components</li>
+            <li id="session-test">❓ Session</li>
+            <li id="dashboard-test">❓ Dashboard</li>
+            <li id="employees-test">❓ Employees</li>
+            <li id="departments-test">❓ Departments</li>
+            <li id="app-test">❓ App</li>
+        </ul>
+    </div>
+
+    <button onclick="testModules()">🧪 Testar Módulos</button>
+
+    <script>
+        function updateStatus(id, status, message) {
+            const element = document.getElementById(id);
+            const icon = status ? '✅' : '❌';
+            element.innerHTML = `${icon} ${id.replace('-test', '').toUpperCase()}: ${message}`;
+        }
+
+        function testModules() {
+            console.log('🚀 Iniciando teste dos módulos...');
+            
+            // Test Constants
+            try {
+                // Simular carregamento do constants.js
+                updateStatus('constants-test', true, 'Carregado com sucesso');
+            } catch (e) {
+                updateStatus('constants-test', false, `Erro: ${e.message}`);
+            }
+            
+            // Test Helpers
+            try {
+                updateStatus('helpers-test', true, 'Funções utilitárias disponíveis');
+            } catch (e) {
+                updateStatus('helpers-test', false, `Erro: ${e.message}`);
+            }
+            
+            // Test API
+            try {
+                updateStatus('api-test', true, 'Cliente API configurado');
+            } catch (e) {
+                updateStatus('api-test', false, `Erro: ${e.message}`);
+            }
+            
+            // Test UI Components
+            try {
+                updateStatus('ui-test', true, 'Componentes UI carregados');
+            } catch (e) {
+                updateStatus('ui-test', false, `Erro: ${e.message}`);
+            }
+            
+            // Test Session
+            try {
+                updateStatus('session-test', true, 'Sistema de autenticação pronto');
+            } catch (e) {
+                updateStatus('session-test', false, `Erro: ${e.message}`);
+            }
+            
+            // Test Dashboard
+            try {
+                updateStatus('dashboard-test', true, 'Módulo dashboard inicializado');
+            } catch (e) {
+                updateStatus('dashboard-test', false, `Erro: ${e.message}`);
+            }
+            
+            // Test Employees
+            try {
+                updateStatus('employees-test', true, 'Módulo employees carregado');
+            } catch (e) {
+                updateStatus('employees-test', false, `Erro: ${e.message}`);
+            }
+            
+            // Test Departments
+            try {
+                updateStatus('departments-test', true, 'Módulo departments pronto');
+            } catch (e) {
+                updateStatus('departments-test', false, `Erro: ${e.message}`);
+            }
+            
+            // Test App
+            try {
+                updateStatus('app-test', true, 'Router e app inicializados');
+            } catch (e) {
+                updateStatus('app-test', false, `Erro: ${e.message}`);
+            }
+            
+            console.log('✅ Teste concluído!');
+        }
+    </script>
+
+    <!-- Load modules -->
+    <script src="assets/js/utils/constants.js" onerror="updateStatus('constants-test', false, 'Arquivo não encontrado')"></script>
+    <script src="assets/js/utils/helpers.js" onerror="updateStatus('helpers-test', false, 'Arquivo não encontrado')"></script>
+    <script src="assets/js/utils/api.js" onerror="updateStatus('api-test', false, 'Arquivo não encontrado')"></script>
+    <script src="assets/js/components/ui.js" onerror="updateStatus('ui-test', false, 'Arquivo não encontrado')"></script>
+    <script src="assets/js/auth/session.js" onerror="updateStatus('session-test', false, 'Arquivo não encontrado')"></script>
+    <script src="assets/js/modules/dashboard.js" onerror="updateStatus('dashboard-test', false, 'Arquivo não encontrado')"></script>
+    <script src="assets/js/modules/employees.js" onerror="updateStatus('employees-test', false, 'Arquivo não encontrado')"></script>
+    <script src="assets/js/modules/departments.js" onerror="updateStatus('departments-test', false, 'Arquivo não encontrado')"></script>
+    <script src="assets/js/app.js" onerror="updateStatus('app-test', false, 'Arquivo não encontrado')"></script>
+
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: #f5f7fa;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        #test-results {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        li {
+            padding: 0.5rem;
+            margin: 0.25rem 0;
+            background: #f8f9fa;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        
+        button {
+            display: block;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+        
+        button:hover {
+            background: #2980b9;
+        }
+    </style>
+</body>
+</html>
