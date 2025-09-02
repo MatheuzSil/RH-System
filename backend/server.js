@@ -208,123 +208,136 @@ app.get('/api/documents', auth, (req,res) => {
   res.json(documents);
 });
 
-app.post('/api/documents/upload', auth, upload.single('file'), (req, res) => {
+// Document upload endpoint
+app.post('/api/documents/upload', auth, upload.single('file'), async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'Nenhum arquivo foi enviado' });
-    }
-
     const { employeeId, documentType, description, expiryDate } = req.body;
     
-    if (!employeeId) {
-      return res.status(400).json({ error: 'ID do colaborador é obrigatório' });
+    if (!req.file) {
+      return res.status(400).json({ error: 'Arquivo é obrigatório' });
     }
-
+    
     const db = loadDB();
     
-    // Check if employee exists
+    // Verify employee exists
     const employee = db.employees.find(e => e.id === employeeId);
     if (!employee) {
-      // Delete uploaded file if employee doesn't exist
-      fs.unlinkSync(req.file.path);
-      return res.status(404).json({ error: 'Colaborador não encontrado' });
+      return res.status(404).json({ error: 'Funcionário não encontrado' });
     }
-
-    // Check permissions
-    if (req.user.role === 'COLAB') {
-      const me = db.employees.find(e => e.email === req.user.email);
-      if (!me || me.id !== employeeId) {
-        fs.unlinkSync(req.file.path);
-        return res.status(403).json({ error: 'Sem permissão para adicionar documentos a este colaborador' });
-      }
-    }
-
+    
     const document = {
       id: uid('DOC'),
-      employeeId,
-      documentType: documentType || 'GERAL',
-      description: description || req.file.originalname,
+      employeeId: employeeId,
+      documentType: documentType || 'OUTRO',
+      description: description || '',
       fileName: req.file.originalname,
-      filePath: req.file.filename,
+      filePath: req.file.path,
       fileSize: req.file.size,
       mimeType: req.file.mimetype,
-      expiryDate: expiryDate || null,
-      uploadedBy: req.user.email,
       uploadedAt: new Date().toISOString(),
-      status: 'ATIVO'
+      expiryDate: expiryDate || null,
+      uploadedBy: req.user.email
     };
-
+    
+    // Initialize documents array if needed
     if (!db.documents) {
       db.documents = [];
     }
     
     db.documents.push(document);
-    log(db, req.user.email, 'document.upload', `${document.documentType} para ${employee.name}`);
+    log(db, req.user.email, 'documents.upload', `${employeeId}:${document.fileName}`);
     saveDB(db);
-
-    res.json(document);
+    
+    res.json({
+      id: document.id,
+      documentType: document.documentType,
+      description: document.description,
+      fileName: document.fileName,
+      uploadedAt: document.uploadedAt,
+      expiryDate: document.expiryDate
+    });
+    
   } catch (error) {
-    if (req.file) {
-      fs.unlinkSync(req.file.path);
-    }
-    res.status(500).json({ error: 'Erro interno do servidor' });
+    console.error('Upload error:', error);
+    res.status(500).json({ error: 'Erro ao fazer upload do documento' });
   }
 });
 
-app.get('/api/documents/:id/download', auth, (req, res) => {
+// List documents for employee
+app.get('/api/documents', auth, (req, res) => {
   const db = loadDB();
-  const document = db.documents?.find(doc => doc.id === req.params.id);
+  const { employeeId } = req.query;
+  
+  if (!employeeId) {
+    return res.status(400).json({ error: 'employeeId é obrigatório' });
+  }
+  
+  // Check permissions
+  if (req.user.role === 'COLAB') {
+    const employee = db.employees.find(e => e.id === employeeId);
+    if (!employee || (employee.userId !== req.user.id && employee.email !== req.user.email)) {
+      return res.status(403).json({ error: 'Sem permissão para visualizar documentos' });
+    }
+  }
+  
+  const documents = db.documents ? db.documents.filter(d => d.employeeId === employeeId) : [];
+  res.json(documents);
+});
+
+// Download document
+app.get('/api/documents/:docId/download', auth, (req, res) => {
+  const db = loadDB();
+  const docId = req.params.docId;
+  const document = db.documents ? db.documents.find(d => d.id === docId) : null;
   
   if (!document) {
     return res.status(404).json({ error: 'Documento não encontrado' });
   }
-
+  
   // Check permissions
   if (req.user.role === 'COLAB') {
-    const me = db.employees.find(e => e.email === req.user.email);
-    if (!me || document.employeeId !== me.id) {
-      return res.status(403).json({ error: 'Sem permissão para acessar este documento' });
+    const employee = db.employees.find(e => e.id === document.employeeId);
+    if (!employee || (employee.userId !== req.user.id && employee.email !== req.user.email)) {
+      return res.status(403).json({ error: 'Sem permissão para baixar documento' });
     }
   }
-
-  const filePath = path.join(UPLOADS_DIR, document.filePath);
   
+  const filePath = document.filePath;
   if (!fs.existsSync(filePath)) {
-    return res.status(404).json({ error: 'Arquivo não encontrado' });
+    return res.status(404).json({ error: 'Arquivo físico não encontrado' });
   }
-
+  
+  res.setHeader('Content-Type', 'application/octet-stream');
   res.setHeader('Content-Disposition', `attachment; filename="${document.fileName}"`);
-  res.setHeader('Content-Type', document.mimeType);
-  res.sendFile(filePath);
+  res.sendFile(path.resolve(filePath));
 });
 
-app.delete('/api/documents/:id', auth, (req, res) => {
+// Delete document
+app.delete('/api/documents/:docId', auth, requireRole('ADMIN', 'RH'), (req, res) => {
   const db = loadDB();
-  const documentIndex = db.documents?.findIndex(doc => doc.id === req.params.id);
+  const docId = req.params.docId;
+  const document = db.documents ? db.documents.find(d => d.id === docId) : null;
   
-  if (documentIndex === -1 || !db.documents) {
+  if (!document) {
     return res.status(404).json({ error: 'Documento não encontrado' });
   }
-
-  const document = db.documents[documentIndex];
-
-  // Check permissions - only ADMIN and RH can delete documents
-  if (!['ADMIN', 'RH'].includes(req.user.role)) {
-    return res.status(403).json({ error: 'Sem permissão para excluir documentos' });
+  
+  try {
+    // Remove physical file
+    if (fs.existsSync(document.filePath)) {
+      fs.unlinkSync(document.filePath);
+    }
+    
+    // Remove from database
+    db.documents = db.documents.filter(d => d.id !== docId);
+    log(db, req.user.email, 'documents.delete', `${document.employeeId}:${document.fileName}`);
+    saveDB(db);
+    
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Error deleting document:', error);
+    res.status(500).json({ error: 'Erro ao excluir documento' });
   }
-
-  // Delete file from filesystem
-  const filePath = path.join(UPLOADS_DIR, document.filePath);
-  if (fs.existsSync(filePath)) {
-    fs.unlinkSync(filePath);
-  }
-
-  // Remove from database
-  db.documents.splice(documentIndex, 1);
-  log(db, req.user.email, 'document.delete', `${document.documentType} de ${document.employeeId}`);
-  saveDB(db);
-
-  res.json({ message: 'Documento excluído com sucesso' });
 });
 
 // Serve uploaded files (with auth)

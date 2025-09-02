@@ -449,7 +449,7 @@
             <div class="form-row">
               <div class="form-group">
                 <label>Tipo de Documento</label>
-                <select id="doc-type" class="input">
+                <select id="documentType" class="input">
                   <option value="RG">RG</option>
                   <option value="CPF">CPF</option>
                   <option value="CARTEIRA_TRABALHO">Carteira de Trabalho</option>
@@ -463,17 +463,17 @@
               </div>
               <div class="form-group">
                 <label>Data de Validade</label>
-                <input id="doc-expiry" class="input" type="date">
+                <input id="documentExpiry" class="input" type="date">
               </div>
             </div>
             <div class="form-group">
               <label>Descrição</label>
-              <input id="doc-description" class="input" type="text" placeholder="Descrição do documento">
+              <input id="documentDescription" class="input" type="text" placeholder="Descrição do documento">
             </div>
             <div class="form-group">
               <label>Arquivo</label>
               <div class="file-input-container">
-                <input id="doc-file" class="input" type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt,.xls,.xlsx">
+                <input id="documentFile" class="input" type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt,.xls,.xlsx">
                 <button id="upload-doc" class="btn ok" type="button">Adicionar Documento</button>
               </div>
             </div>
@@ -831,7 +831,61 @@ async function deleteEmployee(employeeId) {
   }
 }
 
-// Document Management Functions
+async function uploadDocument() {
+  const fileInput = document.getElementById('documentFile');
+  const typeSelect = document.getElementById('documentType');
+  const descriptionInput = document.getElementById('documentDescription');
+  const expiryInput = document.getElementById('documentExpiry');
+  
+  if (!fileInput.files[0]) {
+    alert('Selecione um arquivo');
+    return;
+  }
+  
+  if (!currentEmployee) {
+    alert('Nenhum colaborador selecionado');
+    return;
+  }
+  
+  const formData = new FormData();
+  formData.append('file', fileInput.files[0]);
+  formData.append('employeeId', currentEmployee.id);
+  formData.append('documentType', typeSelect.value);
+  formData.append('description', descriptionInput.value);
+  formData.append('expiryDate', expiryInput.value);
+  
+  try {
+    const response = await fetch(`${API}/documents/upload`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${TOKEN}`
+      },
+      body: formData
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || 'Erro ao enviar documento');
+    }
+    
+    const result = await response.json();
+    alert('Documento enviado com sucesso!');
+    
+    // Limpar formulário
+    fileInput.value = '';
+    descriptionInput.value = '';
+    expiryInput.value = '';
+    typeSelect.value = 'RG';
+    
+    // Recarregar lista de documentos
+    loadEmployeeDocuments(currentEmployee.id);
+    
+  } catch (error) {
+    console.error('Erro no upload:', error);
+    alert('Erro: ' + error.message);
+  }
+}
+
 async function loadEmployeeDocuments(employeeId) {
   try {
     const documents = await api(`/documents?employeeId=${employeeId}`);
@@ -917,17 +971,17 @@ async function uploadDocument() {
   formData.append('expiryDate', expiryInput.value);
   
   try {
-    const response = await fetch('/api/documents/upload', {
+    const response = await fetch(`${API}/documents/upload`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Authorization': `Bearer ${TOKEN}`
       },
-      body: formData // Não usar JSON.stringify aqui!
+      body: formData
     });
     
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Erro ao enviar documento');
+      const errorText = await response.text();
+      throw new Error(errorText || 'Erro ao enviar documento');
     }
     
     const result = await response.json();
@@ -937,64 +991,25 @@ async function uploadDocument() {
     fileInput.value = '';
     descriptionInput.value = '';
     expiryInput.value = '';
-    typeSelect.value = 'GERAL';
+    typeSelect.value = 'RG';
     
     // Recarregar lista de documentos
     loadEmployeeDocuments(currentEmployee.id);
     
   } catch (error) {
+    console.error('Erro no upload:', error);
     alert('Erro: ' + error.message);
   }
 }
 
-async function downloadDocument(documentId) {
+async function loadEmployeeDocuments(employeeId) {
   try {
-    const response = await fetch(`${API}/documents/${documentId}/download`, {
-      headers: {
-        'Authorization': 'Bearer ' + TOKEN
-      }
-    });
-    
-    if (!response.ok) {
-      throw new Error('Erro ao baixar documento');
-    }
-    
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.style.display = 'none';
-    a.href = url;
-    
-    // Get filename from Content-Disposition header
-    const disposition = response.headers.get('Content-Disposition');
-    const filename = disposition ? disposition.split('filename=')[1].replace(/"/g, '') : 'documento';
-    a.download = filename;
-    
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
+    const documents = await api(`/documents?employeeId=${employeeId}`);
+    renderEmployeeDocuments(documents);
   } catch (error) {
-    alert('Erro ao baixar documento: ' + error.message);
+    console.error('Erro ao carregar documentos:', error);
+    qs('#employee-documents').innerHTML = '<div class="no-documents">Erro ao carregar documentos</div>';
   }
-}
-
-async function deleteDocument(documentId) {
-  if (!confirm('Tem certeza que deseja excluir este documento?')) {
-    return;
-  }
-  
-  try {
-    await del(`/documents/${documentId}`);
-    await loadEmployeeDocuments(currentEmployee.id);
-    alert('Documento excluído com sucesso!');
-  } catch (error) {
-    alert('Erro ao excluir documento: ' + error.message);
-  }
-}
-
-async function editEmp(e){
-  openEmployeeModal(e);
 }
 
 // Departments
