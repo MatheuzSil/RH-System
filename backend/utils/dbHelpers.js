@@ -6,6 +6,9 @@ export async function loadFromDB(table, whereClause = '', params = {}) {
     const pool = await getConnection();
     const request = pool.request();
     
+    // Adicionar prefixo marh_ para evitar conflito com tabelas existentes
+    const tableName = `marh_${table}`;
+    
     // Adicionar parâmetros se fornecidos
     if (params && Object.keys(params).length > 0) {
       for (const [key, value] of Object.entries(params)) {
@@ -13,7 +16,7 @@ export async function loadFromDB(table, whereClause = '', params = {}) {
       }
     }
     
-    const query = `SELECT * FROM ${table} ${whereClause}`;
+    const query = `SELECT * FROM ${tableName} ${whereClause}`;
     const result = await request.query(query);
     return result.recordset;
   } catch (error) {
@@ -28,6 +31,9 @@ export async function insertToDB(table, data) {
     const pool = await getConnection();
     const request = pool.request();
     
+    // Adicionar prefixo marh_
+    const tableName = `marh_${table}`;
+    
     // Construir query dinamicamente baseada nos campos do objeto
     const fields = Object.keys(data);
     const values = fields.map(field => `@${field}`).join(', ');
@@ -38,7 +44,7 @@ export async function insertToDB(table, data) {
       request.input(key, value);
     }
     
-    const query = `INSERT INTO ${table} (${fieldNames}) VALUES (${values})`;
+    const query = `INSERT INTO ${tableName} (${fieldNames}) VALUES (${values})`;
     await request.query(query);
     
     return data;
@@ -54,6 +60,9 @@ export async function updateInDB(table, id, data) {
     const pool = await getConnection();
     const request = pool.request();
     
+    // Adicionar prefixo marh_
+    const tableName = `marh_${table}`;
+    
     // Construir query dinamicamente
     const fields = Object.keys(data);
     const setClause = fields.map(field => `${field} = @${field}`).join(', ');
@@ -64,7 +73,7 @@ export async function updateInDB(table, id, data) {
     }
     request.input('id', id);
     
-    const query = `UPDATE ${table} SET ${setClause} WHERE id = @id`;
+    const query = `UPDATE ${tableName} SET ${setClause} WHERE id = @id`;
     await request.query(query);
     
     return { ...data, id };
@@ -80,8 +89,11 @@ export async function deleteFromDB(table, id) {
     const pool = await getConnection();
     const request = pool.request();
     
+    // Adicionar prefixo marh_
+    const tableName = `marh_${table}`;
+    
     request.input('id', id);
-    const query = `DELETE FROM ${table} WHERE id = @id`;
+    const query = `DELETE FROM ${tableName} WHERE id = @id`;
     await request.query(query);
     
     return true;
@@ -109,7 +121,7 @@ export async function logToDB(who, action, details = '') {
     request.input('action', sql.NVarChar, logData.action);
     request.input('details', sql.NVarChar, logData.details);
     
-    await request.query(`INSERT INTO logs (at, who, action, details) VALUES (@at, @who, @action, @details)`);
+    await request.query(`INSERT INTO marh_logs (at, who, action, details) VALUES (@at, @who, @action, @details)`);
     
     return logData;
   } catch (error) {
@@ -122,7 +134,7 @@ export async function logToDB(who, action, details = '') {
 export async function getSettings() {
   try {
     const pool = await getConnection();
-    const result = await pool.request().query('SELECT key_name, value_data FROM settings');
+    const result = await pool.request().query('SELECT key_name, value_data FROM marh_settings');
     
     const settings = {};
     for (const row of result.recordset) {
@@ -155,7 +167,7 @@ export async function saveSettings(settings) {
       
       // Usar MERGE para inserir ou atualizar
       await request.query(`
-        MERGE settings AS target
+        MERGE marh_settings AS target
         USING (SELECT @key_name as key_name, @value_data as value_data) AS source
         ON target.key_name = source.key_name
         WHEN MATCHED THEN
@@ -252,10 +264,10 @@ export async function getDashboardSummary() {
   try {
     const pool = await getConnection();
     
-    const totalEmpResult = await pool.request().query('SELECT COUNT(*) as count FROM employees');
-    const ativosResult = await pool.request().query("SELECT COUNT(*) as count FROM employees WHERE status = 'ATIVO'");
-    const onLeaveResult = await pool.request().query("SELECT COUNT(*) as count FROM leaves WHERE status = 'APROVADO'");
-    const openJobsResult = await pool.request().query("SELECT COUNT(*) as count FROM jobs WHERE status = 'ABERTA'");
+    const totalEmpResult = await pool.request().query('SELECT COUNT(*) as count FROM marh_employees');
+    const ativosResult = await pool.request().query("SELECT COUNT(*) as count FROM marh_employees WHERE status = 'ATIVO'");
+    const onLeaveResult = await pool.request().query("SELECT COUNT(*) as count FROM marh_leaves WHERE status = 'APROVADO'");
+    const openJobsResult = await pool.request().query("SELECT COUNT(*) as count FROM marh_jobs WHERE status = 'ABERTA'");
     
     return {
       totalEmp: totalEmpResult.recordset[0].count,

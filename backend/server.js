@@ -2,15 +2,38 @@ import express from 'express';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { loadFromDB, insertToDB, updateInDB, deleteFromDB, logToDB, getDashboardSummary } from './utils/dbHelpers.js';
+import { config } from 'dotenv';
+
+config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DATA_PATH = path.join(__dirname, 'db.json');
 
+// Variável para controlar se usamos SQL ou JSON
+const USE_SQL = process.env.USE_SQL === 'true';
+
 function loadDB(){ return JSON.parse(fs.readFileSync(DATA_PATH,'utf-8')); }
-function saveDB(db){ fs.writeFileSync(DATA_PATH, JSON.stringify(db,null,2), 'utf-8'); }
+function saveDB(dbData){ fs.writeFileSync(DATA_PATH, JSON.stringify(dbData,null,2), 'utf-8'); }
 function uid(prefix='ID'){ return prefix + '_' + Math.random().toString(36).slice(2,8).toUpperCase(); }
-function log(db, who, action, details=''){ db.logs.unshift({at:new Date().toLocaleString('pt-BR'), who, action, details}); }
+async function log(who, action, details=''){
+  if (USE_SQL) {
+    try {
+      await logToDB(who, action, details);
+    } catch (error) {
+      console.error('Erro ao fazer log SQL:', error);
+      // Fallback para JSON
+      const dbData = loadDB();
+      dbData.logs.unshift({at:new Date().toLocaleString('pt-BR'), who, action, details});
+      saveDB(dbData);
+    }
+  } else {
+    const dbData = loadDB();
+    dbData.logs.unshift({at:new Date().toLocaleString('pt-BR'), who, action, details});
+    saveDB(dbData);
+  }
+}
 
 const sessions = new Map();
 const pendingMFA = new Map();
@@ -40,12 +63,52 @@ app.get('/', (req, res) => {
     name: 'MARH Backend API',
     version: '1.0.0',
     status: 'running',
+    mode: USE_SQL ? 'SQL Server' : 'JSON',
+    sqlActive: USE_SQL,
+    timestamp: new Date().toISOString(),
     endpoints: {
       auth: ['/api/login', '/api/mfa'],
       data: ['/api/employees', '/api/departments', '/api/attendance', '/api/leaves', '/api/payroll', '/api/reviews', '/api/trainings', '/api/jobs', '/api/candidates'],
-      admin: ['/api/users', '/api/logs', '/api/settings']
+      admin: ['/api/users', '/api/logs', '/api/settings'],
+      diagnostic: ['/api/diagnostic']
     }
   });
+});
+
+// Endpoint de diagnóstico para verificar fonte dos dados
+app.get('/api/diagnostic', auth, requireRole('ADMIN'), async (req, res) => {
+  try {
+    const result = {
+      sqlEnabled: USE_SQL,
+      mode: USE_SQL ? 'SQL Server' : 'JSON File',
+      timestamp: new Date().toISOString()
+    };
+    
+    if (USE_SQL) {
+      try {
+        // Testar conexão SQL
+        const users = await loadFromDB('marh_users');
+        result.sqlConnection = 'OK';
+        result.sqlUserCount = users.length;
+        result.dataSource = 'SQL Server Database';
+      } catch (error) {
+        result.sqlConnection = 'ERROR';
+        result.sqlError = error.message;
+        result.dataSource = 'JSON File (Fallback)';
+      }
+    } else {
+      const db = loadDB();
+      result.jsonUserCount = db.users?.length || 0;
+      result.dataSource = 'JSON File';
+    }
+    
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({
+      error: 'Erro no diagnóstico',
+      message: error.message
+    });
+  }
 });
 
 // Auth
@@ -82,36 +145,278 @@ function requireRole(...roles){
   return (req,res,next)=> roles.includes(req.user.role) ? next() : res.status(403).json({error:'Sem permissão'});
 }
 
+// Mapeamento de coleções JSON para tabelas SQL
+const TABLE_MAPPING = {
+  'users': 'marh_users',
+  'departments': 'marh_departments', 
+  'employees': 'marh_employees',
+  'attendance': 'marh_attendance',
+  'leaves': 'marh_leaves',
+  'payroll': 'marh_payroll',
+  'evaluations': 'marh_evaluations',
+  'trainings': 'marh_trainings',
+  'jobs': 'marh_jobs',
+  'candidates': 'marh_candidates'
+};
+
 function listEndpoint(coll, filterFn=null){ 
-  return (req,res)=>{ 
-    const db=loadDB(); let data=db[coll]||[]; 
-    if(filterFn) data = data.filter(x=> filterFn(x, req.user, db));
-    res.json(data); 
+  return async (req,res)=> {
+    try {
+      let data;
+      if (USE_SQL && TABLE_MAPPING[coll]) {
+        data = await loadFromDB(TABLE_MAPPING[coll]);
+      } else {
+        const db = loadDB(); 
+        data = db[coll] || [];
+      }
+      
+      if(filterFn) data = data.filter(x=> filterFn(x, req.user, { [coll]: data }));
+      res.json(data);
+    } catch (error) {
+      console.error(`Erro ao buscar ${coll}:`, error);
+      const db = loadDB(); 
+      let data = db[coll] || [];
+      if(filterFn) data = data.filter(x=> filterFn(x, req.user, db));
+      res.json(data);
+    }
   }; 
 }
-function getOne(coll){ return (req,res)=>{ const db=loadDB(); const it=(db[coll]||[]).find(x=>x.id===req.params.id); if(!it) return res.status(404).json({error:'Não encontrado'}); res.json(it); }; }
-function createEndpoint(coll, roles=['ADMIN','RH','GESTOR']){ return [requireRole(...roles),(req,res)=>{ const db=loadDB(); const obj=req.body||{}; obj.id=obj.id||uid(coll.slice(0,3).toUpperCase()); (db[coll]=db[coll]||[]).unshift(obj); log(db, req.user.email, coll+'.new', obj.id); saveDB(db); res.json(obj);}]; }
-function updateEndpoint(coll, roles=['ADMIN','RH','GESTOR']){ return [requireRole(...roles),(req,res)=>{ const db=loadDB(); const idx=(db[coll]||[]).findIndex(x=>x.id===req.params.id); if(idx<0) return res.status(404).json({error:'Não encontrado'}); db[coll][idx]={...db[coll][idx], ...req.body}; log(db, req.user.email, coll+'.save', req.params.id); saveDB(db); res.json(db[coll][idx]); }]; }
-function deleteEndpoint(coll, roles=['ADMIN']){ return [requireRole(...roles),(req,res)=>{ const db=loadDB(); db[coll]=(db[coll]||[]).filter(x=>x.id!==req.params.id); log(db, req.user.email, coll+'.delete', req.params.id); saveDB(db); res.json({ok:true}); }]; }
+
+function getOne(coll){ 
+  return async (req,res)=> {
+    try {
+      let item;
+      if (USE_SQL && TABLE_MAPPING[coll]) {
+        const data = await loadFromDB(TABLE_MAPPING[coll], `id = '${req.params.id}'`);
+        item = data[0];
+      } else {
+        const db = loadDB(); 
+        item = (db[coll] || []).find(x => x.id === req.params.id);
+      }
+      
+      if(!item) return res.status(404).json({error:'Não encontrado'});
+      res.json(item);
+    } catch (error) {
+      console.error(`Erro ao buscar ${coll} ${req.params.id}:`, error);
+      const db = loadDB(); 
+      const item = (db[coll] || []).find(x => x.id === req.params.id);
+      if(!item) return res.status(404).json({error:'Não encontrado'});
+      res.json(item);
+    }
+  }; 
+}
+
+function createEndpoint(coll, roles=['ADMIN','RH','GESTOR']){ 
+  return [requireRole(...roles), async (req,res)=> {
+    try {
+      const obj = req.body || {};
+      obj.id = obj.id || uid(coll.slice(0,3).toUpperCase());
+      
+      if (USE_SQL && TABLE_MAPPING[coll]) {
+        await insertToDB(TABLE_MAPPING[coll], obj);
+      } else {
+        const db = loadDB();
+        (db[coll] = db[coll] || []).unshift(obj);
+        saveDB(db);
+      }
+      
+      await log(req.user.email, coll + '.new', obj.id);
+      res.json(obj);
+    } catch (error) {
+      console.error(`Erro ao criar ${coll}:`, error);
+      const db = loadDB();
+      const obj = req.body || {};
+      obj.id = obj.id || uid(coll.slice(0,3).toUpperCase());
+      (db[coll] = db[coll] || []).unshift(obj);
+      await log(req.user.email, coll + '.new', obj.id);
+      saveDB(db);
+      res.json(obj);
+    }
+  }]; 
+}
+
+function updateEndpoint(coll, roles=['ADMIN','RH','GESTOR']){ 
+  return [requireRole(...roles), async (req,res)=> {
+    try {
+      if (USE_SQL && TABLE_MAPPING[coll]) {
+        await updateInDB(TABLE_MAPPING[coll], req.params.id, req.body);
+        await log(req.user.email, coll + '.save', req.params.id);
+        res.json({ ...req.body, id: req.params.id });
+      } else {
+        const db = loadDB();
+        const idx = (db[coll] || []).findIndex(x => x.id === req.params.id);
+        if(idx < 0) return res.status(404).json({error:'Não encontrado'});
+        db[coll][idx] = { ...db[coll][idx], ...req.body };
+        await log(req.user.email, coll + '.save', req.params.id);
+        saveDB(db);
+        res.json(db[coll][idx]);
+      }
+    } catch (error) {
+      console.error(`Erro ao atualizar ${coll} ${req.params.id}:`, error);
+      const db = loadDB();
+      const idx = (db[coll] || []).findIndex(x => x.id === req.params.id);
+      if(idx < 0) return res.status(404).json({error:'Não encontrado'});
+      db[coll][idx] = { ...db[coll][idx], ...req.body };
+      await log(req.user.email, coll + '.save', req.params.id);
+      saveDB(db);
+      res.json(db[coll][idx]);
+    }
+  }]; 
+}
+
+function deleteEndpoint(coll, roles=['ADMIN']){ 
+  return [requireRole(...roles), async (req,res)=> {
+    try {
+      if (USE_SQL && TABLE_MAPPING[coll]) {
+        await deleteFromDB(TABLE_MAPPING[coll], req.params.id);
+      } else {
+        const db = loadDB();
+        db[coll] = (db[coll] || []).filter(x => x.id !== req.params.id);
+        saveDB(db);
+      }
+      
+      await log(req.user.email, coll + '.delete', req.params.id);
+      res.json({ok: true});
+    } catch (error) {
+      console.error(`Erro ao deletar ${coll} ${req.params.id}:`, error);
+      const db = loadDB();
+      db[coll] = (db[coll] || []).filter(x => x.id !== req.params.id);
+      await log(req.user.email, coll + '.delete', req.params.id);
+      saveDB(db);
+      res.json({ok: true});
+    }
+  }]; 
+}
 
 // Dashboard summary
-app.get('/api/summary', auth, (req,res)=>{
-  const db = loadDB();
-  const totalEmp = db.employees.length;
-  const ativos = db.employees.filter(e=>e.status==='ATIVO').length;
-  const onLeave = db.leaves.filter(l=>l.status==='APROVADO').length;
-  const openJobs = db.jobs.filter(j=>j.status==='ABERTA').length;
-  res.json({totalEmp, ativos, onLeave, openJobs});
+app.get('/api/summary', auth, async (req,res)=>{
+  try {
+    if (USE_SQL) {
+      const summary = await getDashboardSummary();
+      res.json(summary);
+    } else {
+      const db = loadDB();
+      const totalEmp = db.employees.length;
+      const ativos = db.employees.filter(e=>e.status==='ATIVO').length;
+      const onLeave = db.leaves.filter(l=>l.status==='APROVADO').length;
+      const openJobs = db.jobs.filter(j=>j.status==='ABERTA').length;
+      res.json({totalEmp, ativos, onLeave, openJobs});
+    }
+  } catch (error) {
+    console.error('Erro ao buscar dashboard:', error);
+    const db = loadDB();
+    const totalEmp = db.employees.length;
+    const ativos = db.employees.filter(e=>e.status==='ATIVO').length;
+    const onLeave = db.leaves.filter(l=>l.status==='APROVADO').length;
+    const openJobs = db.jobs.filter(j=>j.status==='ABERTA').length;
+    res.json({totalEmp, ativos, onLeave, openJobs});
+  }
 });
-app.get('/api/logs', auth, requireRole('ADMIN','RH'), (req,res)=>{
-  const db = loadDB(); res.json(db.logs);
+app.get('/api/logs', auth, requireRole('ADMIN','RH'), async (req,res)=>{
+  try {
+    if (USE_SQL) {
+      const logs = await loadFromDB('marh_logs', null, 'ORDER BY id DESC LIMIT 100');
+      res.json(logs);
+    } else {
+      const db = loadDB(); 
+      res.json(db.logs);
+    }
+  } catch (error) {
+    console.error('Erro ao buscar logs:', error);
+    const db = loadDB(); 
+    res.json(db.logs);
+  }
 });
 
 // Users (ADMIN)
-app.get('/api/users', auth, requireRole('ADMIN'), (req,res)=>{ const db=loadDB(); res.json(db.users); });
-app.post('/api/users', auth, requireRole('ADMIN'), (req,res)=>{ const db=loadDB(); const u={...(req.body||{}), id:uid('U')}; (db.users=db.users||[]).push(u); log(db, req.user.email, 'users.new', u.email); saveDB(db); res.json(u); });
-app.put('/api/users/:id', auth, requireRole('ADMIN'), (req,res)=>{ const db=loadDB(); const idx=db.users.findIndex(x=>x.id===req.params.id); if(idx<0) return res.status(404).json({error:'Não encontrado'}); db.users[idx]={...db.users[idx], ...req.body}; log(db, req.user.email, 'users.save', db.users[idx].email); saveDB(db); res.json(db.users[idx]); });
-app.delete('/api/users/:id', auth, ...deleteEndpoint('users', ['ADMIN']));
+app.get('/api/users', auth, requireRole('ADMIN'), async (req,res) => {
+  try {
+    if (USE_SQL) {
+      const users = await loadFromDB('marh_users');
+      res.json(users);
+    } else {
+      const dbData = loadDB();
+      res.json(dbData.users || []);
+    }
+  } catch (error) {
+    console.error('Erro ao buscar usuários:', error);
+    const dbData = loadDB();
+    res.json(dbData.users || []);
+  }
+});
+
+app.post('/api/users', auth, requireRole('ADMIN'), async (req,res) => {
+  try {
+    const user = { ...req.body, id: uid('U') };
+    if (USE_SQL) {
+      await insertToDB('marh_users', user);
+    } else {
+      const dbData = loadDB();
+      (dbData.users = dbData.users || []).push(user);
+      saveDB(dbData);
+    }
+    await log(req.user.email, 'users.new', user.email);
+    res.json(user);
+  } catch (error) {
+    console.error('Erro ao criar usuário:', error);
+    const dbData = loadDB();
+    const user = { ...req.body, id: uid('U') };
+    (dbData.users = dbData.users || []).push(user);
+    await log(req.user.email, 'users.new', user.email);
+    saveDB(dbData);
+    res.json(user);
+  }
+});
+
+app.put('/api/users/:id', auth, requireRole('ADMIN'), async (req,res) => {
+  try {
+    if (USE_SQL) {
+      await updateInDB('marh_users', req.params.id, req.body);
+    } else {
+      const dbData = loadDB();
+      const idx = dbData.users.findIndex(x => x.id === req.params.id);
+      if (idx < 0) return res.status(404).json({error:'Não encontrado'});
+      dbData.users[idx] = { ...dbData.users[idx], ...req.body };
+      saveDB(dbData);
+    }
+    await log(req.user.email, 'users.save', req.body.email);
+    res.json({ ...req.body, id: req.params.id });
+  } catch (error) {
+    console.error('Erro ao atualizar usuário:', error);
+    const dbData = loadDB();
+    const idx = dbData.users.findIndex(x => x.id === req.params.id);
+    if (idx < 0) return res.status(404).json({error:'Não encontrado'});
+    dbData.users[idx] = { ...dbData.users[idx], ...req.body };
+    await log(req.user.email, 'users.save', dbData.users[idx].email);
+    saveDB(dbData);
+    res.json(dbData.users[idx]);
+  }
+});
+
+app.delete('/api/users/:id', auth, requireRole('ADMIN'), async (req,res) => {
+  try {
+    if (USE_SQL) {
+      await deleteFromDB('marh_users', req.params.id);
+    } else {
+      const dbData = loadDB();
+      const idx = dbData.users.findIndex(x => x.id === req.params.id);
+      if (idx < 0) return res.status(404).json({error:'Não encontrado'});
+      const deleted = dbData.users.splice(idx, 1)[0];
+      saveDB(dbData);
+    }
+    await log(req.user.email, 'users.delete', req.params.id);
+    res.json({success: true});
+  } catch (error) {
+    console.error('Erro ao excluir usuário:', error);
+    const dbData = loadDB();
+    const idx = dbData.users.findIndex(x => x.id === req.params.id);
+    if (idx < 0) return res.status(404).json({error:'Não encontrado'});
+    const deleted = dbData.users.splice(idx, 1)[0];
+    await log(req.user.email, 'users.delete', deleted.email);
+    saveDB(dbData);
+    res.json({success: true});
+  }
+});
 
 // Employees (COLAB vê apenas a si próprio)
 app.get('/api/employees', auth, listEndpoint('employees', (e,u,db)=> u.role==='COLAB' ? ((e.userId===u.id) || (e.email===u.email)) : true ));

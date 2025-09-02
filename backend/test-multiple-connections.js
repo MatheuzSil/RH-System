@@ -108,9 +108,9 @@ async function testConfigurations() {
       console.log('   ✅ SUCESSO! Conectado');
       
       // Teste uma query
-      const result = await pool.request().query('SELECT GETDATE() as currentDate, DB_NAME() as database');
+      const result = await pool.request().query('SELECT GETDATE() as currentDate, DB_NAME() as databaseName');
       console.log(`   📅 Data: ${result.recordset[0].currentDate}`);
-      console.log(`   🗃️  Database: ${result.recordset[0].database}`);
+      console.log(`   🗃️  Database: ${result.recordset[0].databaseName}`);
       
       await pool.close();
       console.log('   🎉 Esta configuração funciona!\n');

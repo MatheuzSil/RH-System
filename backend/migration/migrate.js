@@ -37,7 +37,7 @@ async function migrateData() {
         .input('role', sql.NVarChar, user.role)
         .input('pass', sql.NVarChar, user.pass)
         .input('active', sql.Bit, user.active)
-        .query(`INSERT INTO users (id, email, name, role, pass, active) 
+        .query(`INSERT INTO marh_users (id, email, name, role, pass, active) 
                 VALUES (@id, @email, @name, @role, @pass, @active)`);
     }
     console.log(`✅ ${jsonData.users.length} usuários migrados`);
@@ -50,7 +50,7 @@ async function migrateData() {
         .input('id', sql.NVarChar, dept.id)
         .input('name', sql.NVarChar, dept.name)
         .input('costCenter', sql.NVarChar, dept.costCenter)
-        .query(`INSERT INTO departments (id, name, costCenter) 
+        .query(`INSERT INTO marh_departments (id, name, costCenter) 
                 VALUES (@id, @name, @costCenter)`);
     }
     console.log(`✅ ${jsonData.departments.length} departamentos migrados`);
