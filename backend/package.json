@@ -9,8 +9,13 @@
     "dev": "node --watch server.js"
   },
   "dependencies": {
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "multer": "^2.0.2"
   },
-  "keywords": ["rh", "hr", "management"],
+  "keywords": [
+    "rh",
+    "hr",
+    "management"
+  ],
   "author": "MARH Team"
 }

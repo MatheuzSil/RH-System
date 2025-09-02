@@ -442,6 +442,50 @@
             <textarea id="emp-notes" class="input" rows="4" placeholder="Observações gerais sobre o colaborador"></textarea>
           </div>
         </div>
+
+        <div class="form-section" id="documents-section">
+          <h4>Documentos</h4>
+          <div class="documents-upload">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Tipo de Documento</label>
+                <select id="doc-type" class="input">
+                  <option value="RG">RG</option>
+                  <option value="CPF">CPF</option>
+                  <option value="CARTEIRA_TRABALHO">Carteira de Trabalho</option>
+                  <option value="DIPLOMA">Diploma</option>
+                  <option value="CERTIFICADO">Certificado</option>
+                  <option value="CONTRATO">Contrato</option>
+                  <option value="ATESTADO">Atestado</option>
+                  <option value="COMPROVANTE_RESIDENCIA">Comprovante de Residência</option>
+                  <option value="OUTRO">Outro</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Data de Validade</label>
+                <input id="doc-expiry" class="input" type="date">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Descrição</label>
+              <input id="doc-description" class="input" type="text" placeholder="Descrição do documento">
+            </div>
+            <div class="form-group">
+              <label>Arquivo</label>
+              <div class="file-input-container">
+                <input id="doc-file" class="input" type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt,.xls,.xlsx">
+                <button id="upload-doc" class="btn ok" type="button">Adicionar Documento</button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="documents-list">
+            <h5>Documentos do Colaborador</h5>
+            <div id="employee-documents" class="documents-container">
+              <!-- Documents will be loaded here -->
+            </div>
+          </div>
+        </div>
       </form>
     </div>
     <div class="modal-footer">
@@ -652,9 +696,13 @@ function openEmployeeModal(employee = null) {
   if (employee) {
     title.textContent = 'Detalhes do Colaborador';
     populateEmployeeForm(employee);
+    // Load documents for existing employee
+    loadEmployeeDocuments(employee.id);
   } else {
     title.textContent = 'Novo Colaborador';
     clearEmployeeForm();
+    // Clear documents section for new employee
+    qs('#employee-documents').innerHTML = '<div class="no-documents">Salve o colaborador primeiro para adicionar documentos</div>';
   }
   
   modal.classList.remove('hidden');
@@ -663,6 +711,15 @@ function openEmployeeModal(employee = null) {
   qs('#close-modal').onclick = closeEmployeeModal;
   qs('#cancel-employee').onclick = closeEmployeeModal;
   qs('#save-employee').onclick = saveEmployee;
+  qs('#upload-doc').onclick = uploadDocument;
+  
+  // Show/hide documents section based on whether it's a new or existing employee
+  const documentsSection = qs('#documents-section');
+  if (employee) {
+    documentsSection.style.display = 'block';
+  } else {
+    documentsSection.style.display = 'none';
+  }
   
   // Close modal when clicking outside
   modal.onclick = (e) => {
@@ -730,16 +787,32 @@ async function saveEmployee() {
   }
   
   try {
+    let savedEmployee;
     if (currentEmployee) {
       // Update existing employee
-      await post(`/employees/${currentEmployee.id}`, 'PUT', employeeData);
+      savedEmployee = await post(`/employees/${currentEmployee.id}`, 'PUT', employeeData);
+      savedEmployee.id = currentEmployee.id; // Ensure ID is preserved
     } else {
       // Create new employee
-      await post('/employees', 'POST', employeeData);
+      savedEmployee = await post('/employees', 'POST', employeeData);
+      currentEmployee = savedEmployee;
+      
+      // Show documents section for newly created employee
+      const documentsSection = qs('#documents-section');
+      documentsSection.style.display = 'block';
+      
+      // Load empty documents list
+      qs('#employee-documents').innerHTML = '<div class="no-documents">Nenhum documento encontrado</div>';
+      
+      // Update modal title
+      qs('#modal-title').textContent = 'Detalhes do Colaborador';
+      
+      alert('Colaborador criado com sucesso! Agora você pode adicionar documentos.');
     }
     
-    closeEmployeeModal();
+    // Don't close modal, just refresh the employee list in background
     renderEmployees();
+    
   } catch (error) {
     alert('Erro ao salvar colaborador: ' + error.message);
   }
@@ -755,6 +828,169 @@ async function deleteEmployee(employeeId) {
     renderEmployees();
   } catch (error) {
     alert('Erro ao excluir colaborador: ' + error.message);
+  }
+}
+
+// Document Management Functions
+async function loadEmployeeDocuments(employeeId) {
+  try {
+    const documents = await api(`/documents?employeeId=${employeeId}`);
+    renderEmployeeDocuments(documents);
+  } catch (error) {
+    console.error('Erro ao carregar documentos:', error);
+    qs('#employee-documents').innerHTML = '<div class="no-documents">Erro ao carregar documentos</div>';
+  }
+}
+
+function renderEmployeeDocuments(documents) {
+  const container = qs('#employee-documents');
+  
+  if (!documents || documents.length === 0) {
+    container.innerHTML = '<div class="no-documents">Nenhum documento encontrado</div>';
+    return;
+  }
+  
+  container.innerHTML = documents.map(doc => {
+    const expiryInfo = getExpiryInfo(doc.expiryDate);
+    const expiryBadge = doc.expiryDate ? `<span class="expiry-badge ${expiryInfo.status}">${expiryInfo.text}</span>` : '';
+    
+    return `
+      <div class="document-item ${expiryInfo.status ? 'document-' + expiryInfo.status : 'document-valid'}">
+        <div class="document-info">
+          <div class="document-title">${doc.documentType} - ${doc.description}</div>
+          <div class="document-meta">
+            📄 ${doc.fileName} • 
+            👤 ${doc.uploadedBy} • 
+            📅 ${new Date(doc.uploadedAt).toLocaleDateString('pt-BR')}
+            ${expiryBadge}
+          </div>
+        </div>
+        <div class="document-actions">
+          <button class="btn small" onclick="downloadDocument('${doc.id}')">📥 Baixar</button>
+          ${(['ADMIN', 'RH'].includes(ROLE)) ? `<button class="btn small bad" onclick="deleteDocument('${doc.id}')">🗑️ Excluir</button>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function getExpiryInfo(expiryDate) {
+  if (!expiryDate) {
+    return { status: 'valid', text: '' };
+  }
+  
+  const now = new Date();
+  const expiry = new Date(expiryDate);
+  const diffTime = expiry - now;
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  if (diffDays < 0) {
+    return { status: 'expired', text: 'Vencido' };
+  } else if (diffDays <= 30) {
+    return { status: 'expiring', text: `Vence em ${diffDays} dias` };
+  } else {
+    return { status: 'valid', text: `Válido até ${expiry.toLocaleDateString('pt-BR')}` };
+  }
+}
+
+async function uploadDocument() {
+  if (!currentEmployee) {
+    alert('Selecione um colaborador primeiro');
+    return;
+  }
+  
+  const fileInput = qs('#doc-file');
+  const file = fileInput.files[0];
+  
+  if (!file) {
+    alert('Selecione um arquivo para upload');
+    return;
+  }
+  
+  const documentType = qs('#doc-type').value;
+  const description = qs('#doc-description').value || file.name;
+  const expiryDate = qs('#doc-expiry').value;
+  
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('employeeId', currentEmployee.id);
+  formData.append('documentType', documentType);
+  formData.append('description', description);
+  if (expiryDate) {
+    formData.append('expiryDate', expiryDate);
+  }
+  
+  try {
+    const response = await fetch(`${API}/documents/upload`, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + TOKEN
+      },
+      body: formData
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Erro no upload');
+    }
+    
+    // Clear form
+    fileInput.value = '';
+    qs('#doc-description').value = '';
+    qs('#doc-expiry').value = '';
+    
+    // Reload documents
+    await loadEmployeeDocuments(currentEmployee.id);
+    
+    alert('Documento enviado com sucesso!');
+  } catch (error) {
+    alert('Erro ao enviar documento: ' + error.message);
+  }
+}
+
+async function downloadDocument(documentId) {
+  try {
+    const response = await fetch(`${API}/documents/${documentId}/download`, {
+      headers: {
+        'Authorization': 'Bearer ' + TOKEN
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error('Erro ao baixar documento');
+    }
+    
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    
+    // Get filename from Content-Disposition header
+    const disposition = response.headers.get('Content-Disposition');
+    const filename = disposition ? disposition.split('filename=')[1].replace(/"/g, '') : 'documento';
+    a.download = filename;
+    
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  } catch (error) {
+    alert('Erro ao baixar documento: ' + error.message);
+  }
+}
+
+async function deleteDocument(documentId) {
+  if (!confirm('Tem certeza que deseja excluir este documento?')) {
+    return;
+  }
+  
+  try {
+    await del(`/documents/${documentId}`);
+    await loadEmployeeDocuments(currentEmployee.id);
+    alert('Documento excluído com sucesso!');
+  } catch (error) {
+    alert('Erro ao excluir documento: ' + error.message);
   }
 }
 

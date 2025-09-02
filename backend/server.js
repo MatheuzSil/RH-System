@@ -1,12 +1,47 @@
 import express from 'express';
 import fs from 'fs';
 import path from 'path';
+import multer from 'multer';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DATA_PATH = path.join(__dirname, 'db.json');
 const FRONTEND_DIR = path.join(__dirname, '..', 'frontend');
+const UPLOADS_DIR = path.join(__dirname, 'uploads');
+
+// Create uploads directory if it doesn't exist
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+}
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, UPLOADS_DIR);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + '-' + file.originalname);
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  fileFilter: (req, file, cb) => {
+    // Allow common document types
+    const allowedTypes = /jpeg|jpg|png|pdf|doc|docx|txt|xlsx|xls/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb('Erro: Apenas arquivos de documento são permitidos!');
+    }
+  }
+});
 
 function loadDB(){ return JSON.parse(fs.readFileSync(DATA_PATH,'utf-8')); }
 function saveDB(db){ fs.writeFileSync(DATA_PATH, JSON.stringify(db,null,2), 'utf-8'); }
@@ -149,6 +184,175 @@ app.delete('/api/candidates/:id', auth, ...deleteEndpoint('candidates', ['ADMIN'
 // Settings
 app.get('/api/settings', auth, (req,res)=>{ const db=loadDB(); res.json(db.settings||{}); });
 app.put('/api/settings', auth, requireRole('ADMIN','RH'), (req,res)=>{ const db=loadDB(); db.settings={...(db.settings||{}), ...(req.body||{})}; log(db, req.user.email, 'settings.save', JSON.stringify(db.settings)); saveDB(db); res.json(db.settings); });
+
+// Documents
+app.get('/api/documents', auth, (req,res) => {
+  const db = loadDB();
+  const { employeeId } = req.query;
+  let documents = db.documents || [];
+  
+  if (employeeId) {
+    documents = documents.filter(doc => doc.employeeId === employeeId);
+  }
+  
+  // Filter by user role
+  if (req.user.role === 'COLAB') {
+    const me = db.employees.find(e => e.email === req.user.email);
+    if (me) {
+      documents = documents.filter(doc => doc.employeeId === me.id);
+    } else {
+      documents = [];
+    }
+  }
+  
+  res.json(documents);
+});
+
+app.post('/api/documents/upload', auth, upload.single('file'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Nenhum arquivo foi enviado' });
+    }
+
+    const { employeeId, documentType, description, expiryDate } = req.body;
+    
+    if (!employeeId) {
+      return res.status(400).json({ error: 'ID do colaborador é obrigatório' });
+    }
+
+    const db = loadDB();
+    
+    // Check if employee exists
+    const employee = db.employees.find(e => e.id === employeeId);
+    if (!employee) {
+      // Delete uploaded file if employee doesn't exist
+      fs.unlinkSync(req.file.path);
+      return res.status(404).json({ error: 'Colaborador não encontrado' });
+    }
+
+    // Check permissions
+    if (req.user.role === 'COLAB') {
+      const me = db.employees.find(e => e.email === req.user.email);
+      if (!me || me.id !== employeeId) {
+        fs.unlinkSync(req.file.path);
+        return res.status(403).json({ error: 'Sem permissão para adicionar documentos a este colaborador' });
+      }
+    }
+
+    const document = {
+      id: uid('DOC'),
+      employeeId,
+      documentType: documentType || 'GERAL',
+      description: description || req.file.originalname,
+      fileName: req.file.originalname,
+      filePath: req.file.filename,
+      fileSize: req.file.size,
+      mimeType: req.file.mimetype,
+      expiryDate: expiryDate || null,
+      uploadedBy: req.user.email,
+      uploadedAt: new Date().toISOString(),
+      status: 'ATIVO'
+    };
+
+    if (!db.documents) {
+      db.documents = [];
+    }
+    
+    db.documents.push(document);
+    log(db, req.user.email, 'document.upload', `${document.documentType} para ${employee.name}`);
+    saveDB(db);
+
+    res.json(document);
+  } catch (error) {
+    if (req.file) {
+      fs.unlinkSync(req.file.path);
+    }
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+app.get('/api/documents/:id/download', auth, (req, res) => {
+  const db = loadDB();
+  const document = db.documents?.find(doc => doc.id === req.params.id);
+  
+  if (!document) {
+    return res.status(404).json({ error: 'Documento não encontrado' });
+  }
+
+  // Check permissions
+  if (req.user.role === 'COLAB') {
+    const me = db.employees.find(e => e.email === req.user.email);
+    if (!me || document.employeeId !== me.id) {
+      return res.status(403).json({ error: 'Sem permissão para acessar este documento' });
+    }
+  }
+
+  const filePath = path.join(UPLOADS_DIR, document.filePath);
+  
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: 'Arquivo não encontrado' });
+  }
+
+  res.setHeader('Content-Disposition', `attachment; filename="${document.fileName}"`);
+  res.setHeader('Content-Type', document.mimeType);
+  res.sendFile(filePath);
+});
+
+app.delete('/api/documents/:id', auth, (req, res) => {
+  const db = loadDB();
+  const documentIndex = db.documents?.findIndex(doc => doc.id === req.params.id);
+  
+  if (documentIndex === -1 || !db.documents) {
+    return res.status(404).json({ error: 'Documento não encontrado' });
+  }
+
+  const document = db.documents[documentIndex];
+
+  // Check permissions - only ADMIN and RH can delete documents
+  if (!['ADMIN', 'RH'].includes(req.user.role)) {
+    return res.status(403).json({ error: 'Sem permissão para excluir documentos' });
+  }
+
+  // Delete file from filesystem
+  const filePath = path.join(UPLOADS_DIR, document.filePath);
+  if (fs.existsSync(filePath)) {
+    fs.unlinkSync(filePath);
+  }
+
+  // Remove from database
+  db.documents.splice(documentIndex, 1);
+  log(db, req.user.email, 'document.delete', `${document.documentType} de ${document.employeeId}`);
+  saveDB(db);
+
+  res.json({ message: 'Documento excluído com sucesso' });
+});
+
+// Serve uploaded files (with auth)
+app.get('/api/uploads/:filename', auth, (req, res) => {
+  const filename = req.params.filename;
+  const filePath = path.join(UPLOADS_DIR, filename);
+  
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: 'Arquivo não encontrado' });
+  }
+
+  const db = loadDB();
+  const document = db.documents?.find(doc => doc.filePath === filename);
+  
+  if (!document) {
+    return res.status(404).json({ error: 'Documento não encontrado' });
+  }
+
+  // Check permissions
+  if (req.user.role === 'COLAB') {
+    const me = db.employees.find(e => e.email === req.user.email);
+    if (!me || document.employeeId !== me.id) {
+      return res.status(403).json({ error: 'Sem permissão para acessar este documento' });
+    }
+  }
+
+  res.sendFile(filePath);
+});
 
 // Export CSV
 app.get('/api/export/:entity.csv', auth, (req,res)=>{
