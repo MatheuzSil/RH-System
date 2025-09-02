@@ -73,7 +73,7 @@
           <a id="exp-emp" class="btn" href="#">Exportar CSV</a>
           <div id="search-bar" class="search bar">
             <input type="text" id="search-input" class="input" placeholder="Buscar colaborador...">
-            <button id="btn-search" class="btn">Buscar</button>
+            <button id="btn-search-employees" class="btn">Buscar</button>
           </div>
         </div>
         
@@ -554,7 +554,13 @@ function buildMenu(){
 function bindCommon(){
   qs('#btn-print').onclick = ()=> window.print();
   qs('#btn-logout').onclick = ()=> { localStorage.removeItem('MARH_TOKEN'); location.reload(); };
-  qs('#btn-search').onclick = ()=> alert('Busca global (demo)');
+  
+  // Busca global - não interfere com buscas específicas de módulos
+  const globalSearchBtn = qs('#global-search').nextElementSibling;
+  if (globalSearchBtn) {
+    globalSearchBtn.onclick = ()=> alert('Busca global (demo)');
+  }
+  
   ['employees','attendance','leaves','payroll','reviews','trainings','jobs','candidates'].forEach(ent=>{
     const a = qs('#dl-'+ent); if(a) a.onclick = (e)=>{e.preventDefault(); window.open(API+`/export/${ent}.csv`,'_blank'); };
   });
@@ -601,7 +607,7 @@ function filterEmployees(employees) {
   }
   
   const term = searchTerm.toLowerCase().trim();
-  return employees.filter(emp => {
+  const filtered = employees.filter(emp => {
     return (
       (emp.name && emp.name.toLowerCase().includes(term)) ||
       (emp.email && emp.email.toLowerCase().includes(term)) ||
@@ -610,6 +616,9 @@ function filterEmployees(employees) {
       (emp.phone && emp.phone.toLowerCase().includes(term))
     );
   });
+  
+  console.log(`Busca por "${term}": ${filtered.length} resultados de ${employees.length} total`);
+  return filtered;
 }
 
 async function renderEmployees(){
@@ -638,9 +647,12 @@ async function renderEmployees(){
 // Configurar eventos de busca de colaboradores
 function setupEmployeeSearch() {
   const searchInput = qs('#search-input');
-  const searchBtn = qs('#btn-search');
+  const searchBtn = qs('#btn-search-employees');
   
-  if (!searchInput || !searchBtn) return;
+  if (!searchInput || !searchBtn) {
+    console.error('Elementos de busca não encontrados');
+    return;
+  }
   
   // Função para executar a busca
   const performSearch = () => {
@@ -659,16 +671,6 @@ function setupEmployeeSearch() {
   };
   
   // Busca ao pressionar Enter
-  searchInput.onkeyup = (e) => {
-    if (e.key === 'Enter') {
-      performSearch();
-    }
-  };
-  
-  // Busca em tempo real (opcional - descomente se quiser)
-  // searchInput.oninput = performSearch;
-  
-  // Limpar busca se o campo estiver vazio
   searchInput.onkeyup = (e) => {
     if (e.key === 'Enter') {
       performSearch();
