@@ -71,6 +71,10 @@
           <button id="new-emp" class="btn ok">Novo colaborador</button>
           <button id="toggle-view" class="btn">📋 Tabela</button>
           <a id="exp-emp" class="btn" href="#">Exportar CSV</a>
+          <div id="search-bar" class="search bar">
+            <input type="text" id="search-input" class="input" placeholder="Buscar colaborador...">
+            <button id="btn-search" class="btn">Buscar</button>
+          </div>
         </div>
         
         <!-- Cards View -->
@@ -588,6 +592,25 @@ async function refreshLookups(){ DEPTS = await api('/departments'); EMPS = await
 // Employees
 let currentEmployee = null;
 let viewMode = 'cards'; // 'cards' or 'table'
+let searchTerm = ''; // Para filtrar colaboradores
+
+// Filtrar colaboradores baseado no termo de busca
+function filterEmployees(employees) {
+  if (!searchTerm.trim()) {
+    return employees;
+  }
+  
+  const term = searchTerm.toLowerCase().trim();
+  return employees.filter(emp => {
+    return (
+      (emp.name && emp.name.toLowerCase().includes(term)) ||
+      (emp.email && emp.email.toLowerCase().includes(term)) ||
+      (emp.position && emp.position.toLowerCase().includes(term)) ||
+      (emp.department && emp.department.toLowerCase().includes(term)) ||
+      (emp.phone && emp.phone.toLowerCase().includes(term))
+    );
+  });
+}
 
 async function renderEmployees(){
   await refreshLookups();
@@ -607,6 +630,53 @@ async function renderEmployees(){
   
   qs('#new-emp').onclick = () => openEmployeeModal();
   qs('#exp-emp').onclick = (e)=>{ e.preventDefault(); window.open(API+'/export/employees.csv','_blank'); };
+  
+  // Configurar busca de colaboradores
+  setupEmployeeSearch();
+}
+
+// Configurar eventos de busca de colaboradores
+function setupEmployeeSearch() {
+  const searchInput = qs('#search-input');
+  const searchBtn = qs('#btn-search');
+  
+  if (!searchInput || !searchBtn) return;
+  
+  // Função para executar a busca
+  const performSearch = () => {
+    searchTerm = searchInput.value;
+    if (viewMode === 'cards') {
+      renderEmployeeCards();
+    } else {
+      renderEmployeeTable();
+    }
+  };
+  
+  // Busca ao clicar no botão
+  searchBtn.onclick = (e) => {
+    e.preventDefault();
+    performSearch();
+  };
+  
+  // Busca ao pressionar Enter
+  searchInput.onkeyup = (e) => {
+    if (e.key === 'Enter') {
+      performSearch();
+    }
+  };
+  
+  // Busca em tempo real (opcional - descomente se quiser)
+  // searchInput.oninput = performSearch;
+  
+  // Limpar busca se o campo estiver vazio
+  searchInput.onkeyup = (e) => {
+    if (e.key === 'Enter') {
+      performSearch();
+    } else if (searchInput.value.trim() === '' && searchTerm !== '') {
+      searchTerm = '';
+      performSearch();
+    }
+  };
 }
 
 function renderEmployeeCards() {
@@ -616,10 +686,69 @@ function renderEmployeeCards() {
   const cardsContainer = qs('#employees-cards');
   cardsContainer.innerHTML = '';
   
-  EMPS.forEach(emp => {
+  const filteredEmployees = filterEmployees(EMPS);
+  
+  if (filteredEmployees.length === 0) {
+    cardsContainer.innerHTML = `
+      <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 2rem;">
+        <div style="font-size: 3rem; margin-bottom: 1rem;">🔍</div>
+        <h3>Nenhum colaborador encontrado</h3>
+        <p>Tente usar outros termos de busca ou verifique se há colaboradores cadastrados.</p>
+        ${searchTerm ? `<button type="button" class="btn" onclick="clearEmployeeSearch()">Limpar Busca</button>` : ''}
+      </div>
+    `;
+    return;
+  }
+  
+  filteredEmployees.forEach(emp => {
     const card = createEmployeeCard(emp);
     cardsContainer.appendChild(card);
   });
+  
+  // Mostrar contador de resultados
+  updateSearchResults(filteredEmployees.length, EMPS.length);
+}
+
+// Atualizar contador de resultados de busca
+function updateSearchResults(found, total) {
+  let resultsDiv = qs('#search-results');
+  
+  // Criar div de resultados se não existe
+  if (!resultsDiv) {
+    resultsDiv = document.createElement('div');
+    resultsDiv.id = 'search-results';
+    resultsDiv.className = 'search-results';
+    
+    const toolbar = qs('#view-employees .toolbar');
+    toolbar.appendChild(resultsDiv);
+  }
+  
+  if (searchTerm.trim()) {
+    resultsDiv.innerHTML = `
+      <div class="note" style="margin: 0; padding: 0.5rem; background: #e3f2fd; border-color: #2196f3; color: #1976d2;">
+        📊 Mostrando <strong>${found}</strong> de <strong>${total}</strong> colaboradores para "${searchTerm}"
+        <button type="button" class="btn small" onclick="clearEmployeeSearch()" style="margin-left: 0.5rem;">✖ Limpar</button>
+      </div>
+    `;
+    resultsDiv.style.display = 'block';
+  } else {
+    resultsDiv.style.display = 'none';
+  }
+}
+
+// Limpar busca de colaboradores
+function clearEmployeeSearch() {
+  searchTerm = '';
+  const searchInput = qs('#search-input');
+  if (searchInput) {
+    searchInput.value = '';
+  }
+  
+  if (viewMode === 'cards') {
+    renderEmployeeCards();
+  } else {
+    renderEmployeeTable();
+  }
 }
 
 function renderEmployeeTable() {
@@ -630,8 +759,22 @@ function renderEmployeeTable() {
   body.innerHTML = '';
   
   const deptName = id => (DEPTS.find(d=>d.id===id)||{}).name || '-';
+  const filteredEmployees = filterEmployees(EMPS);
   
-  EMPS.forEach(e => {
+  if (filteredEmployees.length === 0) {
+    body.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align: center; padding: 2rem;">
+          <div style="font-size: 2rem; margin-bottom: 1rem;">🔍</div>
+          <div>Nenhum colaborador encontrado</div>
+          ${searchTerm ? `<button type="button" class="btn mt1" onclick="clearEmployeeSearch()">Limpar Busca</button>` : ''}
+        </td>
+      </tr>
+    `;
+    return;
+  }
+  
+  filteredEmployees.forEach(e => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${e.name}</td>
@@ -649,12 +792,14 @@ function renderEmployeeTable() {
     }
     body.append(tr);
   });
+  
+  // Mostrar contador de resultados
+  updateSearchResults(filteredEmployees.length, EMPS.length);
 }
 
 function createEmployeeCard(emp) {
   const card = document.createElement('div');
   card.className = 'employee-card';
-  card.onclick = () => openEmployeeModal(emp);
   
   // Get initials for avatar
   const initials = emp.name.split(' ')
@@ -683,7 +828,36 @@ function createEmployeeCard(emp) {
     <div style="margin-top: 1rem;">
       <span class="employee-status ${emp.status || 'ATIVO'}">${emp.status || 'ATIVO'}</span>
     </div>
+    <div class="employee-actions" style="margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: center;">
+      <button type="button" class="btn small view-btn">👁️ Ver</button>
+      ${ROLE === 'ADMIN' ? `<button type="button" class="btn small bad delete-btn">🗑️ Excluir</button>` : ''}
+    </div>
   `;
+  
+  // Adicionar event listeners aos botões
+  const viewBtn = card.querySelector('.view-btn');
+  if (viewBtn) {
+    viewBtn.onclick = (e) => {
+      e.stopPropagation();
+      openEmployeeModal(emp);
+    };
+  }
+  
+  const deleteBtn = card.querySelector('.delete-btn');
+  if (deleteBtn) {
+    deleteBtn.onclick = (e) => {
+      e.stopPropagation();
+      deleteEmployee(emp.id);
+    };
+  }
+  
+  // Adicionar click no card (mas não nos botões)
+  card.onclick = (e) => {
+    // Só abre o modal se não clicou em um botão
+    if (!e.target.closest('button')) {
+      openEmployeeModal(emp);
+    }
+  };
   
   return card;
 }
