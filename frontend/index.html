@@ -713,6 +713,7 @@ function openEmployeeModal(employee = null) {
   qs('#save-employee').onclick = (e) => {
     e.preventDefault();
     saveEmployee();
+    alert('Colaborador salvo com sucesso!');
   };
   qs('#upload-doc').onclick = (e) => {
     e.preventDefault();
@@ -727,10 +728,6 @@ function openEmployeeModal(employee = null) {
     documentsSection.style.display = 'none';
   }
   
-  // Close modal when clicking outside
-  modal.onclick = (e) => {
-    if (e.target === modal) closeEmployeeModal();
-  };
 }
 
 function closeEmployeeModal() {
