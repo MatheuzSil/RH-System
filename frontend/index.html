@@ -894,57 +894,56 @@ function getExpiryInfo(expiryDate) {
 }
 
 async function uploadDocument() {
+  const fileInput = document.getElementById('documentFile');
+  const typeSelect = document.getElementById('documentType');
+  const descriptionInput = document.getElementById('documentDescription');
+  const expiryInput = document.getElementById('documentExpiry');
+  
+  if (!fileInput.files[0]) {
+    alert('Selecione um arquivo');
+    return;
+  }
+  
   if (!currentEmployee) {
-    alert('Selecione um colaborador primeiro');
+    alert('Nenhum colaborador selecionado');
     return;
   }
-  
-  const fileInput = qs('#doc-file');
-  const file = fileInput.files[0];
-  
-  if (!file) {
-    alert('Selecione um arquivo para upload');
-    return;
-  }
-  
-  const documentType = qs('#doc-type').value;
-  const description = qs('#doc-description').value || file.name;
-  const expiryDate = qs('#doc-expiry').value;
   
   const formData = new FormData();
-  formData.append('file', file);
+  formData.append('file', fileInput.files[0]);
   formData.append('employeeId', currentEmployee.id);
-  formData.append('documentType', documentType);
-  formData.append('description', description);
-  if (expiryDate) {
-    formData.append('expiryDate', expiryDate);
-  }
+  formData.append('documentType', typeSelect.value);
+  formData.append('description', descriptionInput.value);
+  formData.append('expiryDate', expiryInput.value);
   
   try {
-    const response = await fetch(`${API}/documents/upload`, {
+    const response = await fetch('/api/documents/upload', {
       method: 'POST',
       headers: {
-        'Authorization': 'Bearer ' + TOKEN
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
       },
-      body: formData
+      body: formData // Não usar JSON.stringify aqui!
     });
     
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.error || 'Erro no upload');
+      throw new Error(error.error || 'Erro ao enviar documento');
     }
     
-    // Clear form
-    fileInput.value = '';
-    qs('#doc-description').value = '';
-    qs('#doc-expiry').value = '';
-    
-    // Reload documents
-    await loadEmployeeDocuments(currentEmployee.id);
-    
+    const result = await response.json();
     alert('Documento enviado com sucesso!');
+    
+    // Limpar formulário
+    fileInput.value = '';
+    descriptionInput.value = '';
+    expiryInput.value = '';
+    typeSelect.value = 'GERAL';
+    
+    // Recarregar lista de documentos
+    loadEmployeeDocuments(currentEmployee.id);
+    
   } catch (error) {
-    alert('Erro ao enviar documento: ' + error.message);
+    alert('Erro: ' + error.message);
   }
 }
 
