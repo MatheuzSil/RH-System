@@ -2,17 +2,10 @@ import express from 'express';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import multer from 'multer';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DATA_PATH = path.join(__dirname, 'db.json');
-const DOCUMENTS_DIR = path.join(__dirname, 'documents');
-
-// Create documents directory if it doesn't exist
-if (!fs.existsSync(DOCUMENTS_DIR)) {
-  fs.mkdirSync(DOCUMENTS_DIR, { recursive: true });
-}
 
 function loadDB(){ return JSON.parse(fs.readFileSync(DATA_PATH,'utf-8')); }
 function saveDB(db){ fs.writeFileSync(DATA_PATH, JSON.stringify(db,null,2), 'utf-8'); }
@@ -23,37 +16,6 @@ const sessions = new Map();
 const pendingMFA = new Map();
 
 const app = express();
-
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const empId = req.body.empId;
-    const empDir = path.join(DOCUMENTS_DIR, empId);
-    if (!fs.existsSync(empDir)) {
-      fs.mkdirSync(empDir, { recursive: true });
-    }
-    cb(null, empDir);
-  },
-  filename: (req, file, cb) => {
-    const docId = uid('DOC');
-    const extension = path.extname(file.originalname);
-    cb(null, `${docId}${extension}`);
-  }
-});
-
-const upload = multer({
-  storage: storage,
-  limits: {
-    fileSize: 10 * 1024 * 1024 // 10MB limit
-  },
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype === 'application/pdf') {
-      cb(null, true);
-    } else {
-      cb(new Error('Apenas arquivos PDF são aceitos'), false);
-    }
-  }
-});
 
 // CORS configuration
 app.use((req, res, next) => {
@@ -215,7 +177,7 @@ app.delete('/api/candidates/:id', auth, ...deleteEndpoint('candidates', ['ADMIN'
 app.get('/api/settings', auth, (req,res)=>{ const db=loadDB(); res.json(db.settings||{}); });
 app.put('/api/settings', auth, requireRole('ADMIN','RH'), (req,res)=>{ const db=loadDB(); db.settings={...(db.settings||{}), ...(req.body||{})}; log(db, req.user.email, 'settings.save', JSON.stringify(db.settings)); saveDB(db); res.json(db.settings); });
 
-// Documents Management
+// Documents Management - SIMPLIFIED
 app.get('/api/employees/:empId/documents', auth, (req, res) => {
   const db = loadDB();
   const empId = req.params.empId;
@@ -229,21 +191,10 @@ app.get('/api/employees/:empId/documents', auth, (req, res) => {
   }
   
   const documents = db.documents ? db.documents.filter(d => d.empId === empId) : [];
-  
-  // Add expiration status to each document
-  const documentsWithStatus = documents.map(doc => {
-    const isExpired = doc.expirationDate && new Date(doc.expirationDate) < new Date();
-    return {
-      ...doc,
-      isExpired,
-      size: formatFileSize(doc.fileSize)
-    };
-  });
-  
-  res.json(documentsWithStatus);
+  res.json(documents);
 });
 
-app.post('/api/employees/:empId/documents', auth, requireRole('ADMIN', 'RH', 'GESTOR'), upload.single('file'), (req, res) => {
+app.post('/api/employees/:empId/documents', auth, requireRole('ADMIN', 'RH', 'GESTOR'), (req, res) => {
   try {
     const db = loadDB();
     const empId = req.params.empId;
@@ -254,23 +205,25 @@ app.post('/api/employees/:empId/documents', auth, requireRole('ADMIN', 'RH', 'GE
       return res.status(404).json({ error: 'Funcionário não encontrado' });
     }
     
-    if (!req.file) {
-      return res.status(400).json({ error: 'Arquivo é obrigatório' });
+    const { fileName, fileData, type, description, expirationDate, notes } = req.body;
+    
+    if (!fileName || !fileData) {
+      return res.status(400).json({ error: 'Nome do arquivo e dados são obrigatórios' });
     }
     
     const document = {
       id: uid('DOC'),
       empId: empId,
-      type: req.body.type || 'OUTROS',
-      description: req.body.description || '',
-      fileName: req.file.originalname,
-      filePath: req.file.path,
-      fileSize: req.file.size,
-      mimeType: req.file.mimetype,
+      type: type || 'OUTROS',
+      description: description || '',
+      fileName: fileName,
+      fileData: fileData, // Base64 data
+      fileSize: Math.round(fileData.length * 0.75), // Approximate size from base64
+      mimeType: 'application/pdf',
       uploadDate: new Date().toISOString().split('T')[0],
-      expirationDate: req.body.expirationDate || null,
+      expirationDate: expirationDate || null,
       uploadedBy: req.user.email,
-      notes: req.body.notes || ''
+      notes: notes || ''
     };
     
     // Initialize documents array if it doesn't exist
@@ -282,48 +235,16 @@ app.post('/api/employees/:empId/documents', auth, requireRole('ADMIN', 'RH', 'GE
     log(db, req.user.email, 'documents.upload', `${empId}:${document.fileName}`);
     saveDB(db);
     
-    res.json({
-      id: document.id,
-      type: document.type,
-      description: document.description,
-      fileName: document.fileName,
-      uploadDate: document.uploadDate,
-      expirationDate: document.expirationDate,
-      size: formatFileSize(document.fileSize),
-      notes: document.notes,
-      isExpired: document.expirationDate && new Date(document.expirationDate) < new Date()
-    });
+    // Return without fileData to avoid large response
+    const response = { ...document };
+    delete response.fileData;
+    response.isExpired = document.expirationDate && new Date(document.expirationDate) < new Date();
+    
+    res.json(response);
   } catch (error) {
     console.error('Error uploading document:', error);
     res.status(500).json({ error: 'Erro ao fazer upload do documento' });
   }
-});
-
-app.get('/api/documents/:docId/view', auth, (req, res) => {
-  const db = loadDB();
-  const docId = req.params.docId;
-  const document = db.documents ? db.documents.find(d => d.id === docId) : null;
-  
-  if (!document) {
-    return res.status(404).json({ error: 'Documento não encontrado' });
-  }
-  
-  // Check permissions
-  if (req.user.role === 'COLAB') {
-    const employee = db.employees.find(e => e.id === document.empId);
-    if (!employee || (employee.userId !== req.user.id && employee.email !== req.user.email)) {
-      return res.status(403).json({ error: 'Sem permissão para visualizar documento' });
-    }
-  }
-  
-  const filePath = document.filePath;
-  if (!fs.existsSync(filePath)) {
-    return res.status(404).json({ error: 'Arquivo físico não encontrado' });
-  }
-  
-  res.setHeader('Content-Type', document.mimeType);
-  res.setHeader('Content-Disposition', `inline; filename="${document.fileName}"`);
-  res.sendFile(filePath);
 });
 
 app.get('/api/documents/:docId/download', auth, (req, res) => {
@@ -343,33 +264,32 @@ app.get('/api/documents/:docId/download', auth, (req, res) => {
     }
   }
   
-  const filePath = document.filePath;
-  if (!fs.existsSync(filePath)) {
-    return res.status(404).json({ error: 'Arquivo físico não encontrado' });
+  if (!document.fileData) {
+    return res.status(404).json({ error: 'Dados do arquivo não encontrados' });
   }
   
-  res.setHeader('Content-Type', 'application/octet-stream');
+  // Convert base64 back to buffer
+  const buffer = Buffer.from(document.fileData, 'base64');
+  
+  res.setHeader('Content-Type', document.mimeType || 'application/octet-stream');
   res.setHeader('Content-Disposition', `attachment; filename="${document.fileName}"`);
-  res.sendFile(filePath);
+  res.send(buffer);
 });
 
 app.delete('/api/documents/:docId', auth, requireRole('ADMIN', 'RH'), (req, res) => {
   const db = loadDB();
   const docId = req.params.docId;
-  const document = db.documents ? db.documents.find(d => d.id === docId) : null;
+  const documentIndex = db.documents ? db.documents.findIndex(d => d.id === docId) : -1;
   
-  if (!document) {
+  if (documentIndex === -1) {
     return res.status(404).json({ error: 'Documento não encontrado' });
   }
   
+  const document = db.documents[documentIndex];
+  
   try {
-    // Remove physical file
-    if (fs.existsSync(document.filePath)) {
-      fs.unlinkSync(document.filePath);
-    }
-    
     // Remove from database
-    db.documents = db.documents.filter(d => d.id !== docId);
+    db.documents.splice(documentIndex, 1);
     log(db, req.user.email, 'documents.delete', `${document.empId}:${document.fileName}`);
     saveDB(db);
     
@@ -379,15 +299,6 @@ app.delete('/api/documents/:docId', auth, requireRole('ADMIN', 'RH'), (req, res)
     res.status(500).json({ error: 'Erro ao excluir documento' });
   }
 });
-
-// Helper function to format file size
-function formatFileSize(bytes) {
-  if (bytes === 0) return '0 Bytes';
-  const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
 
 // Export CSV
 app.get('/api/export/:entity.csv', auth, (req,res)=>{

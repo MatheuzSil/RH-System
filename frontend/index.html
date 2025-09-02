@@ -954,28 +954,28 @@ async function uploadDocument() {
     return;
   }
   
-  const formData = new FormData();
-  formData.append('file', fileInput.files[0]);
-  formData.append('empId', currentEmployee.id); // Mudança aqui
-  formData.append('type', typeSelect.value); // Mudança aqui
-  formData.append('description', descriptionInput.value);
-  formData.append('expirationDate', expiryInput.value); // Mudança aqui
+  const file = fileInput.files[0];
   
   try {
-    const response = await fetch(`${API}/employees/${currentEmployee.id}/documents`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${TOKEN}`
-      },
-      body: formData
+    // Convert file to base64 - MUITO MAIS SIMPLES!
+    const fileData = await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]); // Remove data:type;base64, prefix
+      reader.readAsDataURL(file);
     });
     
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText || 'Erro ao enviar documento');
-    }
+    // Agora é só JSON simples, igual criar colaborador!
+    const payload = {
+      fileName: file.name,
+      fileData: fileData,
+      type: typeSelect.value,
+      description: descriptionInput.value,
+      expirationDate: expiryInput.value,
+      notes: ''
+    };
     
-    const result = await response.json();
+    const result = await api(`/employees/${currentEmployee.id}/documents`, 'POST', payload);
+    
     alert('Documento enviado com sucesso!');
     
     // Limpar formulário
@@ -988,8 +988,8 @@ async function uploadDocument() {
     loadEmployeeDocuments(currentEmployee.id);
     
   } catch (error) {
-    console.error('Erro no upload:', error);
-    alert('Erro: ' + error.message);
+    console.error('Erro ao fazer upload:', error);
+    alert('Erro ao enviar documento: ' + error.message);
   }
 }
 

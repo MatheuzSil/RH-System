@@ -224,7 +224,7 @@
       "type": "RG",
       "description": "RG - Registro Geral",
       "fileName": "rg_joao_silva.pdf",
-      "filePath": "./documents/EMP_001/DOC_001.pdf",
+      "fileData": "JVBERi0xLjQKJcOkw7zDtsO8CjIgMCBvYmoKPDwvTGVuZ3RoIDMgMCBSL0ZpbHRlci9GbGF0ZURlY29kZT4+CnN0cmVhbQp4nG1QMQ7CMAwA/8LdJo4dO8n4gWfgQQhSRaIqHXj//yW0A0PFsO8sX07X68vOjzNkIgA=",
       "fileSize": 245760,
       "mimeType": "application/pdf",
       "uploadDate": "2025-01-20",
@@ -233,32 +233,18 @@
       "notes": "Documento válido"
     },
     {
-      "id": "DOC_002",
+      "id": "DOC_002", 
       "empId": "EMP_001",
       "type": "CNH",
       "description": "CNH - Carteira de Habilitação",
       "fileName": "cnh_joao_silva.pdf",
-      "filePath": "./documents/EMP_001/DOC_002.pdf",
+      "fileData": "JVBERi0xLjQKJcOkw7zDtsO8CjIgMCBvYmoKPDwvTGVuZ3RoIDMgMCBSL0ZpbHRlci9GbGF0ZURlY29kZT4+CnN0cmVhbQp4nG1QMQ7CMBC8+wv7G/sOe3NzswMjpEiGhAcEFhAFLxBegE9vhPSKRKLI3Jzm5mZGRhYLCwsLCwsL",
       "fileSize": 356480,
       "mimeType": "application/pdf",
       "uploadDate": "2025-01-20",
       "expirationDate": "2024-08-15",
       "uploadedBy": "admin@marh.local",
       "notes": "CNH categoria B - EXPIRADA"
-    },
-    {
-      "id": "DOC_003",
-      "empId": "EMP_001",
-      "type": "ATESTADO_SAUDE",
-      "description": "Atestado de Saúde Ocupacional",
-      "fileName": "aso_joao_silva.pdf",
-      "filePath": "./documents/EMP_001/DOC_003.pdf",
-      "fileSize": 189440,
-      "mimeType": "application/pdf",
-      "uploadDate": "2025-01-20",
-      "expirationDate": "2026-01-20",
-      "uploadedBy": "admin@marh.local",
-      "notes": "ASO válido por 1 ano"
     }
   ],
   "logs": [
