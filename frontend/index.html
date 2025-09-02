@@ -850,17 +850,17 @@ function renderEmployeeDocuments(documents) {
   }
   
   container.innerHTML = documents.map(doc => {
-    const expiryInfo = getExpiryInfo(doc.expiryDate);
-    const expiryBadge = doc.expiryDate ? `<span class="expiry-badge ${expiryInfo.status}">${expiryInfo.text}</span>` : '';
+    const expiryInfo = getExpiryInfo(doc.expirationDate);
+    const expiryBadge = doc.expirationDate ? `<span class="expiry-badge ${expiryInfo.status}">${expiryInfo.text}</span>` : '';
     
     return `
       <div class="document-item ${expiryInfo.status ? 'document-' + expiryInfo.status : 'document-valid'}">
         <div class="document-info">
-          <div class="document-title">${doc.documentType} - ${doc.description}</div>
+          <div class="document-title">${doc.type || 'Documento'} - ${doc.description || doc.fileName}</div>
           <div class="document-meta">
             📄 ${doc.fileName} • 
             👤 ${doc.uploadedBy} • 
-            📅 ${new Date(doc.uploadedAt).toLocaleDateString('pt-BR')}
+            📅 ${new Date(doc.uploadDate).toLocaleDateString('pt-BR')}
             ${expiryBadge}
           </div>
         </div>
@@ -873,13 +873,13 @@ function renderEmployeeDocuments(documents) {
   }).join('');
 }
 
-function getExpiryInfo(expiryDate) {
-  if (!expiryDate) {
+function getExpiryInfo(expirationDate) {
+  if (!expirationDate) {
     return { status: 'valid', text: '' };
   }
   
   const now = new Date();
-  const expiry = new Date(expiryDate);
+  const expiry = new Date(expirationDate);
   const diffTime = expiry - now;
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   
@@ -912,7 +912,10 @@ async function downloadDocument(documentId) {
     
     // Get filename from Content-Disposition header
     const disposition = response.headers.get('Content-Disposition');
-    const filename = disposition ? disposition.split('filename=')[1].replace(/"/g, '') : 'documento';
+    let filename = 'documento';
+    if (disposition && disposition.includes('filename=')) {
+      filename = disposition.split('filename=')[1].replace(/"/g, '');
+    }
     a.download = filename;
     
     document.body.appendChild(a);
@@ -920,6 +923,7 @@ async function downloadDocument(documentId) {
     window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
   } catch (error) {
+    console.error('Erro no download:', error);
     alert('Erro ao baixar documento: ' + error.message);
   }
 }
