@@ -268,13 +268,60 @@ app.get('/api/documents/:docId/download', auth, (req, res) => {
   if (!document.fileData) {
     return res.status(404).json({ error: 'Dados do arquivo não encontrados' });
   }
-  
+
   // Convert base64 back to buffer
   const buffer = Buffer.from(document.fileData, 'base64');
   
   res.setHeader('Content-Type', document.mimeType || 'application/octet-stream');
   res.setHeader('Content-Disposition', `attachment; filename="${document.fileName}"`);
   res.send(buffer);
+});
+
+// Simplified download endpoint - returns document data as JSON
+app.get('/api/documents/:docId/data', auth, (req, res) => {
+  console.log('📥 Download request for docId:', req.params.docId);
+  const db = loadDB();
+  const docId = req.params.docId;
+  const document = db.documents ? db.documents.find(d => d.id === docId) : null;
+  
+  if (!document) {
+    console.log('❌ Documento não encontrado:', docId);
+    return res.status(404).json({ error: 'Documento não encontrado' });
+  }
+  
+  console.log('✅ Documento encontrado:', document.fileName);
+  
+  // Check permissions
+  if (req.user.role === 'COLAB') {
+    const employee = db.employees.find(e => e.id === document.empId);
+    if (!employee || (employee.userId !== req.user.id && employee.email !== req.user.email)) {
+      console.log('❌ Sem permissão para documento:', docId);
+      return res.status(403).json({ error: 'Sem permissão para baixar documento' });
+    }
+  }
+  
+  if (!document.fileData) {
+    console.log('❌ Dados do arquivo não encontrados:', docId);
+    return res.status(404).json({ error: 'Dados do arquivo não encontrados' });
+  }
+  
+  console.log('📤 Enviando dados do documento:', document.fileName, 'Size:', document.fileData.length);
+  
+  // Return document data as JSON
+  res.json({
+    fileName: document.fileName,
+    mimeType: document.mimeType,
+    fileData: document.fileData
+  });
+});
+
+// Test endpoint for debugging
+app.get('/api/test-auth', auth, (req, res) => {
+  res.json({ 
+    message: 'Autenticação OK', 
+    user: req.user.email,
+    role: req.user.role 
+  });
 });
 
 app.delete('/api/documents/:docId', auth, requireRole('ADMIN', 'RH'), (req, res) => {

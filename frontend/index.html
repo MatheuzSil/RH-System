@@ -865,6 +865,7 @@ function renderEmployeeDocuments(documents) {
           </div>
         </div>
         <div class="document-actions">
+          <button class="btn small" onclick="viewDocument('${doc.id}')">👁️ Visualizar</button>
           <button class="btn small" onclick="downloadDocument('${doc.id}')">📥 Baixar</button>
           ${(['ADMIN', 'RH'].includes(ROLE)) ? `<button class="btn small bad" onclick="deleteDocument('${doc.id}')">🗑️ Excluir</button>` : ''}
         </div>
@@ -892,40 +893,90 @@ function getExpiryInfo(expirationDate) {
   }
 }
 
-async function downloadDocument(documentId) {
-  try {
-    const response = await fetch(`${API}/documents/${documentId}/download`, {
-      headers: {
-        'Authorization': 'Bearer ' + TOKEN
-      }
-    });
-    
+function downloadDocument(documentId) {
+  console.log('� Iniciando download simplificado para documento:', documentId);
+  
+  // Use the original /download endpoint that works with direct file download
+  const downloadUrl = `${API}/documents/${documentId}/download`;
+  
+  // Create a temporary link element
+  const a = document.createElement('a');
+  a.href = downloadUrl;
+  a.target = '_blank'; // Open in new tab first to handle auth
+  a.style.display = 'none';
+  
+  // Set authorization header by opening URL with fetch and redirect
+  fetch(downloadUrl, {
+    headers: {
+      'Authorization': 'Bearer ' + TOKEN
+    }
+  })
+  .then(response => {
     if (!response.ok) {
-      throw new Error('Erro ao baixar documento');
+      throw new Error(`HTTP ${response.status}`);
     }
-    
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
+    return response.blob();
+  })
+  .then(blob => {
+    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.style.display = 'none';
     a.href = url;
-    
-    // Get filename from Content-Disposition header
-    const disposition = response.headers.get('Content-Disposition');
-    let filename = 'documento';
-    if (disposition && disposition.includes('filename=')) {
-      filename = disposition.split('filename=')[1].replace(/"/g, '');
-    }
-    a.download = filename;
-    
+    a.download = ''; // Let browser determine filename from Content-Disposition
     document.body.appendChild(a);
     a.click();
-    window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
-  } catch (error) {
-    console.error('Erro no download:', error);
-    alert('Erro ao baixar documento: ' + error.message);
-  }
+    URL.revokeObjectURL(url);
+    console.log('✅ Download iniciado!');
+  })
+  .catch(error => {
+    console.error('❌ Erro no download:', error);
+    alert('Erro no download: ' + error.message);
+  });
+}
+
+function viewDocument(documentId) {
+  console.log('👁️ Abrindo visualização do documento:', documentId);
+  
+  fetch(`${API}/documents/${documentId}/data`, {
+    headers: {
+      'Authorization': 'Bearer ' + TOKEN
+    }
+  })
+  .then(response => {
+    console.log('📡 Response status:', response.status);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    return response.json();
+  })
+  .then(data => {
+    console.log('📄 Dados recebidos para visualização:', data.fileName);
+    
+    // Convert base64 to blob
+    const byteCharacters = atob(data.fileData);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: data.mimeType });
+    
+    // Create blob URL and open in new tab
+    const url = URL.createObjectURL(blob);
+    const newWindow = window.open(url, '_blank');
+    
+    // Clean up URL after a delay to allow the window to load
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 1000);
+    
+    console.log('✅ Documento aberto para visualização!');
+  })
+  .catch(error => {
+    console.error('❌ Erro ao visualizar:', error);
+    alert('Erro ao visualizar documento: ' + error.message);
+  });
 }
 
 async function deleteDocument(documentId) {
