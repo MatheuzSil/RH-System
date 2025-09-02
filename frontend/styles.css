@@ -535,3 +535,104 @@ tr:hover td {
     padding: 1rem;
   }
 }
+
+/* Documents Section */
+.documents-upload {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background: #f8f9fa;
+}
+
+.file-input-container {
+  display: flex;
+  gap: 1rem;
+  align-items: end;
+}
+
+.file-input-container input[type="file"] {
+  flex: 1;
+}
+
+.documents-container {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 1rem;
+}
+
+.document-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+  background: white;
+}
+
+.document-info {
+  flex: 1;
+}
+
+.document-title {
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.25rem;
+}
+
+.document-meta {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.document-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.document-expired {
+  border-left: 4px solid var(--bad);
+}
+
+.document-expiring {
+  border-left: 4px solid var(--warning);
+}
+
+.document-valid {
+  border-left: 4px solid var(--ok);
+}
+
+.expiry-badge {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-left: 0.5rem;
+}
+
+.expiry-badge.expired {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.expiry-badge.expiring {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.expiry-badge.valid {
+  background: #d4edda;
+  color: #155724;
+}
+
+.no-documents {
+  text-align: center;
+  color: var(--muted);
+  padding: 2rem;
+  font-style: italic;
+}
