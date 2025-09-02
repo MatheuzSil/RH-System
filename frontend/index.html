@@ -888,7 +888,7 @@ async function uploadDocument() {
 
 async function loadEmployeeDocuments(employeeId) {
   try {
-    const documents = await api(`/documents?employeeId=${employeeId}`);
+    const documents = await api(`/employees/${employeeId}/documents`); // Mudança aqui
     renderEmployeeDocuments(documents);
   } catch (error) {
     console.error('Erro ao carregar documentos:', error);
@@ -947,6 +947,52 @@ function getExpiryInfo(expiryDate) {
   }
 }
 
+async function downloadDocument(documentId) {
+  try {
+    const response = await fetch(`${API}/documents/${documentId}/download`, {
+      headers: {
+        'Authorization': 'Bearer ' + TOKEN
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error('Erro ao baixar documento');
+    }
+    
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    
+    // Get filename from Content-Disposition header
+    const disposition = response.headers.get('Content-Disposition');
+    const filename = disposition ? disposition.split('filename=')[1].replace(/"/g, '') : 'documento';
+    a.download = filename;
+    
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  } catch (error) {
+    alert('Erro ao baixar documento: ' + error.message);
+  }
+}
+
+async function deleteDocument(documentId) {
+  if (!confirm('Tem certeza que deseja excluir este documento?')) {
+    return;
+  }
+  
+  try {
+    await del(`/documents/${documentId}`);
+    await loadEmployeeDocuments(currentEmployee.id);
+    alert('Documento excluído com sucesso!');
+  } catch (error) {
+    alert('Erro ao excluir documento: ' + error.message);
+  }
+}
+
 async function uploadDocument() {
   const fileInput = document.getElementById('documentFile');
   const typeSelect = document.getElementById('documentType');
@@ -965,13 +1011,13 @@ async function uploadDocument() {
   
   const formData = new FormData();
   formData.append('file', fileInput.files[0]);
-  formData.append('employeeId', currentEmployee.id);
-  formData.append('documentType', typeSelect.value);
+  formData.append('empId', currentEmployee.id); // Mudança aqui
+  formData.append('type', typeSelect.value); // Mudança aqui
   formData.append('description', descriptionInput.value);
-  formData.append('expiryDate', expiryInput.value);
+  formData.append('expirationDate', expiryInput.value); // Mudança aqui
   
   try {
-    const response = await fetch(`${API}/documents/upload`, {
+    const response = await fetch(`${API}/employees/${currentEmployee.id}/documents`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${TOKEN}`
