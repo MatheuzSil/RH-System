@@ -865,6 +865,7 @@ function renderEmployeeDocuments(documents) {
           </div>
         </div>
         <div class="document-actions">
+          <button class="btn small" onclick="viewDocument('${doc.id}')">👁️ Visualizar</button>
           <button class="btn small" onclick="downloadDocument('${doc.id}')">📥 Baixar</button>
           ${(['ADMIN', 'RH'].includes(ROLE)) ? `<button class="btn small bad" onclick="deleteDocument('${doc.id}')">🗑️ Excluir</button>` : ''}
         </div>
@@ -893,7 +894,48 @@ function getExpiryInfo(expirationDate) {
 }
 
 function downloadDocument(documentId) {
-  console.log('🔄 Iniciando download para documento:', documentId);
+  console.log('� Iniciando download simplificado para documento:', documentId);
+  
+  // Use the original /download endpoint that works with direct file download
+  const downloadUrl = `${API}/documents/${documentId}/download`;
+  
+  // Create a temporary link element
+  const a = document.createElement('a');
+  a.href = downloadUrl;
+  a.target = '_blank'; // Open in new tab first to handle auth
+  a.style.display = 'none';
+  
+  // Set authorization header by opening URL with fetch and redirect
+  fetch(downloadUrl, {
+    headers: {
+      'Authorization': 'Bearer ' + TOKEN
+    }
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    return response.blob();
+  })
+  .then(blob => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = ''; // Let browser determine filename from Content-Disposition
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    console.log('✅ Download iniciado!');
+  })
+  .catch(error => {
+    console.error('❌ Erro no download:', error);
+    alert('Erro no download: ' + error.message);
+  });
+}
+
+function viewDocument(documentId) {
+  console.log('👁️ Abrindo visualização do documento:', documentId);
   
   fetch(`${API}/documents/${documentId}/data`, {
     headers: {
@@ -902,7 +944,6 @@ function downloadDocument(documentId) {
   })
   .then(response => {
     console.log('📡 Response status:', response.status);
-    console.log('📡 Response ok:', response.ok);
     
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
@@ -910,9 +951,9 @@ function downloadDocument(documentId) {
     return response.json();
   })
   .then(data => {
-    console.log('📄 Dados recebidos:', data.fileName, 'Size:', data.fileData.length);
+    console.log('📄 Dados recebidos para visualização:', data.fileName);
     
-    // Convert base64 to blob and download
+    // Convert base64 to blob
     const byteCharacters = atob(data.fileData);
     const byteNumbers = new Array(byteCharacters.length);
     for (let i = 0; i < byteCharacters.length; i++) {
@@ -921,21 +962,20 @@ function downloadDocument(documentId) {
     const byteArray = new Uint8Array(byteNumbers);
     const blob = new Blob([byteArray], { type: data.mimeType });
     
-    // Create download link
+    // Create blob URL and open in new tab
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = data.fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const newWindow = window.open(url, '_blank');
     
-    console.log('✅ Download iniciado com sucesso!');
+    // Clean up URL after a delay to allow the window to load
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 1000);
+    
+    console.log('✅ Documento aberto para visualização!');
   })
   .catch(error => {
-    console.error('❌ Erro no download:', error);
-    alert('Erro no download: ' + error.message);
+    console.error('❌ Erro ao visualizar:', error);
+    alert('Erro ao visualizar documento: ' + error.message);
   });
 }
 
