@@ -489,8 +489,8 @@
       </form>
     </div>
     <div class="modal-footer">
-      <button id="save-employee" class="btn ok">Salvar</button>
-      <button id="cancel-employee" class="btn">Cancelar</button>
+      <button id="save-employee" type="button" class="btn ok">Salvar</button>
+      <button id="cancel-employee" type="button" class="btn">Cancelar</button>
     </div>
   </div>
 </div>
@@ -710,8 +710,14 @@ function openEmployeeModal(employee = null) {
   // Bind modal events
   qs('#close-modal').onclick = closeEmployeeModal;
   qs('#cancel-employee').onclick = closeEmployeeModal;
-  qs('#save-employee').onclick = saveEmployee;
-  qs('#upload-doc').onclick = uploadDocument;
+  qs('#save-employee').onclick = (e) => {
+    e.preventDefault();
+    saveEmployee();
+  };
+  qs('#upload-doc').onclick = (e) => {
+    e.preventDefault();
+    uploadDocument();
+  };
   
   // Show/hide documents section based on whether it's a new or existing employee
   const documentsSection = qs('#documents-section');
@@ -865,9 +871,9 @@ function renderEmployeeDocuments(documents) {
           </div>
         </div>
         <div class="document-actions">
-          <button class="btn small" onclick="viewDocument('${doc.id}')">👁️ Visualizar</button>
-          <button class="btn small" onclick="downloadDocument('${doc.id}')">📥 Baixar</button>
-          ${(['ADMIN', 'RH'].includes(ROLE)) ? `<button class="btn small bad" onclick="deleteDocument('${doc.id}')">🗑️ Excluir</button>` : ''}
+          <button type="button" class="btn small" onclick="event.preventDefault(); viewDocument('${doc.id}')">👁️ Visualizar</button>
+          <button type="button" class="btn small" onclick="event.preventDefault(); downloadDocument('${doc.id}')">📥 Baixar</button>
+          ${(['ADMIN', 'RH'].includes(ROLE)) ? `<button type="button" class="btn small bad" onclick="event.preventDefault(); deleteDocument('${doc.id}')">🗑️ Excluir</button>` : ''}
         </div>
       </div>
     `;
@@ -894,39 +900,55 @@ function getExpiryInfo(expirationDate) {
 }
 
 function downloadDocument(documentId) {
-  console.log('� Iniciando download simplificado para documento:', documentId);
+  console.log('📥 Iniciando download simplificado para documento:', documentId);
   
-  // Use the original /download endpoint that works with direct file download
-  const downloadUrl = `${API}/documents/${documentId}/download`;
+  // Verificar se tem token válido
+  if (!TOKEN) {
+    alert('Sessão expirada. Faça login novamente.');
+    return;
+  }
   
-  // Create a temporary link element
-  const a = document.createElement('a');
-  a.href = downloadUrl;
-  a.target = '_blank'; // Open in new tab first to handle auth
-  a.style.display = 'none';
-  
-  // Set authorization header by opening URL with fetch and redirect
-  fetch(downloadUrl, {
+  // Use fetch para baixar o arquivo
+  fetch(`${API}/documents/${documentId}/download`, {
     headers: {
       'Authorization': 'Bearer ' + TOKEN
     }
   })
   .then(response => {
+    console.log('📡 Response status:', response.status);
+    
     if (!response.ok) {
+      if (response.status === 401) {
+        alert('Sessão expirada. Faça login novamente.');
+        return;
+      }
       throw new Error(`HTTP ${response.status}`);
     }
-    return response.blob();
+    
+    // Pegar o nome do arquivo do header Content-Disposition
+    const contentDisposition = response.headers.get('Content-Disposition');
+    let filename = 'documento';
+    if (contentDisposition) {
+      const matches = contentDisposition.match(/filename="?(.+)"?/);
+      if (matches && matches[1]) {
+        filename = matches[1];
+      }
+    }
+    
+    return response.blob().then(blob => ({ blob, filename }));
   })
-  .then(blob => {
+  .then(({ blob, filename }) => {
+    // Criar URL temporária e fazer download
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
+    a.style.display = 'none';
     a.href = url;
-    a.download = ''; // Let browser determine filename from Content-Disposition
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    console.log('✅ Download iniciado!');
+    console.log('✅ Download iniciado!', filename);
   })
   .catch(error => {
     console.error('❌ Erro no download:', error);
@@ -937,6 +959,12 @@ function downloadDocument(documentId) {
 function viewDocument(documentId) {
   console.log('👁️ Abrindo visualização do documento:', documentId);
   
+  // Verificar se tem token válido
+  if (!TOKEN) {
+    alert('Sessão expirada. Faça login novamente.');
+    return;
+  }
+  
   fetch(`${API}/documents/${documentId}/data`, {
     headers: {
       'Authorization': 'Bearer ' + TOKEN
@@ -946,11 +974,17 @@ function viewDocument(documentId) {
     console.log('📡 Response status:', response.status);
     
     if (!response.ok) {
+      if (response.status === 401) {
+        alert('Sessão expirada. Faça login novamente.');
+        return;
+      }
       throw new Error(`HTTP ${response.status}`);
     }
     return response.json();
   })
   .then(data => {
+    if (!data) return; // Se não tem dados, sair
+    
     console.log('📄 Dados recebidos para visualização:', data.fileName);
     
     // Convert base64 to blob
@@ -965,6 +999,13 @@ function viewDocument(documentId) {
     // Create blob URL and open in new tab
     const url = URL.createObjectURL(blob);
     const newWindow = window.open(url, '_blank');
+    
+    // Verificar se a janela foi aberta (pode ser bloqueada por popup blocker)
+    if (!newWindow) {
+      alert('Pop-up foi bloqueado! Permita pop-ups para visualizar documentos.');
+      URL.revokeObjectURL(url);
+      return;
+    }
     
     // Clean up URL after a delay to allow the window to load
     setTimeout(() => {
