@@ -233,7 +233,7 @@
       "notes": "Documento válido"
     },
     {
-      "id": "DOC_002", 
+      "id": "DOC_002",
       "empId": "EMP_001",
       "type": "CNH",
       "description": "CNH - Carteira de Habilitação",
@@ -248,6 +248,12 @@
     }
   ],
   "logs": [
+    {
+      "at": "02/09/2025, 16:21:27",
+      "who": "admin@marh.local",
+      "action": "login",
+      "details": "acesso concedido"
+    },
     {
       "at": "26/08/2025, 15:28:31",
       "who": "admin@marh.local",
