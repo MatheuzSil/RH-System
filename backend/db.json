@@ -1,115 +1,368 @@
 {
   "users": [
     {
-      "id": "U_ADMIN01",
+      "id": "U_ADMIN",
       "email": "admin@marh.local",
-      "pass": "admin123",
       "name": "Admin MARH",
       "role": "ADMIN",
+      "pass": "123",
       "active": true
     },
     {
-      "id": "U_RH01",
-      "email": "rh@marh.local", 
-      "pass": "rh123",
-      "name": "RH MARH",
+      "id": "U_RH",
+      "email": "rh@marh.local",
+      "name": "Recursos Humanos",
       "role": "RH",
+      "pass": "123",
       "active": true
+    },
+    {
+      "id": "U_GESTOR",
+      "email": "gestor@marh.local",
+      "name": "Gestor",
+      "role": "GESTOR",
+      "pass": "123",
+      "active": true
+    },
+    {
+      "id": "U_COLAB",
+      "email": "colab@marh.local",
+      "name": "Colaborador",
+      "role": "COLAB",
+      "pass": "123",
+      "active": true
+    }
+  ],
+  "departments": [
+    {
+      "id": "D1",
+      "name": "Administrativo",
+      "costCenter": "1001"
+    },
+    {
+      "id": "D2",
+      "name": "Tecnologia",
+      "costCenter": "2001"
+    },
+    {
+      "id": "D3",
+      "name": "Comercial",
+      "costCenter": "3001"
     }
   ],
   "employees": [
     {
       "id": "EMP_001",
-      "name": "João Silva Santos",
-      "email": "joao@marh.local",
+      "name": "João Silva",
+      "email": "joao.silva@marh.local",
+      "cpf": "123.456.789-00",
       "phone": "(11) 99999-9999",
-      "position": "Desenvolvedor Sênior",
-      "department": "Tecnologia",
+      "deptId": "D2",
+      "roleTitle": "Desenvolvedor Sênior",
+      "salary": 8000,
       "status": "ATIVO",
-      "hireDate": "2024-01-15",
-      "salary": 8500,
-      "manager": "Maria Costa",
-      "address": "Rua das Flores, 123 - São Paulo/SP",
-      "emergencyContact": "Ana Silva - (11) 88888-8888",
-      "birthDate": "1990-05-15",
+      "admissionDate": "2025-01-15",
+      "type": "CLT",
+      "gender": "Masculino",
       "maritalStatus": "Casado",
-      "education": "Superior Completo - Ciência da Computação",
-      "skills": "JavaScript, Python, React, Node.js, SQL",
-      "certifications": "AWS Solutions Architect, Scrum Master",
-      "notes": "Funcionário exemplar, líder técnico da equipe de desenvolvimento"
-    },
-    {
-      "id": "EMP_002",
-      "name": "Maria Costa Oliveira",
-      "email": "maria@marh.local",
-      "phone": "(11) 77777-7777",
-      "position": "Gerente de RH",
-      "department": "Recursos Humanos",
-      "status": "ATIVO",
-      "hireDate": "2023-03-10",
-      "salary": 12000,
-      "manager": "Carlos Diretor",
-      "address": "Av. Paulista, 456 - São Paulo/SP",
-      "emergencyContact": "Pedro Costa - (11) 66666-6666",
-      "birthDate": "1985-08-22",
-      "maritalStatus": "Solteira",
-      "education": "Pós-Graduação em Gestão de Pessoas",
-      "skills": "Gestão de Pessoas, Recrutamento, Legislação Trabalhista",
-      "certifications": "SHRM-CP, Coaching",
-      "notes": "Responsável por toda estratégia de RH da empresa"
-    },
-    {
-      "id": "EMP_003",
-      "name": "Carlos Ferreira Lima",
-      "email": "carlos@marh.local",
-      "phone": "(11) 55555-5555",
-      "position": "Analista Financeiro",
-      "department": "Financeiro",
-      "status": "ATIVO",
-      "hireDate": "2024-06-01",
-      "salary": 6500,
-      "manager": "Maria Costa",
-      "address": "Rua dos Comerciários, 789 - São Paulo/SP",
-      "emergencyContact": "Julia Ferreira - (11) 44444-4444",
-      "birthDate": "1992-12-03",
-      "maritalStatus": "Solteiro",
-      "education": "Superior Completo - Administração",
-      "skills": "Excel Avançado, Power BI, SAP, Análise Financeira",
-      "certifications": "CRC, Certificação SAP FI",
-      "notes": "Especialista em análises de resultados e projeções financeiras"
+      "hasChildren": "Sim",
+      "childrenCount": "2"
     }
   ],
-  "departments": [
+  "attendance": [
     {
-      "id": "DEPT_001",
-      "name": "Tecnologia da Informação",
-      "description": "Departamento de TI",
-      "manager": "EMP_001"
+      "id": "AT1",
+      "empId": "E1",
+      "date": "2025-08-21",
+      "clockIn": "09:02",
+      "clockOut": "18:01",
+      "status": "OK"
+    },
+    {
+      "id": "AT2",
+      "empId": "E2",
+      "date": "2025-08-21",
+      "clockIn": "08:55",
+      "clockOut": "17:45",
+      "status": "OK"
     }
   ],
-  "attendance": [],
-  "leaves": [],
-  "payroll": [],
-  "reviews": [],
-  "trainings": [],
+  "leaves": [
+    {
+      "id": "L1",
+      "empId": "E1",
+      "type": "FÉRIAS",
+      "start": "2025-09-01",
+      "end": "2025-09-15",
+      "status": "APROVADO",
+      "reason": "Férias programadas",
+      "approver": "E3"
+    }
+  ],
+  "payroll": [
+    {
+      "id": "P1",
+      "empId": "E1",
+      "refMonth": "2025-08",
+      "gross": 9000,
+      "deductions": 1800,
+      "net": 7200,
+      "items": [
+        {
+          "type": "PROVENTO",
+          "desc": "Salário base",
+          "amount": 9000
+        },
+        {
+          "type": "DESCONTO",
+          "desc": "INSS/IR",
+          "amount": 1800
+        }
+      ]
+    },
+    {
+      "id": "P2",
+      "empId": "E2",
+      "refMonth": "2025-08",
+      "gross": 12000,
+      "deductions": 2600,
+      "net": 9400,
+      "items": [
+        {
+          "type": "PROVENTO",
+          "desc": "Salário base",
+          "amount": 12000
+        },
+        {
+          "type": "DESCONTO",
+          "desc": "INSS/IR",
+          "amount": 2600
+        }
+      ]
+    }
+  ],
+  "reviews": [
+    {
+      "id": "R1",
+      "empId": "E1",
+      "period": "2025-S1",
+      "score": 4.3,
+      "notes": "Ótimo desempenho",
+      "reviewer": "E3"
+    },
+    {
+      "id": "R2",
+      "empId": "E2",
+      "period": "2025-S1",
+      "score": 3.8,
+      "notes": "Boa evolução",
+      "reviewer": "E4"
+    }
+  ],
+  "trainings": [
+    {
+      "id": "T1",
+      "title": "LGPD para Todos",
+      "date": "2025-09-10",
+      "seats": 40,
+      "enrolled": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "T2",
+      "title": "Liderança Ágil",
+      "date": "2025-10-05",
+      "seats": 20,
+      "enrolled": [
+        "E2"
+      ]
+    }
+  ],
   "jobs": [
     {
-      "id": "JOB_001",
-      "title": "Desenvolvedor Frontend",
-      "description": "Vaga para desenvolvedor React/Vue",
-      "status": "ABERTA",
-      "department": "TI"
+      "id": "J1",
+      "title": "Desenvolvedor(a) Back-end",
+      "deptId": "D2",
+      "openings": 2,
+      "status": "ABERTA"
     },
     {
-      "id": "JOB_002", 
-      "title": "Analista de RH",
-      "description": "Vaga para analista de recursos humanos",
-      "status": "ABERTA",
-      "department": "RH"
+      "id": "J2",
+      "title": "Executivo(a) de Contas",
+      "deptId": "D3",
+      "openings": 1,
+      "status": "ABERTA"
     }
   ],
-  "candidates": [],
-  "documents": [],
-  "settings": {},
-  "logs": []
+  "candidates": [
+    {
+      "id": "C1",
+      "name": "Julia Prado",
+      "email": "julia@mail.com",
+      "jobId": "J1",
+      "stage": "ENTREVISTA",
+      "notes": "Boa experiência com Node.js"
+    },
+    {
+      "id": "C2",
+      "name": "Pedro Silva",
+      "email": "pedro@mail.com",
+      "jobId": "J2",
+      "stage": "TRIAGEM",
+      "notes": "Experiência em SaaS"
+    }
+  ],
+  "settings": {
+    "companyName": "MARH S/A"
+  },
+  "documents": [
+    {
+      "id": "DOC_001",
+      "empId": "EMP_001",
+      "type": "RG",
+      "description": "RG - Registro Geral",
+      "fileName": "rg_joao_silva.pdf",
+      "filePath": "./documents/EMP_001/DOC_001.pdf",
+      "fileSize": 245760,
+      "mimeType": "application/pdf",
+      "uploadDate": "2025-01-20",
+      "expirationDate": "2025-12-31",
+      "uploadedBy": "admin@marh.local",
+      "notes": "Documento válido"
+    },
+    {
+      "id": "DOC_002",
+      "empId": "EMP_001",
+      "type": "CNH",
+      "description": "CNH - Carteira de Habilitação",
+      "fileName": "cnh_joao_silva.pdf",
+      "filePath": "./documents/EMP_001/DOC_002.pdf",
+      "fileSize": 356480,
+      "mimeType": "application/pdf",
+      "uploadDate": "2025-01-20",
+      "expirationDate": "2024-08-15",
+      "uploadedBy": "admin@marh.local",
+      "notes": "CNH categoria B - EXPIRADA"
+    },
+    {
+      "id": "DOC_003",
+      "empId": "EMP_001",
+      "type": "ATESTADO_SAUDE",
+      "description": "Atestado de Saúde Ocupacional",
+      "fileName": "aso_joao_silva.pdf",
+      "filePath": "./documents/EMP_001/DOC_003.pdf",
+      "fileSize": 189440,
+      "mimeType": "application/pdf",
+      "uploadDate": "2025-01-20",
+      "expirationDate": "2026-01-20",
+      "uploadedBy": "admin@marh.local",
+      "notes": "ASO válido por 1 ano"
+    }
+  ],
+  "logs": [
+    {
+      "at": "26/08/2025, 15:28:31",
+      "who": "admin@marh.local",
+      "action": "leaves.delete",
+      "details": "L2"
+    },
+    {
+      "at": "26/08/2025, 15:28:12",
+      "who": "admin@marh.local",
+      "action": "login",
+      "details": "acesso concedido"
+    },
+    {
+      "at": "26/08/2025, 15:27:54",
+      "who": "admin@marh.local",
+      "action": "employees.delete",
+      "details": "E4"
+    },
+    {
+      "at": "26/08/2025, 15:27:52",
+      "who": "admin@marh.local",
+      "action": "employees.delete",
+      "details": "E3"
+    },
+    {
+      "at": "26/08/2025, 15:27:51",
+      "who": "admin@marh.local",
+      "action": "employees.delete",
+      "details": "E2"
+    },
+    {
+      "at": "26/08/2025, 15:27:50",
+      "who": "admin@marh.local",
+      "action": "employees.delete",
+      "details": "E1"
+    },
+    {
+      "at": "26/08/2025, 15:27:40",
+      "who": "admin@marh.local",
+      "action": "login",
+      "details": "acesso concedido"
+    },
+    {
+      "at": "26/08/2025, 15:20:20",
+      "who": "admin@marh.local",
+      "action": "login",
+      "details": "acesso concedido"
+    },
+    {
+      "at": "26/08/2025, 15:19:27",
+      "who": "colab@marh.local",
+      "action": "login",
+      "details": "acesso concedido"
+    },
+    {
+      "at": "26/08/2025, 15:18:46",
+      "who": "gestor@marh.local",
+      "action": "login",
+      "details": "acesso concedido"
+    },
+    {
+      "at": "26/08/2025, 15:17:57",
+      "who": "rh@marh.local",
+      "action": "employees.save",
+      "details": "E1"
+    },
+    {
+      "at": "26/08/2025, 15:17:46",
+      "who": "rh@marh.local",
+      "action": "login",
+      "details": "acesso concedido"
+    },
+    {
+      "at": "26/08/2025, 15:17:05",
+      "who": "admin@marh.local",
+      "action": "login",
+      "details": "acesso concedido"
+    },
+    {
+      "at": "26/08/2025, 15:09:52",
+      "who": "admin@marh.local",
+      "action": "employees.save",
+      "details": "E1"
+    },
+    {
+      "at": "26/08/2025, 15:09:27",
+      "who": "admin@marh.local",
+      "action": "login",
+      "details": "acesso concedido"
+    },
+    {
+      "at": "26/08/2025, 11:42:58",
+      "who": "admin@marh.local",
+      "action": "login",
+      "details": "acesso concedido"
+    },
+    {
+      "at": "25/08/2025 21:47:11",
+      "who": "system",
+      "action": "seed",
+      "details": "base inicial"
+    }
+  ]
 }
