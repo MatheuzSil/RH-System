@@ -15,7 +15,7 @@
 <body>
 <section id="view-login" class="center">
   <div class="login-card card">
-    <div class="brand"><div class="logo"></div><div><div class="pill">Protótipo • Full-stack</div><h2>MARH — Suite de RH</h2></div></div>
+    <div class="brand"><div class="logo"></div><div><div class="pill">W-Doc</div><h2>MARH — Suite de RH</h2></div></div>
     <div class="mt1"><label>E-mail</label><input id="login-email" class="input" value="admin@marh.local"></div>
     <div class="mt1"><label>Senha</label><input id="login-pass" class="input" type="password" value="123"></div>
     <div class="mt2 right"><button id="btn-login" class="btn ok">Entrar</button></div>
@@ -38,7 +38,7 @@
     <div class="brand"><div class="logo"></div><div><div class="pill">MARH</div><div id="user-ctx" class="note" style="padding:.2rem .4rem"></div></div></div>
     <div class="toolbar" style="min-width:40%">
       <div class="search"><input id="global-search" class="input" placeholder="Buscar..."><button id="btn-search" class="btn">Buscar</button></div>
-      <button id="btn-print" class="btn">Imprimir #</button>
+      <button id="btn-print" class="btn">Imprimir</button>
       <button id="btn-logout" class="btn bad">Sair</button>
     </div>
   </header>
@@ -71,6 +71,10 @@
           <button id="new-emp" class="btn ok">Novo colaborador</button>
           <button id="toggle-view" class="btn">📋 Tabela</button>
           <a id="exp-emp" class="btn" href="#">Exportar CSV</a>
+          <div id="search-bar" class="search bar">
+            <input type="text" id="search-input" class="input" placeholder="Buscar colaborador...">
+            <button id="btn-search-employees" class="btn">Buscar</button>
+          </div>
         </div>
         
         <!-- Cards View -->
@@ -157,7 +161,7 @@
         <div class="grid mt2">
           <!-- Sistema de Protocolo completo -->
           <div class="card">
-            <b>e-Protocolo - Sistema Completo</b>
+            <b>e-Protocolo</b>
             <div class="mt1">Sistema de controle de documentos, protocolos e movimentações</div>
             <div class="mt1">
               <div class="tabs" id="protocol-tabs">
@@ -489,8 +493,8 @@
       </form>
     </div>
     <div class="modal-footer">
-      <button id="save-employee" class="btn ok">Salvar</button>
-      <button id="cancel-employee" class="btn">Cancelar</button>
+      <button id="save-employee" type="button" class="btn ok">Salvar</button>
+      <button id="cancel-employee" type="button" class="btn">Cancelar</button>
     </div>
   </div>
 </div>
@@ -550,7 +554,13 @@ function buildMenu(){
 function bindCommon(){
   qs('#btn-print').onclick = ()=> window.print();
   qs('#btn-logout').onclick = ()=> { localStorage.removeItem('MARH_TOKEN'); location.reload(); };
-  qs('#btn-search').onclick = ()=> alert('Busca global (demo)');
+  
+  // Busca global - não interfere com buscas específicas de módulos
+  const globalSearchBtn = qs('#global-search').nextElementSibling;
+  if (globalSearchBtn) {
+    globalSearchBtn.onclick = ()=> alert('Busca global (demo)');
+  }
+  
   ['employees','attendance','leaves','payroll','reviews','trainings','jobs','candidates'].forEach(ent=>{
     const a = qs('#dl-'+ent); if(a) a.onclick = (e)=>{e.preventDefault(); window.open(API+`/export/${ent}.csv`,'_blank'); };
   });
@@ -588,6 +598,28 @@ async function refreshLookups(){ DEPTS = await api('/departments'); EMPS = await
 // Employees
 let currentEmployee = null;
 let viewMode = 'cards'; // 'cards' or 'table'
+let searchTerm = ''; // Para filtrar colaboradores
+
+// Filtrar colaboradores baseado no termo de busca
+function filterEmployees(employees) {
+  if (!searchTerm.trim()) {
+    return employees;
+  }
+  
+  const term = searchTerm.toLowerCase().trim();
+  const filtered = employees.filter(emp => {
+    return (
+      (emp.name && emp.name.toLowerCase().includes(term)) ||
+      (emp.email && emp.email.toLowerCase().includes(term)) ||
+      (emp.position && emp.position.toLowerCase().includes(term)) ||
+      (emp.department && emp.department.toLowerCase().includes(term)) ||
+      (emp.phone && emp.phone.toLowerCase().includes(term))
+    );
+  });
+  
+  console.log(`Busca por "${term}": ${filtered.length} resultados de ${employees.length} total`);
+  return filtered;
+}
 
 async function renderEmployees(){
   await refreshLookups();
@@ -607,6 +639,46 @@ async function renderEmployees(){
   
   qs('#new-emp').onclick = () => openEmployeeModal();
   qs('#exp-emp').onclick = (e)=>{ e.preventDefault(); window.open(API+'/export/employees.csv','_blank'); };
+  
+  // Configurar busca de colaboradores
+  setupEmployeeSearch();
+}
+
+// Configurar eventos de busca de colaboradores
+function setupEmployeeSearch() {
+  const searchInput = qs('#search-input');
+  const searchBtn = qs('#btn-search-employees');
+  
+  if (!searchInput || !searchBtn) {
+    console.error('Elementos de busca não encontrados');
+    return;
+  }
+  
+  // Função para executar a busca
+  const performSearch = () => {
+    searchTerm = searchInput.value;
+    if (viewMode === 'cards') {
+      renderEmployeeCards();
+    } else {
+      renderEmployeeTable();
+    }
+  };
+  
+  // Busca ao clicar no botão
+  searchBtn.onclick = (e) => {
+    e.preventDefault();
+    performSearch();
+  };
+  
+  // Busca ao pressionar Enter
+  searchInput.onkeyup = (e) => {
+    if (e.key === 'Enter') {
+      performSearch();
+    } else if (searchInput.value.trim() === '' && searchTerm !== '') {
+      searchTerm = '';
+      performSearch();
+    }
+  };
 }
 
 function renderEmployeeCards() {
@@ -616,10 +688,69 @@ function renderEmployeeCards() {
   const cardsContainer = qs('#employees-cards');
   cardsContainer.innerHTML = '';
   
-  EMPS.forEach(emp => {
+  const filteredEmployees = filterEmployees(EMPS);
+  
+  if (filteredEmployees.length === 0) {
+    cardsContainer.innerHTML = `
+      <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 2rem;">
+        <div style="font-size: 3rem; margin-bottom: 1rem;">🔍</div>
+        <h3>Nenhum colaborador encontrado</h3>
+        <p>Tente usar outros termos de busca ou verifique se há colaboradores cadastrados.</p>
+        ${searchTerm ? `<button type="button" class="btn" onclick="clearEmployeeSearch()">Limpar Busca</button>` : ''}
+      </div>
+    `;
+    return;
+  }
+  
+  filteredEmployees.forEach(emp => {
     const card = createEmployeeCard(emp);
     cardsContainer.appendChild(card);
   });
+  
+  // Mostrar contador de resultados
+  updateSearchResults(filteredEmployees.length, EMPS.length);
+}
+
+// Atualizar contador de resultados de busca
+function updateSearchResults(found, total) {
+  let resultsDiv = qs('#search-results');
+  
+  // Criar div de resultados se não existe
+  if (!resultsDiv) {
+    resultsDiv = document.createElement('div');
+    resultsDiv.id = 'search-results';
+    resultsDiv.className = 'search-results';
+    
+    const toolbar = qs('#view-employees .toolbar');
+    toolbar.appendChild(resultsDiv);
+  }
+  
+  if (searchTerm.trim()) {
+    resultsDiv.innerHTML = `
+      <div class="note" style="margin: 0; padding: 0.5rem; background: #e3f2fd; border-color: #2196f3; color: #1976d2;">
+        📊 Mostrando <strong>${found}</strong> de <strong>${total}</strong> colaboradores para "${searchTerm}"
+        <button type="button" class="btn small" onclick="clearEmployeeSearch()" style="margin-left: 0.5rem;">✖ Limpar</button>
+      </div>
+    `;
+    resultsDiv.style.display = 'block';
+  } else {
+    resultsDiv.style.display = 'none';
+  }
+}
+
+// Limpar busca de colaboradores
+function clearEmployeeSearch() {
+  searchTerm = '';
+  const searchInput = qs('#search-input');
+  if (searchInput) {
+    searchInput.value = '';
+  }
+  
+  if (viewMode === 'cards') {
+    renderEmployeeCards();
+  } else {
+    renderEmployeeTable();
+  }
 }
 
 function renderEmployeeTable() {
@@ -630,8 +761,22 @@ function renderEmployeeTable() {
   body.innerHTML = '';
   
   const deptName = id => (DEPTS.find(d=>d.id===id)||{}).name || '-';
+  const filteredEmployees = filterEmployees(EMPS);
   
-  EMPS.forEach(e => {
+  if (filteredEmployees.length === 0) {
+    body.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align: center; padding: 2rem;">
+          <div style="font-size: 2rem; margin-bottom: 1rem;">🔍</div>
+          <div>Nenhum colaborador encontrado</div>
+          ${searchTerm ? `<button type="button" class="btn mt1" onclick="clearEmployeeSearch()">Limpar Busca</button>` : ''}
+        </td>
+      </tr>
+    `;
+    return;
+  }
+  
+  filteredEmployees.forEach(e => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${e.name}</td>
@@ -649,12 +794,14 @@ function renderEmployeeTable() {
     }
     body.append(tr);
   });
+  
+  // Mostrar contador de resultados
+  updateSearchResults(filteredEmployees.length, EMPS.length);
 }
 
 function createEmployeeCard(emp) {
   const card = document.createElement('div');
   card.className = 'employee-card';
-  card.onclick = () => openEmployeeModal(emp);
   
   // Get initials for avatar
   const initials = emp.name.split(' ')
@@ -683,7 +830,36 @@ function createEmployeeCard(emp) {
     <div style="margin-top: 1rem;">
       <span class="employee-status ${emp.status || 'ATIVO'}">${emp.status || 'ATIVO'}</span>
     </div>
+    <div class="employee-actions" style="margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: center;">
+      <button type="button" class="btn small view-btn">👁️ Ver</button>
+      ${ROLE === 'ADMIN' ? `<button type="button" class="btn small bad delete-btn">🗑️ Excluir</button>` : ''}
+    </div>
   `;
+  
+  // Adicionar event listeners aos botões
+  const viewBtn = card.querySelector('.view-btn');
+  if (viewBtn) {
+    viewBtn.onclick = (e) => {
+      e.stopPropagation();
+      openEmployeeModal(emp);
+    };
+  }
+  
+  const deleteBtn = card.querySelector('.delete-btn');
+  if (deleteBtn) {
+    deleteBtn.onclick = (e) => {
+      e.stopPropagation();
+      deleteEmployee(emp.id);
+    };
+  }
+  
+  // Adicionar click no card (mas não nos botões)
+  card.onclick = (e) => {
+    // Só abre o modal se não clicou em um botão
+    if (!e.target.closest('button')) {
+      openEmployeeModal(emp);
+    }
+  };
   
   return card;
 }
@@ -710,8 +886,15 @@ function openEmployeeModal(employee = null) {
   // Bind modal events
   qs('#close-modal').onclick = closeEmployeeModal;
   qs('#cancel-employee').onclick = closeEmployeeModal;
-  qs('#save-employee').onclick = saveEmployee;
-  qs('#upload-doc').onclick = uploadDocument;
+  qs('#save-employee').onclick = (e) => {
+    e.preventDefault();
+    saveEmployee();
+    alert('Colaborador salvo com sucesso!');
+  };
+  qs('#upload-doc').onclick = (e) => {
+    e.preventDefault();
+    uploadDocument();
+  };
   
   // Show/hide documents section based on whether it's a new or existing employee
   const documentsSection = qs('#documents-section');
@@ -721,10 +904,6 @@ function openEmployeeModal(employee = null) {
     documentsSection.style.display = 'none';
   }
   
-  // Close modal when clicking outside
-  modal.onclick = (e) => {
-    if (e.target === modal) closeEmployeeModal();
-  };
 }
 
 function closeEmployeeModal() {
@@ -865,9 +1044,9 @@ function renderEmployeeDocuments(documents) {
           </div>
         </div>
         <div class="document-actions">
-          <button class="btn small" onclick="viewDocument('${doc.id}')">👁️ Visualizar</button>
-          <button class="btn small" onclick="downloadDocument('${doc.id}')">📥 Baixar</button>
-          ${(['ADMIN', 'RH'].includes(ROLE)) ? `<button class="btn small bad" onclick="deleteDocument('${doc.id}')">🗑️ Excluir</button>` : ''}
+          <button type="button" class="btn small" onclick="event.preventDefault(); viewDocument('${doc.id}')">👁️ Visualizar</button>
+          <button type="button" class="btn small" onclick="event.preventDefault(); downloadDocument('${doc.id}')">📥 Baixar</button>
+          ${(['ADMIN', 'RH'].includes(ROLE)) ? `<button type="button" class="btn small bad" onclick="event.preventDefault(); deleteDocument('${doc.id}')">🗑️ Excluir</button>` : ''}
         </div>
       </div>
     `;
@@ -894,39 +1073,55 @@ function getExpiryInfo(expirationDate) {
 }
 
 function downloadDocument(documentId) {
-  console.log('� Iniciando download simplificado para documento:', documentId);
+  console.log('📥 Iniciando download simplificado para documento:', documentId);
   
-  // Use the original /download endpoint that works with direct file download
-  const downloadUrl = `${API}/documents/${documentId}/download`;
+  // Verificar se tem token válido
+  if (!TOKEN) {
+    alert('Sessão expirada. Faça login novamente.');
+    return;
+  }
   
-  // Create a temporary link element
-  const a = document.createElement('a');
-  a.href = downloadUrl;
-  a.target = '_blank'; // Open in new tab first to handle auth
-  a.style.display = 'none';
-  
-  // Set authorization header by opening URL with fetch and redirect
-  fetch(downloadUrl, {
+  // Use fetch para baixar o arquivo
+  fetch(`${API}/documents/${documentId}/download`, {
     headers: {
       'Authorization': 'Bearer ' + TOKEN
     }
   })
   .then(response => {
+    console.log('📡 Response status:', response.status);
+    
     if (!response.ok) {
+      if (response.status === 401) {
+        alert('Sessão expirada. Faça login novamente.');
+        return;
+      }
       throw new Error(`HTTP ${response.status}`);
     }
-    return response.blob();
+    
+    // Pegar o nome do arquivo do header Content-Disposition
+    const contentDisposition = response.headers.get('Content-Disposition');
+    let filename = 'documento';
+    if (contentDisposition) {
+      const matches = contentDisposition.match(/filename="?(.+)"?/);
+      if (matches && matches[1]) {
+        filename = matches[1];
+      }
+    }
+    
+    return response.blob().then(blob => ({ blob, filename }));
   })
-  .then(blob => {
+  .then(({ blob, filename }) => {
+    // Criar URL temporária e fazer download
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
+    a.style.display = 'none';
     a.href = url;
-    a.download = ''; // Let browser determine filename from Content-Disposition
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    console.log('✅ Download iniciado!');
+    console.log('✅ Download iniciado!', filename);
   })
   .catch(error => {
     console.error('❌ Erro no download:', error);
@@ -937,6 +1132,12 @@ function downloadDocument(documentId) {
 function viewDocument(documentId) {
   console.log('👁️ Abrindo visualização do documento:', documentId);
   
+  // Verificar se tem token válido
+  if (!TOKEN) {
+    alert('Sessão expirada. Faça login novamente.');
+    return;
+  }
+  
   fetch(`${API}/documents/${documentId}/data`, {
     headers: {
       'Authorization': 'Bearer ' + TOKEN
@@ -946,11 +1147,17 @@ function viewDocument(documentId) {
     console.log('📡 Response status:', response.status);
     
     if (!response.ok) {
+      if (response.status === 401) {
+        alert('Sessão expirada. Faça login novamente.');
+        return;
+      }
       throw new Error(`HTTP ${response.status}`);
     }
     return response.json();
   })
   .then(data => {
+    if (!data) return; // Se não tem dados, sair
+    
     console.log('📄 Dados recebidos para visualização:', data.fileName);
     
     // Convert base64 to blob
@@ -965,6 +1172,13 @@ function viewDocument(documentId) {
     // Create blob URL and open in new tab
     const url = URL.createObjectURL(blob);
     const newWindow = window.open(url, '_blank');
+    
+    // Verificar se a janela foi aberta (pode ser bloqueada por popup blocker)
+    if (!newWindow) {
+      alert('Pop-up foi bloqueado! Permita pop-ups para visualizar documentos.');
+      URL.revokeObjectURL(url);
+      return;
+    }
     
     // Clean up URL after a delay to allow the window to load
     setTimeout(() => {
