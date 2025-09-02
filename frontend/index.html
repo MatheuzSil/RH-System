@@ -993,16 +993,6 @@ async function uploadDocument() {
   }
 }
 
-async function loadEmployeeDocuments(employeeId) {
-  try {
-    const documents = await api(`/documents?employeeId=${employeeId}`);
-    renderEmployeeDocuments(documents);
-  } catch (error) {
-    console.error('Erro ao carregar documentos:', error);
-    qs('#employee-documents').innerHTML = '<div class="no-documents">Erro ao carregar documentos</div>';
-  }
-}
-
 // Departments
 async function renderDepts(){
   const data = await api('/departments'); const body = qs('#tbl-dept tbody'); body.innerHTML='';
