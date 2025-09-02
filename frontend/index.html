@@ -221,12 +221,12 @@
     <form id="loginForm">
       <div class="form-group">
         <label for="email">E-mail</label>
-        <input type="email" id="email" class="form-control" placeholder="seu@email.com" required>
+        <input type="email" id="email" class="form-control" placeholder="admin@marh.local" required>
       </div>
       
       <div class="form-group">
         <label for="password">Senha</label>
-        <input type="password" id="password" class="form-control" placeholder="Sua senha" required>
+        <input type="password" id="password" class="form-control" placeholder="123" required>
       </div>
       
       <button type="submit" class="btn btn-primary btn-block">
@@ -236,10 +236,15 @@
     </form>
     
     <div class="note">
-      <strong>Estrutura Modular Ativa</strong><br>
-      Sistema reorganizado com arquitetura modular para melhor manutenibilidade e performance.
+      <strong>APIs Conectadas</strong><br>
+      Sistema conectado com backend real para autenticação e dados.
       <br><br>
-      <small>Branch: reorganize | Status: Em desenvolvimento</small>
+      <strong>Usuários de teste:</strong><br>
+      • admin@marh.local (senha: 123)<br>
+      • rh@marh.local (senha: 123)<br>
+      • gestor@marh.local (senha: 123)<br>
+      <br>
+      <small>Branch: reorganize | Status: APIs ativas</small>
     </div>
   </div>
 </section>
@@ -308,8 +313,8 @@
   
   // Constantes
   const API_BASE = window.location.hostname === 'localhost' 
-    ? 'http://localhost:3000' 
-    : 'https://marh-backend.vercel.app';
+    ? 'http://localhost:3001' 
+    : 'https://marh-backend-matheus.vercel.app';
 
   // Utilitários
   function showView(viewName) {
@@ -342,18 +347,27 @@
     const password = document.getElementById('password').value;
     
     try {
-      // Simular API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Chamada real da API de login
+      const response = await fetch(`${API_BASE}/api/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, password })
+      });
       
-      // Por enquanto, aceitar qualquer login
-      if (email && password) {
-        currentUser = { email, role: 'ADMIN' };
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        currentUser = data.user;
+        localStorage.setItem('auth_token', data.token);
         showView('mfa');
       } else {
-        alert('Preencha todos os campos');
+        alert(data.message || 'Credenciais inválidas');
       }
     } catch (error) {
-      alert('Erro no login: ' + error.message);
+      console.error('Erro na API:', error);
+      alert('Erro de conexão com o servidor. Verifique se o backend está rodando.');
     } finally {
       showLoading(false);
     }
@@ -363,21 +377,112 @@
     e.preventDefault();
     
     const code = document.getElementById('mfaCode').value;
+    const token = localStorage.getItem('auth_token');
     
-    if (code.length === 6) {
-      // Simular verificação MFA
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      showView('app');
-    } else {
+    if (code.length !== 6) {
       alert('Código deve ter 6 dígitos');
+      return;
+    }
+    
+    try {
+      // Chamada real da API de verificação MFA
+      const response = await fetch(`${API_BASE}/api/verify-mfa`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ code })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        localStorage.setItem('mfa_verified', 'true');
+        showView('app');
+        loadDashboard();
+      } else {
+        alert(data.message || 'Código inválido');
+      }
+    } catch (error) {
+      console.error('Erro na verificação MFA:', error);
+      alert('Erro de conexão. Verifique se o backend está rodando.');
     }
   });
 
   function logout() {
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('mfa_verified');
     currentUser = null;
     showView('login');
     document.getElementById('loginForm').reset();
     document.getElementById('mfaForm').reset();
+  }
+
+  async function loadDashboard() {
+    const token = localStorage.getItem('auth_token');
+    const content = document.getElementById('content');
+    
+    try {
+      // Carregar dados do dashboard via API
+      const response = await fetch(`${API_BASE}/api/dashboard`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        
+        content.innerHTML = `
+          <h1>Dashboard - ${currentUser.name || currentUser.email}</h1>
+          <p>Bem-vindo ao sistema MARH! Estrutura modular ativa.</p>
+          
+          <div class="card" style="padding: 2rem; margin-top: 2rem;">
+            <h3>📊 Resumo do Sistema</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem;">
+              <div style="background: #f8f9fa; padding: 1rem; border-radius: 6px; text-align: center;">
+                <div style="font-size: 1.5rem; font-weight: bold; color: #007bff;">${data.totalEmployees || 0}</div>
+                <div>Colaboradores</div>
+              </div>
+              <div style="background: #f8f9fa; padding: 1rem; border-radius: 6px; text-align: center;">
+                <div style="font-size: 1.5rem; font-weight: bold; color: #28a745;">${data.totalDepartments || 0}</div>
+                <div>Departamentos</div>
+              </div>
+              <div style="background: #f8f9fa; padding: 1rem; border-radius: 6px; text-align: center;">
+                <div style="font-size: 1.5rem; font-weight: bold; color: #ffc107;">${data.pendingTasks || 0}</div>
+                <div>Pendências</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="card" style="padding: 2rem; margin-top: 2rem;">
+            <h3>🏗️ Status da Reorganização</h3>
+            <ul style="margin-top: 1rem; padding-left: 2rem;">
+              <li>✅ Estrutura de arquivos modular criada</li>
+              <li>✅ CSS componentizado</li>
+              <li>✅ JavaScript modularizado</li>
+              <li>✅ APIs conectadas</li>
+              <li>🔄 Testes e ajustes (em progresso)</li>
+            </ul>
+          </div>
+        `;
+      } else {
+        throw new Error('Erro ao carregar dashboard');
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dashboard:', error);
+      content.innerHTML = `
+        <h1>Sistema MARH - Estrutura Modular</h1>
+        <p>Bem-vindo ao sistema reorganizado! (Modo offline)</p>
+        
+        <div class="card" style="padding: 2rem; margin-top: 2rem; border-left: 4px solid #ffc107;">
+          <h3>⚠️ Modo Offline</h3>
+          <p>Não foi possível conectar com o backend. Verifique se o servidor está rodando.</p>
+          <p><strong>URL do Backend:</strong> ${API_BASE}</p>
+        </div>
+      `;
+    }
   }
 
   // Inicialização
