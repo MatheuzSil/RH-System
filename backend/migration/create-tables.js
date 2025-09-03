@@ -75,13 +75,13 @@ async function createTables() {
     `);
     console.log('  ✅ marh_departments criada');
     
-    // Criar tabela de funcionários
+    // Criar tabela de funcionários com todos os campos
     await pool.request().query(`
       CREATE TABLE marh_employees (
           id NVARCHAR(50) PRIMARY KEY,
           name NVARCHAR(255) NOT NULL,
           email NVARCHAR(255),
-          cpf NVARCHAR(20),
+          cpf NVARCHAR(14),
           phone NVARCHAR(20),
           deptId NVARCHAR(50),
           roleTitle NVARCHAR(255),
@@ -93,10 +93,20 @@ async function createTables() {
           maritalStatus NVARCHAR(20),
           hasChildren NVARCHAR(10),
           childrenCount NVARCHAR(10),
-          userId NVARCHAR(50)
+          userId NVARCHAR(50),
+          chapa NVARCHAR(50),
+          cod_cargo NVARCHAR(20),
+          cargo NVARCHAR(100),
+          local NVARCHAR(100),
+          descricao_folha NVARCHAR(200),
+          centro_custo NVARCHAR(50),
+          cod_situacao NVARCHAR(10),
+          situacao NVARCHAR(50),
+          data_rescisao DATE,
+          hireDate DATE
       )
     `);
-    console.log('  ✅ marh_employees criada');
+    console.log('  ✅ marh_employees criada com todos os campos');
     
     // Criar outras tabelas essenciais
     await pool.request().query(`
