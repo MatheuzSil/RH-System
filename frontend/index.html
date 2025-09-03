@@ -567,8 +567,18 @@
               <input id="emp-name" class="input" type="text" required>
             </div>
             <div class="form-group">
+              <label>Chapa</label>
+              <input id="emp-chapa" class="input" type="text">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
               <label>E-mail</label>
               <input id="emp-email" class="input" type="email" required>
+            </div>
+            <div class="form-group">
+              <label>CPF</label>
+              <input id="emp-cpf" class="input" type="text">
             </div>
           </div>
           <div class="form-row">
@@ -583,9 +593,45 @@
           </div>
           <div class="form-row">
             <div class="form-group">
+              <label>Código do Cargo</label>
+              <input id="emp-cod-cargo" class="input" type="text">
+            </div>
+            <div class="form-group">
+              <label>Nome do Cargo</label>
+              <input id="emp-cargo" class="input" type="text">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
               <label>Departamento</label>
               <input id="emp-department" class="input" type="text">
             </div>
+            <div class="form-group">
+              <label>Local de Trabalho</label>
+              <input id="emp-local" class="input" type="text">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Centro de Custo</label>
+              <input id="emp-centro-custo" class="input" type="text">
+            </div>
+            <div class="form-group">
+              <label>Descrição da Folha</label>
+              <input id="emp-descricao-folha" class="input" type="text">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Código da Situação</label>
+              <input id="emp-cod-situacao" class="input" type="text">
+            </div>
+            <div class="form-group">
+              <label>Situação</label>
+              <input id="emp-situacao" class="input" type="text">
+            </div>
+          </div>
+          <div class="form-row">
             <div class="form-group">
               <label>Status</label>
               <select id="emp-status" class="input">
@@ -600,6 +646,12 @@
               <label>Data de Admissão</label>
               <input id="emp-hire-date" class="input" type="date">
             </div>
+            <div class="form-group">
+              <label>Data de Rescisão</label>
+              <input id="emp-data-rescisao" class="input" type="date">
+            </div>
+          </div>
+          <div class="form-row">
             <div class="form-group">
               <label>Salário</label>
               <input id="emp-salary" class="input" type="number" step="0.01">
@@ -1206,12 +1258,22 @@ function closeEmployeeModal() {
 
 function populateEmployeeForm(emp) {
   qs('#emp-name').value = emp.name || '';
+  qs('#emp-chapa').value = emp.chapa || '';
   qs('#emp-email').value = emp.email || '';
+  qs('#emp-cpf').value = emp.cpf || '';
   qs('#emp-phone').value = emp.phone || '';
   qs('#emp-position').value = emp.position || '';
+  qs('#emp-cod-cargo').value = emp.cod_cargo || '';
+  qs('#emp-cargo').value = emp.cargo || '';
   qs('#emp-department').value = emp.department || '';
+  qs('#emp-local').value = emp.local || '';
+  qs('#emp-centro-custo').value = emp.centro_custo || '';
+  qs('#emp-descricao-folha').value = emp.descricao_folha || '';
+  qs('#emp-cod-situacao').value = emp.cod_situacao || '';
+  qs('#emp-situacao').value = emp.situacao || '';
   qs('#emp-status').value = emp.status || 'ATIVO';
   qs('#emp-hire-date').value = emp.hireDate || '';
+  qs('#emp-data-rescisao').value = emp.data_rescisao || '';
   qs('#emp-salary').value = emp.salary || '';
   qs('#emp-birth-date').value = emp.birthDate || '';
   qs('#emp-marital-status').value = emp.maritalStatus || '';
@@ -1235,12 +1297,22 @@ function clearEmployeeForm() {
 async function saveEmployee() {
   const employeeData = {
     name: qs('#emp-name').value.trim(),
+    chapa: qs('#emp-chapa').value.trim(),
     email: qs('#emp-email').value.trim(),
+    cpf: qs('#emp-cpf').value.trim(),
     phone: qs('#emp-phone').value.trim(),
     position: qs('#emp-position').value.trim(),
+    cod_cargo: qs('#emp-cod-cargo').value.trim(),
+    cargo: qs('#emp-cargo').value.trim(),
     department: qs('#emp-department').value.trim(),
+    local: qs('#emp-local').value.trim(),
+    centro_custo: qs('#emp-centro-custo').value.trim(),
+    descricao_folha: qs('#emp-descricao-folha').value.trim(),
+    cod_situacao: qs('#emp-cod-situacao').value.trim(),
+    situacao: qs('#emp-situacao').value.trim(),
     status: qs('#emp-status').value,
     hireDate: qs('#emp-hire-date').value,
+    data_rescisao: qs('#emp-data-rescisao').value,
     salary: parseFloat(qs('#emp-salary').value) || 0,
     birthDate: qs('#emp-birth-date').value,
     maritalStatus: qs('#emp-marital-status').value,

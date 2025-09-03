@@ -276,11 +276,23 @@
                 <label>Campos Constantes</label>
                 <div id="constantsContainer">
                     <div class="mapping-item">
-                        <span style="min-width: 100px;">status:</span>
+                        <span style="min-width: 120px;">status:</span>
                         <select id="constant_status" style="flex: 1;">
                             <option value="ATIVO">ATIVO</option>
                             <option value="INATIVO">INATIVO</option>
                         </select>
+                    </div>
+                    <div class="mapping-item">
+                        <span style="min-width: 120px;">cod_situacao:</span>
+                        <input type="text" id="constant_cod_situacao" style="flex: 1;" placeholder="Ex: 01, 02, etc">
+                    </div>
+                    <div class="mapping-item">
+                        <span style="min-width: 120px;">situacao:</span>
+                        <input type="text" id="constant_situacao" style="flex: 1;" placeholder="Ex: Ativo, Férias, etc">
+                    </div>
+                    <div class="mapping-item">
+                        <span style="min-width: 120px;">centro_custo:</span>
+                        <input type="text" id="constant_centro_custo" style="flex: 1;" placeholder="Ex: CC001, CC002">
                     </div>
                 </div>
             </div>
@@ -610,13 +622,22 @@
             // Campos específicos do sistema MARH baseados na estrutura
             const marhFields = {
                 'name': 'Nome Completo *',
+                'chapa': 'Chapa',
                 'cpf': 'CPF',
                 'email': 'E-mail',
                 'phone': 'Telefone',
                 'department': 'Departamento *',
                 'position': 'Cargo/Posição *',
+                'cod_cargo': 'Código do Cargo',
+                'cargo': 'Nome do Cargo',
+                'local': 'Local de Trabalho',
+                'descricao_folha': 'Descrição da Folha',
+                'centro_custo': 'Centro de Custo',
+                'cod_situacao': 'Código da Situação',
+                'situacao': 'Situação',
                 'salary': 'Salário',
                 'admissionDate': 'Data de Admissão',
+                'data_rescisao': 'Data de Rescisão',
                 'birthDate': 'Data de Nascimento',
                 'address': 'Endereço',
                 'city': 'Cidade',
@@ -664,13 +685,22 @@
                     // Mapeamentos específicos baseados na estrutura do MARH e imagem
                     const mappings = {
                         'name': ['nome', 'nome_completo', 'funcionario'],
+                        'chapa': ['chapa', 'codigo', 'matricula', 'id'],
                         'cpf': ['cpf', 'cod_darg', 'documento', 'doc'],
                         'email': ['email', 'e-mail', 'e_mail'],
                         'phone': ['telefone', 'fone', 'celular'],
                         'department': ['departamento', 'depto', 'setor'],
                         'position': ['cargo', 'posicao', 'funcao', 'descricao'],
+                        'cod_cargo': ['cod_cargo', 'codigo_cargo', 'id_cargo'],
+                        'cargo': ['nome_cargo', 'desc_cargo', 'titulo_cargo'],
+                        'local': ['local', 'local_trabalho', 'filial', 'unidade'],
+                        'descricao_folha': ['descricao_folha', 'desc_folha', 'folha'],
+                        'centro_custo': ['centro_custo', 'cc', 'custo', 'centro'],
+                        'cod_situacao': ['cod_situacao', 'codigo_situacao', 'sit_cod'],
+                        'situacao': ['situacao', 'desc_situacao', 'status_desc'],
                         'salary': ['salario', 'valor', 'remuneracao'],
-                        'admissionDate': ['admissao', 'data_admissao', 'inicio'],
+                        'admissionDate': ['admissao', 'data_admissao', 'inicio', 'dt_admissao'],
+                        'data_rescisao': ['rescisao', 'data_rescisao', 'desligamento', 'dt_rescisao'],
                         'birthDate': ['nascimento', 'data_nascimento', 'aniversario'],
                         'address': ['endereco', 'rua', 'logradouro'],
                         'city': ['cidade', 'municipio', 'local'],
@@ -996,7 +1026,10 @@
             
             // Atualizar constantes
             constants = {
-                status: document.getElementById('constant_status').value
+                status: document.getElementById('constant_status').value,
+                cod_situacao: document.getElementById('constant_cod_situacao').value,
+                situacao: document.getElementById('constant_situacao').value,
+                centro_custo: document.getElementById('constant_centro_custo').value
             };
             
             isImporting = true;
