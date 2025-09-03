@@ -1,31 +1,5 @@
 // Sistema JavaScript para Gestão de Documentos em Massa
 
-// Função API helper - compatível com o sistema principal
-async function api(path, method = 'GET', body = null) {
-  const token = localStorage.getItem('MARH_TOKEN');
-  const baseURL = window.API || 'http://localhost:3000/api';
-  
-  const options = {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': token ? `Bearer ${token}` : ''
-    }
-  };
-  
-  if (body && method !== 'GET') {
-    options.body = JSON.stringify(body);
-  }
-  
-  const response = await fetch(`${baseURL}${path}`, options);
-  
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-  }
-  
-  return await response.json();
-}
-
 // Utility functions
 function debounce(func, wait) {
   let timeout;
@@ -386,13 +360,10 @@ class BulkDocumentManager {
       // Simular progresso (em uma implementação real, você usaria XMLHttpRequest com progress)
       this.simulateProgress(totalSize);
 
-      const token = localStorage.getItem('MARH_TOKEN');
-      const baseURL = window.API || 'http://localhost:3000/api';
-
-      const response = await fetch(`${baseURL}/documents/bulk-upload`, {
+      const response = await fetch(`${API}/documents/bulk-upload`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': 'Bearer ' + TOKEN
         },
         body: formData
       });
@@ -537,14 +508,11 @@ class BulkDocumentManager {
     try {
       const documentIds = Array.from(checkboxes).map(cb => cb.value);
       
-      const token = localStorage.getItem('MARH_TOKEN');
-      const baseURL = window.API || 'http://localhost:3000/api';
-      
-      const response = await fetch(`${baseURL}/documents/bulk-delete`, {
+      const response = await fetch(`${API}/documents/bulk-delete`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': 'Bearer ' + TOKEN
         },
         body: JSON.stringify({ documentIds })
       });
