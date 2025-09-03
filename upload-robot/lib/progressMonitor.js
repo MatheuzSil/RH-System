@@ -202,7 +202,7 @@ export class ProgressMonitor {
   /**
    * Finaliza o monitoramento e exibe relatório final
    */
-  finish() {
+  async finish() {
     const elapsedTime = (Date.now() - this.startTime) / 1000;
     const successRate = ((this.metrics.uploaded / this.totalFiles) * 100).toFixed(1);
     
@@ -238,14 +238,14 @@ export class ProgressMonitor {
     
     // Salvar relatórios se configurado
     if (this.saveReports) {
-      this.saveReports();
+      await this.saveReportsToFile();
     }
   }
 
   /**
    * Salva relatórios detalhados
    */
-  async saveReports() {
+  async saveReportsToFile() {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const reportsDir = path.join(process.cwd(), 'upload-robot', 'reports');
     

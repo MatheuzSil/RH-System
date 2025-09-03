@@ -11,8 +11,8 @@ import crypto from 'crypto';
 export class FileScanner {
   constructor(config) {
     this.config = config;
-    this.allowedExtensions = config.upload.allowedExtensions || ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png'];
-    this.maxFileSize = this.parseFileSize(config.upload.maxFileSize || '50MB');
+    this.allowedExtensions = config.search?.extensions || ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png'];
+    this.maxFileSize = this.parseFileSize(config.maxFileSize || '50MB');
     this.processedFiles = new Set();
     this.stats = {
       totalFiles: 0,
@@ -74,14 +74,30 @@ export class FileScanner {
       this.stats.totalFiles++;
       
       // Verificar se já foi processado (evitar duplicatas por links simbólicos)
-      const fileHash = await this.getFileHash(filePath);
+      let fileHash;
+      try {
+        fileHash = await this.getFileHash(filePath);
+      } catch (err) {
+        // Se não conseguir gerar hash, ignora o arquivo
+        console.warn(`⚠️ Arquivo ignorado (hash): ${filePath}`);
+        this.stats.skippedFiles++;
+        return;
+      }
       if (this.processedFiles.has(fileHash)) {
         this.stats.skippedFiles++;
         return;
       }
       this.processedFiles.add(fileHash);
       
-      const stat = await fs.stat(filePath);
+      let stat;
+      try {
+        stat = await fs.stat(filePath);
+      } catch (err) {
+        // Se não conseguir acessar o arquivo, ignora
+        console.warn(`⚠️ Arquivo ausente ou inacessível ignorado: ${filePath}`);
+        this.stats.skippedFiles++;
+        return;
+      }
       const ext = path.extname(filePath).toLowerCase();
       const fileName = path.basename(filePath);
       
@@ -125,7 +141,7 @@ export class FileScanner {
         sizeFormatted: this.formatFileSize(stat.size),
         modified: stat.mtime,
         hash: fileHash,
-        relativePath: path.relative(this.config.upload.documentsDir, filePath)
+        relativePath: path.basename(filePath)
       };
       
       files.push(fileInfo);

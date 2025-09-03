@@ -1,0 +1,32 @@
+[
+  {
+    "file": "00b0a21d-1674-470b-862e-6f6441e0e711.pdf",
+    "size": 1671616,
+    "path": "test-docs\\00b0a21d-1674-470b-862e-6f6441e0e711.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T18:51:00.401Z"
+  },
+  {
+    "file": "ARTHUR_MIRANDA_SANTANA_25293.pdf",
+    "size": 1671616,
+    "path": "test-docs\\ARTHUR_MIRANDA_SANTANA_25293.pdf",
+    "result": {
+      "success": false,
+      "reason": "Validation failed for parameter 'empId'. Invalid string.",
+      "employee": {
+        "id": 2,
+        "name": "ARTHUR MIRANDA SANTANA",
+        "cpf": "11067377921",
+        "chapa": "25293",
+        "phone": null,
+        "cargo": "N/A",
+        "matchReason": "Nome: Arthur Miranda Santana → ARTHUR MIRANDA SANTANA (100.0%)"
+      }
+    },
+    "timestamp": "2025-09-03T18:51:00.413Z"
+  }
+]

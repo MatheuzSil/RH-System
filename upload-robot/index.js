@@ -7,14 +7,26 @@
  * inteligente baseados em nome, CPF, chapa e conteúdo do arquivo.
  */
 
+console.log('🚀 INICIANDO ROBÔ DE UPLOAD...');
+console.log('Args recebidos:', process.argv);
+
+console.log('Importando módulos...');
 import { fileURLToPath } from 'url';
 import path from 'path';
 import minimist from 'minimist';
 import fs from 'fs-extra';
+console.log('Módulos básicos importados');
+
 import { FileScanner } from './lib/fileScanner.js';
+console.log('FileScanner importado');
 import { UploadManager } from './lib/uploadManager.js';
+console.log('UploadManager importado');
 import { ProgressMonitor } from './lib/progressMonitor.js';
-import { sql, getPool } from '../backend/config/database.js';
+console.log('ProgressMonitor importado');
+import { sql, getConnection, closeConnection } from '../backend/config/database.js';
+console.log('Database config importado');
+
+console.log('Todos os módulos importados com sucesso!');
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -97,7 +109,7 @@ class UploadRobot {
   async connectDatabase() {
     try {
       console.log('🔌 Conectando ao banco de dados...');
-      this.pool = await getPool();
+      this.pool = await getConnection();
       
       // Testar conexão
       await this.pool.request().query('SELECT 1');
@@ -105,6 +117,7 @@ class UploadRobot {
       
     } catch (error) {
       console.error('❌ Erro ao conectar com banco:', error.message);
+      console.error('Detalhes do erro:', error);
       throw error;
     }
   }
@@ -118,28 +131,39 @@ class UploadRobot {
       
       const result = await this.pool.request().query(`
         SELECT 
-          id, name, cpf, chapa, email, telefone, cargo 
-        FROM marh_employees 
-        WHERE ativo = 1
-        ORDER BY name
+          Id, Nome, Cpf, Matricula, Status
+        FROM Funcionario 
+        WHERE Status = 'Ativo' OR Status IS NULL
+        ORDER BY Nome
       `);
       
+      console.log('Query executada com sucesso, resultado:', result.recordset.length, 'registros');
+      
       this.employees = result.recordset.map(emp => ({
-        ...emp,
-        name: emp.name?.trim(),
-        cpf: emp.cpf?.replace(/\D/g, ''), // apenas números
-        chapa: emp.chapa?.toString().trim(),
-        email: emp.email?.toLowerCase().trim()
+        id: emp.Id,
+        name: emp.Nome?.trim(),
+        cpf: emp.Cpf?.replace(/\D/g, ''), // apenas números
+        matricula: emp.Matricula?.toString().trim(),
+        // Campos originais também disponíveis
+        Id: emp.Id,
+        Nome: emp.Nome,
+        Cpf: emp.Cpf,
+        Matricula: emp.Matricula,
+        Status: emp.Status
       }));
       
       console.log(`✅ ${this.employees.length} colaboradores carregados`);
       
       if (this.employees.length === 0) {
-        throw new Error('Nenhum colaborador ativo encontrado no banco de dados');
+        console.warn('⚠️ Nenhum colaborador ativo encontrado no banco de dados');
+        console.warn('Continuando sem colaboradores para teste...');
+        // Não vamos parar o robô, apenas alertar
+        // throw new Error('Nenhum colaborador ativo encontrado no banco de dados');
       }
       
     } catch (error) {
       console.error('❌ Erro ao carregar colaboradores:', error.message);
+      console.error('SQL Error details:', error);
       throw error;
     }
   }
@@ -154,7 +178,7 @@ class UploadRobot {
       // Escanear arquivos
       console.log(`📁 Escaneando arquivos em: ${documentsPath}`);
       this.fileScanner = new FileScanner(this.config);
-      const files = await this.fileScanner.scan(documentsPath);
+      const files = await this.fileScanner.scanDirectory(documentsPath);
       
       if (files.length === 0) {
         console.log('⚠️ Nenhum arquivo encontrado para processar');
@@ -180,7 +204,7 @@ class UploadRobot {
       
       // Finalizar e exibir relatórios
       if (this.progressMonitor) {
-        this.progressMonitor.finish();
+        await this.progressMonitor.finish();
       }
       
       await this.generateFinalReport();
@@ -297,7 +321,7 @@ class UploadRobot {
       }
       
       if (this.pool) {
-        await this.pool.close();
+        await closeConnection();
       }
       
       console.log('🧹 Recursos limpos com sucesso');
@@ -451,6 +475,20 @@ ALGORITMO DE MATCHING:
 }
 
 // Executar se chamado diretamente
-if (import.meta.url === `file://${process.argv[1]}`) {
+console.log('Verificando se deve executar main...');
+console.log('import.meta.url:', import.meta.url);
+console.log('process.argv[1]:', process.argv[1]);
+
+// Corrigir o caminho no Windows
+const scriptPath = process.argv[1].replace(/\\/g, '/');
+const expectedUrl = `file:///${scriptPath}`;
+console.log('expectedUrl:', expectedUrl);
+
+if (import.meta.url === expectedUrl) {
+  console.log('✅ Executando função main...');
+  main().catch(console.error);
+} else {
+  console.log('❌ Não executando main - condição não atendida');
+  console.log('Executando main mesmo assim para debug...');
   main().catch(console.error);
 }
