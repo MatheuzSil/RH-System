@@ -734,8 +734,8 @@ function initApp(){
 }
 function buildMenu(){
   const NAV = {
-    ADMIN: [['view-dashboard','📊 Dashboard'],['view-employees','👥 Colaboradores'],['view-depts','🏢 Departamentos'],['view-att','🕒 Presenças'],['view-leaves','🏖️ Afastamentos'],['view-payroll','💸 Folha'],['view-reviews','📈 Avaliações'],['view-train','🎓 Treinamentos'],['view-jobs','📋 Vagas'],['view-cand','🧑‍💼 Candidatos'],['view-bulk-documents','📁 Documentos Massa'],['view-protocol','📋 Protocolo'],['view-reports','📑 Relatórios'],['view-audit','🗂️ Logs'],['view-settings','⚙️ Usuários']],
-    RH: [['view-dashboard','📊 Dashboard'],['view-employees','👥 Colaboradores'],['view-depts','🏢 Departamentos'],['view-att','🕒 Presenças'],['view-leaves','🏖️ Afastamentos'],['view-payroll','💸 Folha'],['view-reviews','📈 Avaliações'],['view-train','🎓 Treinamentos'],['view-jobs','📋 Vagas'],['view-cand','🧑‍💼 Candidatos'],['view-bulk-documents','📁 Documentos Massa'],['view-protocol','📋 Protocolo'],['view-reports','📑 Relatórios'],['view-audit','🗂️ Logs']],
+    ADMIN: [['view-dashboard','📊 Dashboard'],['view-employees','👥 Colaboradores'],['import-colaboradores','📥 Importar Colaboradores'],['view-depts','🏢 Departamentos'],['view-att','🕒 Presenças'],['view-leaves','🏖️ Afastamentos'],['view-payroll','💸 Folha'],['view-reviews','📈 Avaliações'],['view-train','🎓 Treinamentos'],['view-jobs','📋 Vagas'],['view-cand','🧑‍💼 Candidatos'],['view-bulk-documents','📁 Documentos Massa'],['view-protocol','📋 Protocolo'],['view-reports','📑 Relatórios'],['view-audit','🗂️ Logs'],['view-settings','⚙️ Usuários']],
+    RH: [['view-dashboard','📊 Dashboard'],['view-employees','👥 Colaboradores'],['import-colaboradores','📥 Importar Colaboradores'],['view-depts','🏢 Departamentos'],['view-att','🕒 Presenças'],['view-leaves','🏖️ Afastamentos'],['view-payroll','💸 Folha'],['view-reviews','📈 Avaliações'],['view-train','🎓 Treinamentos'],['view-jobs','📋 Vagas'],['view-cand','🧑‍💼 Candidatos'],['view-bulk-documents','📁 Documentos Massa'],['view-protocol','📋 Protocolo'],['view-reports','📑 Relatórios'],['view-audit','🗂️ Logs']],
     GESTOR: [['view-dashboard','📊 Dashboard'],['view-employees','👥 Colaboradores'],['view-att','🕒 Presenças'],['view-leaves','🏖️ Afastamentos'],['view-reviews','📈 Avaliações'],['view-protocol','📋 Protocolo'],['view-reports','📑 Relatórios']],
     COLAB: [['view-dashboard','📊 Dashboard'],['view-att','🕒 Presenças'],['view-leaves','🏖️ Afastamentos'],['view-payroll','💸 Folha'],['view-reviews','📈 Avaliações'],['view-protocol','📋 Protocolo']]
   };
@@ -780,6 +780,11 @@ async function openView(id){
     if(typeof BulkDocumentManager !== 'undefined') {
       window.bulkDocManager = new BulkDocumentManager();
     }
+  }
+  if(id==='import-colaboradores') {
+    // Abrir importador de colaboradores em nova aba
+    window.open('./import-colaboradores.html', '_blank');
+    return; // Não mudar a view atual
   }
   if(id==='view-audit'){ try{ const logs = await api('/logs'); renderAudit(logs);}catch{ alert('Sem permissão'); openView('view-dashboard'); } }
   if(id==='view-settings') renderUsers();

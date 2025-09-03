@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Importador de Colaboradores - MARH</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f0f4f8;
+            color: #212529;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .header h1 {
+            color: #007bff;
+            margin-bottom: 0.5rem;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .upload-area {
+            border: 2px dashed #007bff;
+            border-radius: 8px;
+            padding: 3rem;
+            text-align: center;
+            background: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-area:hover, .upload-area.dragover {
+            background: #e3f2fd;
+            border-color: #0056b3;
+        }
+        
+        .upload-area.has-file {
+            background: #d4edda;
+            border-color: #28a745;
+        }
+        
+        .file-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 0.25rem;
+            transition: background 0.2s;
+        }
+        
+        .btn:hover { background: #0056b3; }
+        .btn:disabled { background: #6c757d; cursor: not-allowed; }
+        .btn.success { background: #28a745; }
+        .btn.success:hover { background: #1e7e34; }
+        .btn.danger { background: #dc3545; }
+        .btn.danger:hover { background: #c82333; }
+        .btn.warning { background: #ffc107; color: #212529; }
+        .btn.warning:hover { background: #e0a800; }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        
+        .mapping-item {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .mapping-item select, .mapping-item input {
+            margin: 0 0.5rem;
+            padding: 0.25rem;
+        }
+        
+        .preview-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        
+        .preview-table th, .preview-table td {
+            border: 1px solid #dee2e6;
+            padding: 0.5rem;
+            text-align: left;
+        }
+        
+        .preview-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+        
+        .progress-container {
+            margin: 1rem 0;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #20c997);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .log-container {
+            max-height: 300px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+        
+        .log-entry {
+            margin-bottom: 0.5rem;
+            padding: 0.25rem;
+            border-radius: 3px;
+        }
+        
+        .log-success { background: #d4edda; color: #155724; }
+        .log-error { background: #f8d7da; color: #721c24; }
+        .log-info { background: #d1ecf1; color: #0c5460; }
+        
+        .hidden { display: none !important; }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .stat-card {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 4px;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #007bff;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Importador de Colaboradores</h1>
+            <p>Importe colaboradores em massa a partir de planilhas Excel ou CSV</p>
+        </div>
+
+        <!-- Upload de Arquivo -->
+        <div class="card">
+            <h3>📁 1. Selecionar Planilha</h3>
+            <div class="upload-area" id="uploadArea">
+                <div class="file-icon">📄</div>
+                <p><strong>Arraste sua planilha aqui</strong> ou <button type="button" class="btn" onclick="document.getElementById('fileInput').click()">clique para selecionar</button></p>
+                <p style="color: #6c757d; font-size: 0.9rem;">Formatos: .xlsx, .xls, .csv</p>
+                <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display: none;">
+            </div>
+            <div id="fileInfo" class="hidden" style="margin-top: 1rem;">
+                <p><strong>Arquivo:</strong> <span id="fileName"></span></p>
+                <p><strong>Linhas:</strong> <span id="rowCount"></span> | <strong>Colunas:</strong> <span id="colCount"></span></p>
+            </div>
+        </div>
+
+        <!-- Configuração da API -->
+        <div class="card">
+            <h3>🔧 2. Configuração da API</h3>
+            <div class="grid">
+                <div class="form-group">
+                    <label>URL da API</label>
+                    <input type="text" id="apiUrl" class="form-control" placeholder="http://localhost:3000/api/employees" value="">
+                </div>
+                <div class="form-group">
+                    <label>Método HTTP</label>
+                    <select id="httpMethod" class="form-control">
+                        <option value="POST">POST (Criar novos)</option>
+                        <option value="PUT">PUT (Atualizar existentes)</option>
+                        <option value="PATCH">PATCH (Atualizar parcial)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="grid">
+                <div class="form-group">
+                    <label>Token MARH (será detectado automaticamente)</label>
+                    <input type="text" id="authToken" class="form-control" placeholder="Token será carregado automaticamente" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Status da Conexão</label>
+                    <div id="connectionStatus" style="padding: 0.75rem; border: 1px solid #ced4da; border-radius: 4px;">
+                        <span id="statusText">🔄 Verificando conexão...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mapeamento de Colunas -->
+        <div class="card" id="mappingCard" style="display: none;">
+            <h3>🗂️ 3. Mapear Colunas</h3>
+            <p>Configure como as colunas da planilha correspondem aos campos do sistema:</p>
+            <div id="mappingContainer"></div>
+            
+            <div class="form-group">
+                <label>Campos Constantes</label>
+                <div id="constantsContainer">
+                    <div class="mapping-item">
+                        <span style="min-width: 100px;">status:</span>
+                        <select id="constant_status" style="flex: 1;">
+                            <option value="ATIVO">ATIVO</option>
+                            <option value="INATIVO">INATIVO</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 1rem;">
+                <button class="btn" onclick="testConnection()">🔄 Testar Conexão</button>
+                <button class="btn warning" onclick="validateMapping()">✅ Validar Mapeamento</button>
+            </div>
+        </div>
+
+        <!-- Pré-visualização -->
+        <div class="card" id="previewCard" style="display: none;">
+            <h3>👀 4. Pré-visualização</h3>
+            <button class="btn" onclick="generatePreview()">🔄 Atualizar Pré-visualização</button>
+            <button class="btn warning" onclick="testFirstRow()">🧪 Testar 1ª Linha</button>
+            
+            <div id="previewContainer"></div>
+        </div>
+
+        <!-- Controles de Importação -->
+        <div class="card" id="importCard" style="display: none;">
+            <h3>🚀 5. Importação</h3>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalRows">0</div>
+                    <div class="stat-label">Total de Linhas</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="processedRows">0</div>
+                    <div class="stat-label">Processadas</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="successRows">0</div>
+                    <div class="stat-label">Sucesso</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="errorRows">0</div>
+                    <div class="stat-label">Erros</div>
+                </div>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-info">
+                    <span id="progressText">Pronto para iniciar</span>
+                    <span id="progressSpeed"></span>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin: 1rem 0;">
+                <button class="btn success" id="startBtn" onclick="startImport()">▶️ Iniciar Importação</button>
+                <button class="btn warning" id="pauseBtn" onclick="pauseImport()" disabled>⏸️ Pausar</button>
+                <button class="btn danger" id="cancelBtn" onclick="cancelImport()" disabled>⏹️ Cancelar</button>
+                <button class="btn" onclick="exportErrors()">📥 Exportar Erros</button>
+            </div>
+
+            <div class="form-group">
+                <label>Configurações Avançadas</label>
+                <div class="grid">
+                    <div>
+                        <label>Concorrência (requisições simultâneas)</label>
+                        <input type="number" id="concurrency" class="form-control" value="3" min="1" max="10">
+                    </div>
+                    <div>
+                        <label>Timeout por requisição (ms)</label>
+                        <input type="number" id="timeout" class="form-control" value="5000" min="1000">
+                    </div>
+                </div>
+            </div>
+
+            <h4>📋 Logs de Importação</h4>
+            <div class="log-container" id="logContainer"></div>
+        </div>
+
+        <!-- Configurações Salvas -->
+        <div class="card">
+            <h3>💾 Configurações</h3>
+            <div style="margin-bottom: 1rem;">
+                <button class="btn" onclick="saveConfig()">💾 Salvar Configuração</button>
+                <button class="btn" onclick="loadConfig()">📂 Carregar Configuração</button>
+                <button class="btn danger" onclick="clearConfig()">🗑️ Limpar</button>
+            </div>
+            <textarea id="configData" class="form-control" rows="3" placeholder="Configuração será exibida aqui..."></textarea>
+        </div>
+    </div>
+
+    <!-- SheetJS CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <script>
+        // Estado global
+        let fileData = null;
+        let parsedData = [];
+        let mapping = {};
+        let constants = {};
+        let isImporting = false;
+        let isPaused = false;
+        let importStats = {
+            total: 0,
+            processed: 0,
+            success: 0,
+            errors: 0
+        };
+        let errorLog = [];
+        
+        // Configuração da API MARH
+        let API_BASE = '';
+        let AUTH_TOKEN = '';
+        
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeMarhConnection();
+            initializeEventListeners();
+            loadSavedConfig();
+        });
+        
+        function initializeMarhConnection() {
+            // Tentar detectar configuração do MARH se estiver rodando na mesma origem
+            if (window.API) {
+                API_BASE = window.API;
+                addLog('✅ API detectada: ' + API_BASE, 'success');
+            } else {
+                // URLs comuns para testar
+                API_BASE = 'http://localhost:3000/api';
+            }
+            
+            // Tentar obter token do localStorage
+            AUTH_TOKEN = localStorage.getItem('MARH_TOKEN') || '';
+            
+            if (AUTH_TOKEN) {
+                document.getElementById('authToken').value = AUTH_TOKEN.substring(0, 20) + '...';
+                addLog('✅ Token MARH detectado', 'success');
+            }
+            
+            document.getElementById('apiUrl').value = API_BASE + '/employees';
+            
+            // Testar conexão
+            testConnection();
+        }
+        
+        function validateMapping() {
+            const requiredFields = ['name', 'department', 'position'];
+            const missingFields = [];
+            
+            requiredFields.forEach(field => {
+                if (!mapping[field] || !mapping[field].column) {
+                    missingFields.push(field);
+                }
+            });
+            
+            if (missingFields.length > 0) {
+                alert(`❌ Campos obrigatórios não mapeados: ${missingFields.join(', ')}\n\nPor favor, mapeie todos os campos marcados com (*)`);
+                return false;
+            }
+            
+            addLog('✅ Mapeamento validado com sucesso!', 'success');
+            return true;
+        }
+        
+        async function testConnection() {
+            const statusEl = document.getElementById('statusText');
+            statusEl.innerHTML = '🔄 Testando conexão...';
+            
+            try {
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+                
+                if (AUTH_TOKEN) {
+                    headers['Authorization'] = `Bearer ${AUTH_TOKEN}`;
+                }
+                
+                const response = await fetch(API_BASE + '/employees', {
+                    method: 'GET',
+                    headers
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    statusEl.innerHTML = `✅ Conectado! ${data.length || 0} colaboradores encontrados`;
+                    document.getElementById('connectionStatus').style.backgroundColor = '#d4edda';
+                    addLog(`✅ Conexão estabelecida com ${API_BASE}`, 'success');
+                } else if (response.status === 401) {
+                    statusEl.innerHTML = '❌ Token inválido ou expirado';
+                    document.getElementById('connectionStatus').style.backgroundColor = '#f8d7da';
+                    addLog('❌ Erro de autenticação. Faça login no sistema MARH primeiro.', 'error');
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+            } catch (error) {
+                statusEl.innerHTML = '❌ Erro de conexão: ' + error.message;
+                document.getElementById('connectionStatus').style.backgroundColor = '#f8d7da';
+                addLog('❌ Erro ao conectar com a API: ' + error.message, 'error');
+            }
+        }
+        
+        function initializeEventListeners() {
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('fileInput');
+            
+            // Upload por drag & drop
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+            
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
+            
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFile(files[0]);
+                }
+            });
+            
+            // Upload por clique
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleFile(e.target.files[0]);
+                }
+            });
+        }
+        
+        function handleFile(file) {
+            const allowedTypes = [
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+                'application/vnd.ms-excel', // .xls
+                'text/csv' // .csv
+            ];
+            
+            if (!allowedTypes.includes(file.type) && !file.name.toLowerCase().endsWith('.csv')) {
+                alert('❌ Formato não suportado. Use: .xlsx, .xls ou .csv');
+                return;
+            }
+            
+            addLog('📁 Carregando arquivo: ' + file.name, 'info');
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    parseFile(e.target.result, file);
+                } catch (error) {
+                    addLog('❌ Erro ao ler arquivo: ' + error.message, 'error');
+                }
+            };
+            
+            if (file.name.toLowerCase().endsWith('.csv')) {
+                reader.readAsText(file);
+            } else {
+                reader.readAsArrayBuffer(file);
+            }
+        }
+        
+        function parseFile(data, file) {
+            try {
+                let workbook;
+                
+                if (file.name.toLowerCase().endsWith('.csv')) {
+                    // Parse CSV manual
+                    const lines = data.split('\n').filter(line => line.trim());
+                    if (lines.length === 0) throw new Error('Arquivo CSV vazio');
+                    
+                    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+                    parsedData = lines.slice(1).map((line, index) => {
+                        const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
+                        const row = {};
+                        headers.forEach((header, i) => {
+                            row[header] = values[i] || '';
+                        });
+                        row.__rowIndex = index + 2; // +2 porque linha 1 é header e index começa em 0
+                        return row;
+                    });
+                } else {
+                    // Parse Excel com SheetJS
+                    workbook = XLSX.read(data, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    parsedData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+                    
+                    // Adicionar índice da linha para referência
+                    parsedData.forEach((row, index) => {
+                        row.__rowIndex = index + 2; // +2 porque linha 1 é header
+                    });
+                }
+                
+                if (parsedData.length === 0) {
+                    throw new Error('Nenhum dado encontrado na planilha');
+                }
+                
+                fileData = {
+                    name: file.name,
+                    data: parsedData,
+                    headers: Object.keys(parsedData[0]).filter(k => !k.startsWith('__'))
+                };
+                
+                updateFileInfo();
+                setupMapping();
+                showMappingCard();
+                
+                addLog(`✅ Arquivo carregado: ${parsedData.length} linhas, ${fileData.headers.length} colunas`, 'success');
+                
+            } catch (error) {
+                addLog('❌ Erro ao processar arquivo: ' + error.message, 'error');
+            }
+        }
+        
+        function updateFileInfo() {
+            document.getElementById('fileName').textContent = fileData.name;
+            document.getElementById('rowCount').textContent = parsedData.length.toLocaleString();
+            document.getElementById('colCount').textContent = fileData.headers.length;
+            document.getElementById('fileInfo').classList.remove('hidden');
+            document.getElementById('uploadArea').classList.add('has-file');
+        }
+        
+        function setupMapping() {
+            const container = document.getElementById('mappingContainer');
+            container.innerHTML = '';
+            
+            // Campos específicos do sistema MARH baseados na estrutura
+            const marhFields = {
+                'name': 'Nome Completo *',
+                'cpf': 'CPF',
+                'email': 'E-mail',
+                'phone': 'Telefone',
+                'department': 'Departamento *',
+                'position': 'Cargo/Posição *',
+                'salary': 'Salário',
+                'admissionDate': 'Data de Admissão',
+                'birthDate': 'Data de Nascimento',
+                'address': 'Endereço',
+                'city': 'Cidade',
+                'state': 'Estado',
+                'zipCode': 'CEP',
+                'status': 'Status (ATIVO/INATIVO)'
+            };
+            
+            Object.entries(marhFields).forEach(([field, label]) => {
+                const isRequired = label.includes('*');
+                const item = document.createElement('div');
+                item.className = 'mapping-item';
+                item.style.backgroundColor = isRequired ? '#fff3cd' : 'transparent';
+                
+                item.innerHTML = `
+                    <span style="min-width: 150px; font-weight: ${isRequired ? 'bold' : '500'};">${label}:</span>
+                    <select onchange="updateMapping('${field}', this.value)" style="flex: 1; margin-right: 10px;">
+                        <option value="">-- Não mapear --</option>
+                        ${fileData.headers.map(header => 
+                            `<option value="${header}">${header}</option>`
+                        ).join('')}
+                    </select>
+                    <input type="text" placeholder="Transformação JS (opcional)" 
+                           onchange="updateTransform('${field}', this.value)" 
+                           style="flex: 1;" title="Ex: value.toUpperCase(), parseFloat(value)">
+                `;
+                
+                container.appendChild(item);
+            });
+            
+            // Auto-mapear campos similares
+            autoMapFields(marhFields);
+        }
+        
+        function autoMapFields(marhFields) {
+            Object.keys(marhFields).forEach(field => {
+                const select = document.querySelector(`select[onchange*="${field}"]`);
+                if (!select) return;
+                
+                // Tentar encontrar coluna similar baseada na imagem fornecida
+                const similarColumn = fileData.headers.find(header => {
+                    const fieldLower = field.toLowerCase();
+                    const headerLower = header.toLowerCase();
+                    
+                    // Mapeamentos específicos baseados na estrutura do MARH e imagem
+                    const mappings = {
+                        'name': ['nome', 'nome_completo', 'funcionario'],
+                        'cpf': ['cpf', 'cod_darg', 'documento', 'doc'],
+                        'email': ['email', 'e-mail', 'e_mail'],
+                        'phone': ['telefone', 'fone', 'celular'],
+                        'department': ['departamento', 'depto', 'setor'],
+                        'position': ['cargo', 'posicao', 'funcao', 'descricao'],
+                        'salary': ['salario', 'valor', 'remuneracao'],
+                        'admissionDate': ['admissao', 'data_admissao', 'inicio'],
+                        'birthDate': ['nascimento', 'data_nascimento', 'aniversario'],
+                        'address': ['endereco', 'rua', 'logradouro'],
+                        'city': ['cidade', 'municipio', 'local'],
+                        'state': ['estado', 'uf', 'unidade_federativa'],
+                        'zipCode': ['cep', 'codigo_postal'],
+                        'status': ['status', 'situacao', 'ativo']
+                    };
+                    
+                    if (mappings[fieldLower]) {
+                        return mappings[fieldLower].some(mapping => 
+                            headerLower.includes(mapping) || mapping.includes(headerLower)
+                        );
+                    }
+                    
+                    // Mapeamento genérico
+                    return headerLower.includes(fieldLower) || fieldLower.includes(headerLower);
+                });
+                
+                if (similarColumn) {
+                    select.value = similarColumn;
+                    updateMapping(field, similarColumn);
+                }
+            });
+        }
+        
+        function updateMapping(field, column) {
+            if (column) {
+                mapping[field] = { column, transform: mapping[field]?.transform || '' };
+            } else {
+                delete mapping[field];
+            }
+        }
+        
+        function updateTransform(field, transform) {
+            if (mapping[field]) {
+                mapping[field].transform = transform;
+            }
+        }
+        
+        function showMappingCard() {
+            document.getElementById('mappingCard').style.display = 'block';
+            document.getElementById('previewCard').style.display = 'block';
+            document.getElementById('importCard').style.display = 'block';
+            updateStats();
+        }
+        
+        function generatePreview() {
+            if (!parsedData || parsedData.length === 0) return;
+            
+            const container = document.getElementById('previewContainer');
+            const previewData = parsedData.slice(0, 3); // Mostrar apenas 3 linhas
+            
+            const table = document.createElement('table');
+            table.className = 'preview-table';
+            
+            // Header
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+            
+            const mappedFields = Object.keys(mapping).filter(field => mapping[field].column);
+            const constantFields = Object.keys(constants).filter(field => constants[field]);
+            
+            [...mappedFields, ...constantFields].forEach(field => {
+                const th = document.createElement('th');
+                th.textContent = field;
+                headerRow.appendChild(th);
+            });
+            
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+            
+            // Body
+            const tbody = document.createElement('tbody');
+            
+            previewData.forEach(row => {
+                const tr = document.createElement('tr');
+                
+                mappedFields.forEach(field => {
+                    const td = document.createElement('td');
+                    const config = mapping[field];
+                    let value = row[config.column] || '';
+                    
+                    // Aplicar transformação se definida
+                    if (config.transform) {
+                        try {
+                            value = new Function('value', `return ${config.transform}`)(value);
+                        } catch (e) {
+                            value = `[ERRO: ${e.message}]`;
+                        }
+                    }
+                    
+                    td.textContent = value;
+                    tr.appendChild(td);
+                });
+                
+                constantFields.forEach(field => {
+                    const td = document.createElement('td');
+                    td.textContent = constants[field];
+                    td.style.background = '#f0f8ff';
+                    tr.appendChild(td);
+                });
+                
+                tbody.appendChild(tr);
+            });
+            
+            table.appendChild(tbody);
+            container.innerHTML = '';
+            container.appendChild(table);
+        }
+        
+        function testFirstRow() {
+            if (!parsedData || parsedData.length === 0) {
+                alert('❌ Nenhum dado para testar');
+                return;
+            }
+            
+            const payload = buildPayload(parsedData[0]);
+            
+            addLog('🧪 Testando primeira linha...', 'info');
+            console.log('Payload de teste:', payload);
+            
+            // Mostrar payload em JSON
+            const jsonStr = JSON.stringify(payload, null, 2);
+            if (confirm(`Payload que será enviado:\n\n${jsonStr}\n\nProsseguir com o teste?`)) {
+                sendRequest(payload, 1)
+                    .then(response => {
+                        addLog('✅ Teste bem-sucedido!', 'success');
+                        console.log('Resposta do teste:', response);
+                    })
+                    .catch(error => {
+                        addLog('❌ Erro no teste: ' + error.message, 'error');
+                    });
+            }
+        }
+        
+        function buildPayload(row) {
+            const payload = {};
+            
+            // Mapear colunas
+            Object.entries(mapping).forEach(([field, config]) => {
+                if (!config.column) return;
+                
+                let value = row[config.column] || '';
+                
+                // Aplicar transformação
+                if (config.transform) {
+                    try {
+                        value = new Function('value', `return ${config.transform}`)(value);
+                    } catch (e) {
+                        console.warn(`Erro na transformação do campo ${field}:`, e);
+                    }
+                }
+                
+                payload[field] = value;
+            });
+            
+            // Adicionar constantes
+            Object.entries(constants).forEach(([field, value]) => {
+                if (value) payload[field] = value;
+            });
+            
+            // Gerar ID único se não mapeado
+            if (!payload.id) {
+                payload.id = 'EMP_' + Math.random().toString(36).slice(2, 8).toUpperCase();
+            }
+            
+            // Status padrão
+            if (!payload.status) {
+                payload.status = document.getElementById('constant_status').value || 'ATIVO';
+            }
+            
+            return payload;
+        }
+        
+        async function sendRequest(payload, rowIndex) {
+            const apiUrl = document.getElementById('apiUrl').value || (API_BASE + '/employees');
+            const method = document.getElementById('httpMethod').value;
+            const timeout = parseInt(document.getElementById('timeout').value);
+            
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+            
+            // Usar token do MARH
+            if (AUTH_TOKEN) {
+                headers['Authorization'] = `Bearer ${AUTH_TOKEN}`;
+            }
+            
+            // Validar payload para o formato MARH
+            const marhPayload = validateAndFormatPayload(payload);
+            
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), timeout);
+            
+            try {
+                addLog(`📤 Enviando: ${marhPayload.name} (${marhPayload.id})`, 'info');
+                
+                const response = await fetch(apiUrl, {
+                    method,
+                    headers,
+                    body: JSON.stringify(marhPayload),
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(`HTTP ${response.status}: ${errorData.error || response.statusText}`);
+                }
+                
+                const result = await response.json();
+                addLog(`✅ Colaborador criado: ${result.name} (ID: ${result.id})`, 'success');
+                return result;
+                
+            } catch (error) {
+                clearTimeout(timeoutId);
+                if (error.name === 'AbortError') {
+                    throw new Error('Timeout - requisição cancelada');
+                }
+                throw error;
+            }
+        }
+        
+        function validateAndFormatPayload(payload) {
+            // Formatação específica para o sistema MARH
+            const marhPayload = {
+                id: payload.id || generateEmployeeId(),
+                name: payload.name || 'Nome não informado',
+                email: payload.email || generateEmailFromName(payload.name),
+                phone: payload.phone || '',
+                department: payload.department || 'Não informado',
+                position: payload.position || 'Colaborador',
+                salary: payload.salary ? parseFloat(payload.salary.toString().replace(/[^\d.,]/g, '').replace(',', '.')) : 0,
+                status: payload.status || 'ATIVO',
+                admissionDate: formatDate(payload.admissionDate) || new Date().toISOString().split('T')[0],
+                birthDate: formatDate(payload.birthDate) || null,
+                cpf: formatCPF(payload.cpf) || '',
+                address: payload.address || '',
+                city: payload.city || '',
+                state: payload.state || '',
+                zipCode: formatZipCode(payload.zipCode) || '',
+                userId: payload.userId || null
+            };
+            
+            // Remover campos vazios para não quebrar a validação
+            Object.keys(marhPayload).forEach(key => {
+                if (marhPayload[key] === '' || marhPayload[key] === null) {
+                    delete marhPayload[key];
+                }
+            });
+            
+            return marhPayload;
+        }
+        
+        function generateEmployeeId() {
+            return 'EMP_' + Math.random().toString(36).slice(2, 8).toUpperCase();
+        }
+        
+        function generateEmailFromName(name) {
+            if (!name) return '';
+            return name.toLowerCase()
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Remove acentos
+                .replace(/[^a-z\s]/g, '') // Remove caracteres especiais
+                .replace(/\s+/g, '.') // Substitui espaços por pontos
+                + '@empresa.com';
+        }
+        
+        function formatCPF(cpf) {
+            if (!cpf) return '';
+            return cpf.toString().replace(/\D/g, '').slice(0, 11);
+        }
+        
+        function formatZipCode(zipCode) {
+            if (!zipCode) return '';
+            return zipCode.toString().replace(/\D/g, '').slice(0, 8);
+        }
+        
+        function formatDate(dateStr) {
+            if (!dateStr) return null;
+            
+            try {
+                // Tenta diferentes formatos de data
+                let date;
+                
+                if (dateStr instanceof Date) {
+                    date = dateStr;
+                } else if (typeof dateStr === 'string') {
+                    // Formato brasileiro: dd/mm/yyyy
+                    if (dateStr.includes('/')) {
+                        const parts = dateStr.split('/');
+                        if (parts.length === 3) {
+                            date = new Date(parts[2], parts[1] - 1, parts[0]);
+                        }
+                    } 
+                    // Formato ISO ou americano
+                    else {
+                        date = new Date(dateStr);
+                    }
+                }
+                
+                if (date && !isNaN(date.getTime())) {
+                    return date.toISOString().split('T')[0];
+                }
+            } catch (e) {
+                console.warn('Erro ao formatar data:', dateStr, e);
+            }
+            
+            return null;
+        }
+        
+        async function startImport() {
+            if (isImporting || !parsedData || parsedData.length === 0) return;
+            
+            // Validar mapeamento antes de iniciar
+            if (!validateMapping()) return;
+            
+            // Validar conexão
+            if (!AUTH_TOKEN) {
+                alert('❌ Token de autenticação não encontrado. Por favor, faça login no sistema MARH primeiro.');
+                return;
+            }
+            
+            // Atualizar constantes
+            constants = {
+                status: document.getElementById('constant_status').value
+            };
+            
+            isImporting = true;
+            isPaused = false;
+            importStats = { total: parsedData.length, processed: 0, success: 0, errors: 0 };
+            errorLog = [];
+            
+            updateUI();
+            updateStats();
+            
+            addLog(`🚀 Iniciando importação de ${parsedData.length} colaboradores para o sistema MARH...`, 'info');
+            
+            const concurrency = parseInt(document.getElementById('concurrency').value);
+            const startTime = Date.now();
+            
+            try {
+                await processWithConcurrency(parsedData, concurrency);
+                
+                const duration = (Date.now() - startTime) / 1000;
+                addLog(`✅ Importação concluída em ${duration.toFixed(1)}s`, 'success');
+                addLog(`📊 Resultado: ${importStats.success} sucessos, ${importStats.errors} erros`, 'info');
+                
+                if (importStats.errors > 0) {
+                    addLog('💡 Clique em "Exportar Erros" para ver detalhes dos erros', 'info');
+                }
+                
+            } catch (error) {
+                addLog(`❌ Importação interrompida: ${error.message}`, 'error');
+            } finally {
+                isImporting = false;
+                updateUI();
+            }
+        }
+        
+        async function processWithConcurrency(data, concurrency) {
+            const chunks = [];
+            for (let i = 0; i < data.length; i += concurrency) {
+                chunks.push(data.slice(i, i + concurrency));
+            }
+            
+            for (const chunk of chunks) {
+                if (!isImporting) break;
+                
+                while (isPaused) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+                
+                const promises = chunk.map(async (row, index) => {
+                    try {
+                        const payload = buildPayload(row);
+                        const response = await sendRequest(payload, row.__rowIndex);
+                        
+                        importStats.success++;
+                        addLog(`✅ Linha ${row.__rowIndex}: ${payload.name || payload.id} criado`, 'success');
+                        
+                    } catch (error) {
+                        importStats.errors++;
+                        const errorMsg = `❌ Linha ${row.__rowIndex}: ${error.message}`;
+                        addLog(errorMsg, 'error');
+                        
+                        errorLog.push({
+                            linha: row.__rowIndex,
+                            dados: row,
+                            erro: error.message
+                        });
+                    } finally {
+                        importStats.processed++;
+                        updateProgress();
+                    }
+                });
+                
+                await Promise.all(promises);
+            }
+        }
+        
+        function pauseImport() {
+            isPaused = !isPaused;
+            document.getElementById('pauseBtn').textContent = isPaused ? '▶️ Retomar' : '⏸️ Pausar';
+            addLog(isPaused ? '⏸️ Importação pausada' : '▶️ Importação retomada', 'info');
+        }
+        
+        function cancelImport() {
+            isImporting = false;
+            isPaused = false;
+            updateUI();
+            addLog('⏹️ Importação cancelada', 'info');
+        }
+        
+        function updateUI() {
+            document.getElementById('startBtn').disabled = isImporting;
+            document.getElementById('pauseBtn').disabled = !isImporting;
+            document.getElementById('cancelBtn').disabled = !isImporting;
+        }
+        
+        function updateProgress() {
+            const progress = (importStats.processed / importStats.total) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+            document.getElementById('progressText').textContent = 
+                `${importStats.processed}/${importStats.total} (${progress.toFixed(1)}%)`;
+                
+            updateStats();
+        }
+        
+        function updateStats() {
+            document.getElementById('totalRows').textContent = importStats.total.toLocaleString();
+            document.getElementById('processedRows').textContent = importStats.processed.toLocaleString();
+            document.getElementById('successRows').textContent = importStats.success.toLocaleString();
+            document.getElementById('errorRows').textContent = importStats.errors.toLocaleString();
+        }
+        
+        function addLog(message, type = 'info') {
+            const container = document.getElementById('logContainer');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            
+            container.appendChild(entry);
+            container.scrollTop = container.scrollHeight;
+        }
+        
+        function exportErrors() {
+            if (errorLog.length === 0) {
+                alert('❌ Nenhum erro para exportar');
+                return;
+            }
+            
+            const csv = ['Linha,Erro,Dados Originais']
+                .concat(errorLog.map(error => 
+                    `${error.linha},"${error.erro}","${JSON.stringify(error.dados).replace(/"/g, '""')}"`
+                ))
+                .join('\n');
+            
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `erros_importacao_${new Date().toISOString().slice(0,10)}.csv`;
+            link.click();
+        }
+        
+        function saveConfig() {
+            const config = {
+                apiUrl: document.getElementById('apiUrl').value,
+                httpMethod: document.getElementById('httpMethod').value,
+                authToken: document.getElementById('authToken').value,
+                extraHeaders: document.getElementById('extraHeaders').value,
+                mapping,
+                constants: {
+                    status: document.getElementById('constant_status').value,
+                    userId: document.getElementById('constant_userId').value
+                },
+                concurrency: document.getElementById('concurrency').value,
+                timeout: document.getElementById('timeout').value
+            };
+            
+            const configStr = JSON.stringify(config, null, 2);
+            document.getElementById('configData').value = configStr;
+            
+            localStorage.setItem('marh_import_config', configStr);
+            addLog('💾 Configuração salva', 'info');
+        }
+        
+        function loadConfig() {
+            const configStr = document.getElementById('configData').value || localStorage.getItem('marh_import_config');
+            if (!configStr) {
+                alert('❌ Nenhuma configuração encontrada');
+                return;
+            }
+            
+            try {
+                const config = JSON.parse(configStr);
+                
+                document.getElementById('apiUrl').value = config.apiUrl || '';
+                document.getElementById('httpMethod').value = config.httpMethod || 'POST';
+                document.getElementById('authToken').value = config.authToken || '';
+                document.getElementById('extraHeaders').value = config.extraHeaders || '';
+                document.getElementById('concurrency').value = config.concurrency || '3';
+                document.getElementById('timeout').value = config.timeout || '5000';
+                
+                if (config.constants) {
+                    document.getElementById('constant_status').value = config.constants.status || '';
+                    document.getElementById('constant_userId').value = config.constants.userId || '';
+                }
+                
+                mapping = config.mapping || {};
+                constants = config.constants || {};
+                
+                addLog('📂 Configuração carregada', 'info');
+                
+            } catch (error) {
+                alert('❌ Erro ao carregar configuração: ' + error.message);
+            }
+        }
+        
+        function loadSavedConfig() {
+            const saved = localStorage.getItem('marh_import_config');
+            if (saved) {
+                document.getElementById('configData').value = saved;
+            }
+        }
+        
+        function clearConfig() {
+            if (confirm('Tem certeza que deseja limpar todas as configurações?')) {
+                localStorage.removeItem('marh_import_config');
+                document.getElementById('configData').value = '';
+                location.reload();
+            }
+        }
+    </script>
+</body>
+</html>
