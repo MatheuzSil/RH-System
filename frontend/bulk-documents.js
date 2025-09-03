@@ -1,4 +1,44 @@
 // Sistema JavaScript para Gestão de Documentos em Massa
+
+// Função API helper - compatível com o sistema principal
+async function api(path, method = 'GET', body = null) {
+  const token = localStorage.getItem('MARH_TOKEN');
+  const baseURL = window.API || 'http://localhost:3000/api';
+  
+  const options = {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': token ? `Bearer ${token}` : ''
+    }
+  };
+  
+  if (body && method !== 'GET') {
+    options.body = JSON.stringify(body);
+  }
+  
+  const response = await fetch(`${baseURL}${path}`, options);
+  
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+  
+  return await response.json();
+}
+
+// Utility functions
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+
 class BulkDocumentManager {
   constructor() {
     this.selectedFiles = new Map();
@@ -346,10 +386,13 @@ class BulkDocumentManager {
       // Simular progresso (em uma implementação real, você usaria XMLHttpRequest com progress)
       this.simulateProgress(totalSize);
 
-      const response = await fetch(`${API}/documents/bulk-upload`, {
+      const token = localStorage.getItem('MARH_TOKEN');
+      const baseURL = window.API || 'http://localhost:3000/api';
+
+      const response = await fetch(`${baseURL}/documents/bulk-upload`, {
         method: 'POST',
         headers: {
-          'Authorization': 'Bearer ' + TOKEN
+          'Authorization': `Bearer ${token}`
         },
         body: formData
       });
@@ -494,11 +537,14 @@ class BulkDocumentManager {
     try {
       const documentIds = Array.from(checkboxes).map(cb => cb.value);
       
-      const response = await fetch(`${API}/documents/bulk-delete`, {
+      const token = localStorage.getItem('MARH_TOKEN');
+      const baseURL = window.API || 'http://localhost:3000/api';
+      
+      const response = await fetch(`${baseURL}/documents/bulk-delete`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + TOKEN
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ documentIds })
       });
