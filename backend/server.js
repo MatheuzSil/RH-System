@@ -14,6 +14,26 @@ const DATA_PATH = path.join(__dirname, 'db.json');
 // Variável para controlar se usamos SQL ou JSON
 const USE_SQL = process.env.USE_SQL === 'true';
 
+// Mapeamento de coleções para tabelas SQL
+const TABLE_MAPPING = {
+  users: 'marh_users',
+  employees: 'marh_employees',
+  departments: 'marh_departments',
+  attendance: 'marh_attendance',
+  leaves: 'marh_leaves',
+  payroll: 'marh_payroll',
+  reviews: 'marh_reviews',
+  evaluations: 'marh_evaluations',
+  trainings: 'marh_trainings',
+  jobs: 'marh_jobs',
+  candidates: 'marh_candidates'
+};
+
+// Log do modo atual
+console.log(`\n🔄 MARH Backend iniciado no modo: ${USE_SQL ? '🗄️ SQL SERVER' : '📄 JSON'}`);
+console.log(`📊 Fonte de dados: ${USE_SQL ? 'SQL Server Database' : 'JSON File (db.json)'}`);
+console.log(`🔗 USE_SQL=${USE_SQL}\n`);
+
 function loadDB(){ return JSON.parse(fs.readFileSync(DATA_PATH,'utf-8')); }
 function saveDB(dbData){ fs.writeFileSync(DATA_PATH, JSON.stringify(dbData,null,2), 'utf-8'); }
 function uid(prefix='ID'){ return prefix + '_' + Math.random().toString(36).slice(2,8).toUpperCase(); }
@@ -77,6 +97,7 @@ app.get('/', (req, res) => {
 
 // Endpoint de diagnóstico para verificar fonte dos dados
 app.get('/api/diagnostic', auth, requireRole('ADMIN'), async (req, res) => {
+  console.log(`🔍 [DIAGNOSTIC] Executando diagnóstico do sistema`);
   try {
     const result = {
       sqlEnabled: USE_SQL,
@@ -85,25 +106,32 @@ app.get('/api/diagnostic', auth, requireRole('ADMIN'), async (req, res) => {
     };
     
     if (USE_SQL) {
+      console.log(`🔍 [DIAGNOSTIC] Testando conexão SQL Server`);
       try {
         // Testar conexão SQL
         const users = await loadFromDB('marh_users');
         result.sqlConnection = 'OK';
         result.sqlUserCount = users.length;
         result.dataSource = 'SQL Server Database';
+        console.log(`✅ [DIAGNOSTIC] SQL Server OK - ${users.length} usuários encontrados`);
       } catch (error) {
         result.sqlConnection = 'ERROR';
         result.sqlError = error.message;
         result.dataSource = 'JSON File (Fallback)';
+        console.log(`❌ [DIAGNOSTIC] SQL Server com erro: ${error.message}`);
       }
     } else {
+      console.log(`📄 [DIAGNOSTIC] Usando modo JSON`);
       const db = loadDB();
       result.jsonUserCount = db.users?.length || 0;
       result.dataSource = 'JSON File';
+      console.log(`✅ [DIAGNOSTIC] JSON OK - ${result.jsonUserCount} usuários encontrados`);
     }
     
+    console.log(`📊 [DIAGNOSTIC] Resultado:`, result);
     res.json(result);
   } catch (error) {
+    console.error(`❌ [DIAGNOSTIC] Erro no diagnóstico:`, error);
     res.status(500).json({
       error: 'Erro no diagnóstico',
       message: error.message
@@ -112,26 +140,68 @@ app.get('/api/diagnostic', auth, requireRole('ADMIN'), async (req, res) => {
 });
 
 // Auth
-app.post('/api/login', (req,res)=>{
+app.post('/api/login', async (req,res)=>{
   const {email, password} = req.body || {};
-  const db = loadDB();
-  const user = db.users.find(u => u.email === email && u.pass === password && u.active);
+  
+  // Buscar usuário no SQL ou JSON
+  let user;
+  if (USE_SQL) {
+    console.log(`🔐 [LOGIN] Verificando credenciais no SQL Server`);
+    try {
+      const users = await loadFromDB('marh_users', `email = '${email}' AND pass = '${password}' AND active = 1`);
+      user = users[0];
+      console.log(`${user ? '✅' : '❌'} [LOGIN] Usuário ${user ? 'encontrado' : 'não encontrado'} no SQL Server`);
+    } catch (error) {
+      console.log(`❌ [LOGIN] Erro no SQL Server, usando JSON como fallback:`, error.message);
+      const db = loadDB();
+      user = db.users.find(u => u.email === email && u.pass === password && u.active);
+      console.log(`${user ? '✅' : '❌'} [LOGIN] Usuário ${user ? 'encontrado' : 'não encontrado'} no JSON (fallback)`);
+    }
+  } else {
+    console.log(`📄 [LOGIN] Verificando credenciais no JSON`);
+    const db = loadDB();
+    user = db.users.find(u => u.email === email && u.pass === password && u.active);
+    console.log(`${user ? '✅' : '❌'} [LOGIN] Usuário ${user ? 'encontrado' : 'não encontrado'} no JSON`);
+  }
+  
   if(!user){ return res.status(401).json({error:'Credenciais inválidas'}); }
   const code = (''+Math.floor(100000+Math.random()*900000));
   pendingMFA.set(email, code);
+  console.log(`📱 [LOGIN] Código MFA gerado para ${email}: ${code}`);
   return res.json({mfa:true, demoCode: code});
 });
-app.post('/api/mfa', (req,res)=>{
+app.post('/api/mfa', async (req,res)=>{
   const {email, code} = req.body || {};
   const expected = pendingMFA.get(email);
   if(!expected || expected !== code){ return res.status(401).json({error:'Código inválido'}); }
   pendingMFA.delete(email);
-  const db = loadDB();
-  const user = db.users.find(u=>u.email===email && u.active);
+  
+  // Buscar usuário para o token
+  let user;
+  if (USE_SQL) {
+    console.log(`🎫 [MFA] Buscando dados do usuário no SQL Server para gerar token`);
+    try {
+      const users = await loadFromDB('marh_users', `email = '${email}' AND active = 1`);
+      user = users[0];
+      console.log(`✅ [MFA] Usuário encontrado no SQL Server: ${user?.name}`);
+    } catch (error) {
+      console.log(`❌ [MFA] Erro no SQL Server, usando JSON como fallback`);
+      const db = loadDB();
+      user = db.users.find(u=>u.email===email && u.active);
+      console.log(`✅ [MFA] Usuário encontrado no JSON: ${user?.name}`);
+    }
+  } else {
+    console.log(`📄 [MFA] Buscando dados do usuário no JSON para gerar token`);
+    const db = loadDB();
+    user = db.users.find(u=>u.email===email && u.active);
+    console.log(`✅ [MFA] Usuário encontrado no JSON: ${user?.name}`);
+  }
+  
   if(!user){ return res.status(401).json({error:'Usuário não encontrado'}); }
   const token = uid('T');
   sessions.set(token, {id:user.id, email:user.email, name:user.name, role:user.role});
-  log(db, user.email, 'login', 'acesso concedido'); saveDB(db);
+  await log(user.email, 'login', 'acesso concedido');
+  console.log(`🚀 [MFA] Token gerado com sucesso para ${user.name} (${user.role})`);
   res.json({token, role:user.role, name:user.name});
 });
 
@@ -145,37 +215,28 @@ function requireRole(...roles){
   return (req,res,next)=> roles.includes(req.user.role) ? next() : res.status(403).json({error:'Sem permissão'});
 }
 
-// Mapeamento de coleções JSON para tabelas SQL
-const TABLE_MAPPING = {
-  'users': 'marh_users',
-  'departments': 'marh_departments', 
-  'employees': 'marh_employees',
-  'attendance': 'marh_attendance',
-  'leaves': 'marh_leaves',
-  'payroll': 'marh_payroll',
-  'evaluations': 'marh_evaluations',
-  'trainings': 'marh_trainings',
-  'jobs': 'marh_jobs',
-  'candidates': 'marh_candidates'
-};
-
 function listEndpoint(coll, filterFn=null){ 
   return async (req,res)=> {
     try {
       let data;
       if (USE_SQL && TABLE_MAPPING[coll]) {
+        console.log(`📊 [${coll.toUpperCase()}] Buscando dados do SQL Server (tabela: ${TABLE_MAPPING[coll]})`);
         data = await loadFromDB(TABLE_MAPPING[coll]);
+        console.log(`✅ [${coll.toUpperCase()}] ${data.length} registros carregados do SQL Server`);
       } else {
+        console.log(`📄 [${coll.toUpperCase()}] Buscando dados do JSON (db.json)`);
         const db = loadDB(); 
         data = db[coll] || [];
+        console.log(`✅ [${coll.toUpperCase()}] ${data.length} registros carregados do JSON`);
       }
       
       if(filterFn) data = data.filter(x=> filterFn(x, req.user, { [coll]: data }));
       res.json(data);
     } catch (error) {
-      console.error(`Erro ao buscar ${coll}:`, error);
+      console.error(`❌ [${coll.toUpperCase()}] Erro no SQL Server, usando JSON como fallback:`, error.message);
       const db = loadDB(); 
       let data = db[coll] || [];
+      console.log(`🔄 [${coll.toUpperCase()}] ${data.length} registros carregados do JSON (fallback)`);
       if(filterFn) data = data.filter(x=> filterFn(x, req.user, db));
       res.json(data);
     }
@@ -187,11 +248,15 @@ function getOne(coll){
     try {
       let item;
       if (USE_SQL && TABLE_MAPPING[coll]) {
+        console.log(`🔍 [${coll.toUpperCase()}] Buscando item ${req.params.id} no SQL Server`);
         const data = await loadFromDB(TABLE_MAPPING[coll], `id = '${req.params.id}'`);
         item = data[0];
+        console.log(`${item ? '✅' : '❌'} [${coll.toUpperCase()}] Item ${item ? 'encontrado' : 'não encontrado'} no SQL Server`);
       } else {
+        console.log(`📄 [${coll.toUpperCase()}] Buscando item ${req.params.id} no JSON`);
         const db = loadDB(); 
         item = (db[coll] || []).find(x => x.id === req.params.id);
+        console.log(`${item ? '✅' : '❌'} [${coll.toUpperCase()}] Item ${item ? 'encontrado' : 'não encontrado'} no JSON`);
       }
       
       if(!item) return res.status(404).json({error:'Não encontrado'});

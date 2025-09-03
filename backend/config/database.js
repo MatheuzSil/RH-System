@@ -6,9 +6,9 @@ dotenv.config();
 
 const config = {
   server: process.env.DB_SERVER || 'sqlserver.grupoworklife.com.br',
-  database: process.env.DB_NAME || 'grupoworklife',
+  database: process.env.DB_DATABASE || 'grupoworklife',
   user: process.env.DB_USER || 'grupoworklife',
-  password: process.env.DB_PASSWORD || 'sua_senha_aqui',
+  password: process.env.DB_PASSWORD || 'P14vv4WP]Fnr',
   port: parseInt(process.env.DB_PORT) || 1433,
   options: {
     encrypt: process.env.DB_ENCRYPT === 'false' ? false : true,
