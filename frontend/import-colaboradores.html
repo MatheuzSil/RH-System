@@ -673,6 +673,9 @@
         }
         
         function autoMapFields(marhFields) {
+            console.log('=== INÍCIO AUTO MAPPING ===');
+            console.log('Headers disponíveis:', fileData.headers);
+            
             Object.keys(marhFields).forEach(field => {
                 const select = document.querySelector(`select[onchange*="${field}"]`);
                 if (!select) return;
@@ -710,20 +713,34 @@
                     };
                     
                     if (mappings[fieldLower]) {
-                        return mappings[fieldLower].some(mapping => 
+                        const found = mappings[fieldLower].some(mapping => 
                             headerLower.includes(mapping) || mapping.includes(headerLower)
                         );
+                        if (found) {
+                            console.log(`Campo ${field}: encontrado mapping específico com header "${header}"`);
+                            return true;
+                        }
                     }
                     
                     // Mapeamento genérico
-                    return headerLower.includes(fieldLower) || fieldLower.includes(headerLower);
+                    const genericMatch = headerLower.includes(fieldLower) || fieldLower.includes(headerLower);
+                    if (genericMatch) {
+                        console.log(`Campo ${field}: encontrado mapping genérico com header "${header}"`);
+                    }
+                    return genericMatch;
                 });
                 
                 if (similarColumn) {
+                    console.log(`✅ Mapeando ${field} -> ${similarColumn}`);
                     select.value = similarColumn;
                     updateMapping(field, similarColumn);
+                } else {
+                    console.log(`❌ Nenhuma coluna encontrada para ${field}`);
                 }
             });
+            
+            console.log('Mapping final:', mapping);
+            console.log('=== FIM AUTO MAPPING ===');
         }
         
         function updateMapping(field, column) {
@@ -817,14 +834,22 @@
                 return;
             }
             
+            // Debug do mapeamento
+            console.log('Mapeamento atual:', mapping);
+            console.log('Dados da primeira linha:', parsedData[0]);
+            
             const payload = buildPayload(parsedData[0]);
             
             addLog('🧪 Testando primeira linha...', 'info');
             console.log('Payload de teste:', payload);
             
-            // Mostrar payload em JSON
+            // Mostrar payload em JSON com informações de debug
+            const mappingInfo = Object.entries(mapping).map(([field, config]) => 
+                `${field}: ${config.column} -> ${parsedData[0][config.column] || '(vazio)'}`
+            ).join('\n');
+            
             const jsonStr = JSON.stringify(payload, null, 2);
-            if (confirm(`Payload que será enviado:\n\n${jsonStr}\n\nProsseguir com o teste?`)) {
+            if (confirm(`Mapeamento:\n${mappingInfo}\n\nPayload que será enviado:\n\n${jsonStr}\n\nProsseguir com o teste?`)) {
                 sendRequest(payload, 1)
                     .then(response => {
                         addLog('✅ Teste bem-sucedido!', 'success');
@@ -839,16 +864,26 @@
         function buildPayload(row) {
             const payload = {};
             
+            console.log('=== BUILD PAYLOAD DEBUG ===');
+            console.log('Mapping disponível:', mapping);
+            console.log('Row data:', row);
+            
             // Mapear colunas
             Object.entries(mapping).forEach(([field, config]) => {
-                if (!config.column) return;
+                if (!config.column) {
+                    console.log(`Campo ${field}: sem coluna mapeada`);
+                    return;
+                }
                 
                 let value = row[config.column] || '';
+                console.log(`Campo ${field}: coluna "${config.column}" = "${value}"`);
                 
                 // Aplicar transformação
                 if (config.transform) {
                     try {
+                        const originalValue = value;
                         value = new Function('value', `return ${config.transform}`)(value);
+                        console.log(`Transformação ${field}: "${originalValue}" -> "${value}"`);
                     } catch (e) {
                         console.warn(`Erro na transformação do campo ${field}:`, e);
                     }
@@ -859,18 +894,26 @@
             
             // Adicionar constantes
             Object.entries(constants).forEach(([field, value]) => {
-                if (value) payload[field] = value;
+                if (value) {
+                    payload[field] = value;
+                    console.log(`Constante ${field}: "${value}"`);
+                }
             });
             
             // Gerar ID único se não mapeado
             if (!payload.id) {
                 payload.id = 'EMP_' + Math.random().toString(36).slice(2, 8).toUpperCase();
+                console.log(`ID gerado: ${payload.id}`);
             }
             
             // Status padrão
             if (!payload.status) {
                 payload.status = document.getElementById('constant_status').value || 'ATIVO';
+                console.log(`Status padrão: ${payload.status}`);
             }
+            
+            console.log('Payload final:', payload);
+            console.log('=== FIM BUILD PAYLOAD DEBUG ===');
             
             return payload;
         }
