@@ -574,11 +574,31 @@
                         return row;
                     });
                 } else {
-                    // Parse Excel com SheetJS
-                    workbook = XLSX.read(data, { type: 'array' });
+                    // Parse Excel com SheetJS - configurações melhoradas
+                    console.log('Lendo arquivo Excel...');
+                    workbook = XLSX.read(data, { 
+                        type: 'array',
+                        cellDates: true,        // Tentar converter datas automaticamente
+                        cellText: false,        // Não forçar tudo como texto
+                        cellFormula: false,     // Não incluir fórmulas
+                        cellStyles: false,      // Não incluir estilos
+                        sheetStubs: false       // Não incluir células vazias
+                    });
+                    
                     const sheetName = workbook.SheetNames[0];
+                    console.log('Planilha encontrada:', sheetName);
                     const worksheet = workbook.Sheets[sheetName];
-                    parsedData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+                    
+                    // Converter para JSON com configurações específicas
+                    parsedData = XLSX.utils.sheet_to_json(worksheet, { 
+                        defval: '',           // Valor padrão para células vazias
+                        header: 1,            // Usar primeira linha como header
+                        raw: false,           // Não usar valores brutos (permite formatação)
+                        dateNF: 'yyyy-mm-dd' // Formato de data preferido
+                    });
+                    
+                    console.log('Dados parseados:', parsedData.length, 'linhas');
+                    console.log('Primeira linha de exemplo:', parsedData[0]);
                     
                     // Adicionar índice da linha para referência
                     parsedData.forEach((row, index) => {
@@ -589,6 +609,57 @@
                 if (parsedData.length === 0) {
                     throw new Error('Nenhum dado encontrado na planilha');
                 }
+                
+                // Pós-processamento dos dados para garantir tipos corretos
+                console.log('Aplicando pós-processamento...');
+                parsedData = parsedData.map((row, index) => {
+                    const processedRow = {};
+                    
+                    Object.keys(row).forEach(key => {
+                        if (key.startsWith('__')) {
+                            processedRow[key] = row[key];
+                            return;
+                        }
+                        
+                        let value = row[key];
+                        
+                        // Se o valor é uma data do JavaScript, converter para string
+                        if (value instanceof Date) {
+                            value = value.toISOString().split('T')[0]; // YYYY-MM-DD
+                            console.log(`Data JS detectada em ${key}: ${row[key]} -> ${value}`);
+                        }
+                        // Se parecer um número de data do Excel (45000+), converter
+                        else if (typeof value === 'number' && value > 25000 && value < 60000) {
+                            const excelDate = new Date((value - 25569) * 86400 * 1000);
+                            value = excelDate.toISOString().split('T')[0];
+                            console.log(`Número Excel detectado em ${key}: ${row[key]} -> ${value}`);
+                        }
+                        // Garantir que números sejam preservados como números quando apropriado
+                        else if (typeof value === 'string' && !isNaN(value) && value.trim() !== '') {
+                            // Se for um número grande (possível chapa), manter como string
+                            if (key.toLowerCase().includes('chapa') || key.toLowerCase().includes('cpf') || key.toLowerCase().includes('codigo')) {
+                                value = value.trim();
+                                console.log(`Campo numérico preservado como string em ${key}: ${value}`);
+                            }
+                            // Se for um número pequeno, converter para number
+                            else if (parseFloat(value) < 10000000) {
+                                value = parseFloat(value);
+                            } else {
+                                value = value.trim();
+                            }
+                        }
+                        // Limpar strings
+                        else if (typeof value === 'string') {
+                            value = value.trim();
+                        }
+                        
+                        processedRow[key] = value;
+                    });
+                    
+                    return processedRow;
+                });
+                
+                console.log('Pós-processamento completo. Primeira linha processada:', parsedData[0]);
                 
                 fileData = {
                     name: file.name,
