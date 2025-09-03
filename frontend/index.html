@@ -88,11 +88,12 @@
             <thead>
               <tr>
                 <th>Nome</th>
+                <th>Chapa</th>
                 <th>E-mail</th>
-                <th>Departamento</th>
                 <th>Cargo</th>
+                <th>Local</th>
+                <th>Situação</th>
                 <th>Salário</th>
-                <th>Status</th>
                 <th></th>
               </tr>
             </thead>
@@ -957,8 +958,13 @@ function filterEmployees(employees) {
       (emp.name && emp.name.toLowerCase().includes(term)) ||
       (emp.email && emp.email.toLowerCase().includes(term)) ||
       (emp.position && emp.position.toLowerCase().includes(term)) ||
+      (emp.cargo && emp.cargo.toLowerCase().includes(term)) ||
       (emp.department && emp.department.toLowerCase().includes(term)) ||
-      (emp.phone && emp.phone.toLowerCase().includes(term))
+      (emp.local && emp.local.toLowerCase().includes(term)) ||
+      (emp.phone && emp.phone.toLowerCase().includes(term)) ||
+      (emp.chapa && emp.chapa.toLowerCase().includes(term)) ||
+      (emp.cpf && emp.cpf.toLowerCase().includes(term)) ||
+      (emp.situacao && emp.situacao.toLowerCase().includes(term))
     );
   });
   
@@ -1111,7 +1117,7 @@ function renderEmployeeTable() {
   if (filteredEmployees.length === 0) {
     body.innerHTML = `
       <tr>
-        <td colspan="7" style="text-align: center; padding: 2rem;">
+        <td colspan="8" style="text-align: center; padding: 2rem;">
           <div style="font-size: 2rem; margin-bottom: 1rem;">🔍</div>
           <div>Nenhum colaborador encontrado</div>
           ${searchTerm ? `<button type="button" class="btn mt1" onclick="clearEmployeeSearch()">Limpar Busca</button>` : ''}
@@ -1125,11 +1131,12 @@ function renderEmployeeTable() {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${e.name}</td>
+      <td>${e.chapa || 'N/A'}</td>
       <td>${e.email}</td>
-      <td>${deptName(e.department)}</td>
-      <td>${e.position||''}</td>
+      <td>${e.cargo || e.position || 'N/A'}</td>
+      <td>${e.local || e.department || 'N/A'}</td>
+      <td>${e.situacao || e.status || 'N/A'}</td>
       <td>${brl(e.salary||0)}</td>
-      <td>${e.status}</td>
       <td class="right"></td>
     `;
     const td = tr.querySelector('td:last-child');
@@ -1164,16 +1171,18 @@ function createEmployeeCard(emp) {
   card.innerHTML = `
     <div class="employee-avatar">${initials}</div>
     <div class="employee-name">${emp.name}</div>
-    <div class="employee-position">${emp.position || 'Cargo não informado'}</div>
-    <div class="employee-department">${emp.department || 'Departamento não informado'}</div>
+    <div class="employee-position">${emp.cargo || emp.position || 'Cargo não informado'}</div>
+    <div class="employee-department">${emp.local || emp.department || 'Local não informado'}</div>
     <div class="employee-info">
       <div>📧 ${emp.email}</div>
       <div>📱 ${emp.phone || 'Não informado'}</div>
+      <div>🏷️ Chapa: ${emp.chapa || 'Não informado'}</div>
       <div>💰 ${salary}</div>
       <div>📅 Admissão: ${hireDate}</div>
+      <div>🏢 Centro de Custo: ${emp.centro_custo || 'Não informado'}</div>
     </div>
     <div style="margin-top: 1rem;">
-      <span class="employee-status ${emp.status || 'ATIVO'}">${emp.status || 'ATIVO'}</span>
+      <span class="employee-status ${emp.status || 'ATIVO'}">${emp.situacao || emp.status || 'ATIVO'}</span>
     </div>
     <div class="employee-actions" style="margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: center;">
       <button type="button" class="btn small view-btn">👁️ Ver</button>
