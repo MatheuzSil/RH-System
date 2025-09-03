@@ -209,39 +209,71 @@ class MassiveDocumentImporter {
   async processBatch(files, batchId, options) {
     let success = 0;
     let failed = 0;
+    const documentsToInsert = [];
     
     for (const filePath of files) {
       try {
         const empId = this.extractEmployeeIdFromPath(filePath);
         const stat = fs.statSync(filePath);
         
-        // Simular processo de upload
-        // Em um caso real, você integraria com sua API
+        // Ler arquivo e converter para base64
+        const fileBuffer = fs.readFileSync(filePath);
+        const fileData = fileBuffer.toString('base64');
+        
         const document = {
           id: this.generateId('DOC'),
           empId: empId,
           fileName: path.basename(filePath),
-          filePath: filePath,
+          fileData: fileData,
           fileSize: stat.size,
           mimeType: this.getMimeType(filePath),
           uploadDate: new Date().toISOString().split('T')[0],
+          type: options.defaultType || 'DOCUMENTO_IMPORTADO',
+          description: `Importado via CLI - ${path.basename(filePath)}`,
           batchId: batchId,
-          importedAt: new Date().toISOString()
+          uploadedBy: 'CLI_IMPORT',
+          importedAt: new Date().toISOString(),
+          expirationDate: null,
+          notes: `Importação em lote - Arquivo original: ${filePath}`
         };
         
-        // Aqui você salvaria no banco de dados
-        // await this.saveToDatabase(document);
-        
+        documentsToInsert.push(document);
         success++;
         this.stats.processedSize += stat.size;
         
         if (options.verbose) {
-          console.log(`   ✅ ${path.basename(filePath)} (${empId})`);
+          console.log(`   ✅ ${path.basename(filePath)} (${empId}) - ${this.formatSize(stat.size)}`);
         }
         
       } catch (error) {
         failed++;
         console.log(`   ❌ ${path.basename(filePath)}: ${error.message}`);
+      }
+    }
+    
+    // Inserir todos os documentos do lote no SQL Server
+    if (documentsToInsert.length > 0) {
+      try {
+        console.log(`💾 Salvando ${documentsToInsert.length} documentos no SQL Server...`);
+        
+        if (options.dryRun) {
+          console.log(`🧪 [DRY-RUN] Simularia inserção de ${documentsToInsert.length} documentos`);
+        } else {
+          // Importar função do dbHelpers
+          const { insertDocumentsBulk } = await import('./utils/dbHelpers.js');
+          await insertDocumentsBulk(documentsToInsert);
+          console.log(`✅ ${documentsToInsert.length} documentos salvos no SQL Server`);
+        }
+      } catch (error) {
+        console.error(`❌ Erro ao salvar lote no SQL Server:`, error.message);
+        
+        if (!options.continueOnError) {
+          throw error;
+        }
+        
+        // Marcar todos como falharam
+        failed += success;
+        success = 0;
       }
     }
     
@@ -395,22 +427,30 @@ async function main() {
   
   if (args.length === 0 || args.includes('--help')) {
     console.log(`
-📁 MARH - Importador Massivo de Documentos
+📁 MARH - Importador Massivo de Documentos (SQL Server)
 
 Uso: node bulk-import.js [diretório] [opções]
 
 Opções:
-  --batch-size [num]    Arquivos por lote (padrão: 50)
-  --delay [ms]         Delay entre lotes em ms (padrão: 1000)
-  --ignore-errors      Continuar mesmo com erros
-  --continue-on-error  Não parar em erros de lote
-  --verbose            Log detalhado
-  --dry-run           Simular sem alterar dados
+  --batch-size [num]     Arquivos por lote (padrão: 50)
+  --delay [ms]          Delay entre lotes em ms (padrão: 1000)
+  --default-type [tipo] Tipo padrão dos documentos (padrão: DOCUMENTO_IMPORTADO)
+  --ignore-errors       Continuar mesmo com erros
+  --continue-on-error   Não parar em erros de lote
+  --verbose             Log detalhado
+  --dry-run            Simular sem alterar dados (SQL)
+
+Variáveis de Ambiente:
+  USE_SQL=true          Usar SQL Server (obrigatório para produção)
+  DB_SERVER=servidor    Servidor SQL Server
+  DB_USER=usuario       Usuário do banco
+  DB_PASSWORD=senha     Senha do banco
 
 Exemplos:
   node bulk-import.js ./documentos
   node bulk-import.js ./documentos --batch-size 100 --verbose
-  node bulk-import.js ./documentos --dry-run
+  node bulk-import.js ./documentos --dry-run --default-type CONTRATO
+  USE_SQL=true node bulk-import.js ./documentos --batch-size 25
     `);
     return;
   }

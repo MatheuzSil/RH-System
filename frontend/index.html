@@ -141,6 +141,199 @@
         <div class="card"><table id="tbl-cand"><thead><tr><th>Nome</th><th>E-mail</th><th>Vaga</th><th>Etapa</th><th></th></tr></thead><tbody></tbody></table></div>
       </div>
 
+      <!-- Aba de Documentos Massivos -->
+      <div id="view-bulk-documents" class="hidden">
+        <div class="page-header">
+          <h2>📁 Gestão de Documentos em Massa</h2>
+          <p>Sistema para upload e organização de grandes volumes de documentos de funcionários</p>
+        </div>
+
+        <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 2rem;">
+          <!-- Seção de Upload -->
+          <div class="card">
+            <h3>🚀 Upload em Lote</h3>
+            <div class="form-section">
+              <div class="form-group">
+                <label>Selecionar Funcionário</label>
+                <select id="bulk-employee-select" class="input">
+                  <option value="">Carregando funcionários...</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label>Tipo de Documento</label>
+                <select id="bulk-doc-type" class="input">
+                  <option value="RG">RG</option>
+                  <option value="CPF">CPF</option>
+                  <option value="CONTRATO">Contrato</option>
+                  <option value="DIPLOMA">Diploma</option>
+                  <option value="CERTIFICADO">Certificado</option>
+                  <option value="PRONTUARIO">Prontuário</option>
+                  <option value="EXAME">Exame Médico</option>
+                  <option value="OUTROS">Outros</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Descrição Geral</label>
+                <input id="bulk-description" class="input" placeholder="Descrição dos documentos">
+              </div>
+
+              <div class="form-group">
+                <label>Data de Expiração (opcional)</label>
+                <input id="bulk-expiry" class="input" type="date">
+              </div>
+
+              <div class="form-group">
+                <label>Selecionar Arquivos (PDF, DOC, IMG)</label>
+                <div class="file-drop-zone" id="bulk-drop-zone">
+                  <input id="bulk-file-input" type="file" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt,.xls,.xlsx" style="display: none;">
+                  <div class="drop-message">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">📄</div>
+                    <p><strong>Arraste arquivos aqui</strong> ou <button type="button" onclick="document.getElementById('bulk-file-input').click()" class="link-button">clique para selecionar</button></p>
+                    <p style="color: #666; font-size: 0.9rem;">Máximo: 100 arquivos por vez, 100MB por arquivo</p>
+                  </div>
+                  <div id="file-preview" class="file-preview hidden"></div>
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button id="bulk-upload-btn" class="btn ok" disabled>
+                  📤 Iniciar Upload em Lote
+                </button>
+                <button id="clear-files-btn" class="btn">
+                  🗑️ Limpar Seleção
+                </button>
+              </div>
+
+              <!-- Progress Section -->
+              <div id="upload-progress" class="progress-section hidden">
+                <h4>📊 Progresso do Upload</h4>
+                <div class="progress-bar">
+                  <div id="progress-fill" class="progress-fill"></div>
+                </div>
+                <div id="progress-info" class="progress-info">
+                  <span id="progress-text">Preparando...</span>
+                  <span id="progress-speed"></span>
+                </div>
+                <div id="upload-results" class="upload-results"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Seção de Monitoramento -->
+          <div class="card">
+            <h3>📈 Estatísticas</h3>
+            <div class="stats-grid">
+              <div class="stat-card">
+                <div class="stat-number" id="total-documents">0</div>
+                <div class="stat-label">Total de Documentos</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-number" id="total-size">0 MB</div>
+                <div class="stat-label">Espaço Utilizado</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-number" id="employees-with-docs">0</div>
+                <div class="stat-label">Funcionários com Docs</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-number" id="pending-uploads">0</div>
+                <div class="stat-label">Uploads Pendentes</div>
+              </div>
+            </div>
+
+            <div class="mt2">
+              <h4>🔍 Busca Rápida</h4>
+              <input id="doc-search" class="input" placeholder="Buscar por nome do funcionário ou documento...">
+              <div id="search-results" class="search-results mt1"></div>
+            </div>
+
+            <div class="mt2">
+              <h4>🏷️ Filtros</h4>
+              <div class="filter-group">
+                <select id="filter-type" class="input" style="width: 48%; margin-right: 4%;">
+                  <option value="">Todos os tipos</option>
+                  <option value="RG">RG</option>
+                  <option value="CPF">CPF</option>
+                  <option value="CONTRATO">Contrato</option>
+                  <option value="DIPLOMA">Diploma</option>
+                  <option value="CERTIFICADO">Certificado</option>
+                  <option value="PRONTUARIO">Prontuário</option>
+                  <option value="EXAME">Exame Médico</option>
+                  <option value="OUTROS">Outros</option>
+                </select>
+                <select id="filter-status" class="input" style="width: 48%;">
+                  <option value="">Todos os status</option>
+                  <option value="valid">Válidos</option>
+                  <option value="expired">Expirados</option>
+                  <option value="expiring">Expirando em 30 dias</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Seção de Listagem -->
+        <div class="card mt2">
+          <div class="card-header">
+            <h3>📋 Documentos Recentes</h3>
+            <div class="toolbar">
+              <button id="export-docs" class="btn">📥 Exportar Lista</button>
+              <button id="bulk-delete" class="btn danger">🗑️ Exclusão em Lote</button>
+              <button id="refresh-docs" class="btn">🔄 Atualizar</button>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th><input type="checkbox" id="select-all-docs"></th>
+                  <th>Funcionário</th>
+                  <th>Documento</th>
+                  <th>Tipo</th>
+                  <th>Tamanho</th>
+                  <th>Upload</th>
+                  <th>Status</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="bulk-docs-list">
+                <!-- Documentos serão carregados aqui -->
+              </tbody>
+            </table>
+          </div>
+
+          <div class="pagination">
+            <button id="prev-page" class="btn">← Anterior</button>
+            <span id="page-info">Página 1 de 1</span>
+            <button id="next-page" class="btn">Próximo →</button>
+          </div>
+        </div>
+
+        <!-- Seção de Importação -->
+        <div class="card mt2">
+          <h3>📂 Importação de Diretório</h3>
+          <p>Para volumes muito grandes (400GB+), use a ferramenta de linha de comando:</p>
+          <div class="code-block">
+            <code>
+              # 1. Organize os arquivos em pastas por funcionário<br>
+              documentos/<br>
+              ├── EMP001/<br>
+              │   ├── contrato.pdf<br>
+              │   └── rg.pdf<br>
+              ├── EMP002/<br>
+              │   └── diploma.pdf<br>
+              <br>
+              # 2. Execute o script de importação<br>
+              node backend/bulk-import.js ./documentos
+            </code>
+          </div>
+          <button id="start-cli-import" class="btn ok mt1">🚀 Iniciar Importação CLI</button>
+        </div>
+      </div>
+
       <div id="view-reports" class="hidden">
         <div class="card">
           <b>Relatórios rápidos</b>
@@ -541,8 +734,8 @@ function initApp(){
 }
 function buildMenu(){
   const NAV = {
-    ADMIN: [['view-dashboard','📊 Dashboard'],['view-employees','👥 Colaboradores'],['view-depts','🏢 Departamentos'],['view-att','🕒 Presenças'],['view-leaves','🏖️ Afastamentos'],['view-payroll','💸 Folha'],['view-reviews','📈 Avaliações'],['view-train','🎓 Treinamentos'],['view-jobs','📋 Vagas'],['view-cand','🧑‍💼 Candidatos'],['view-protocol','📋 Protocolo'],['view-reports','📑 Relatórios'],['view-audit','🗂️ Logs'],['view-settings','⚙️ Usuários']],
-    RH: [['view-dashboard','📊 Dashboard'],['view-employees','👥 Colaboradores'],['view-depts','🏢 Departamentos'],['view-att','🕒 Presenças'],['view-leaves','🏖️ Afastamentos'],['view-payroll','💸 Folha'],['view-reviews','📈 Avaliações'],['view-train','🎓 Treinamentos'],['view-jobs','📋 Vagas'],['view-cand','🧑‍💼 Candidatos'],['view-protocol','📋 Protocolo'],['view-reports','📑 Relatórios'],['view-audit','🗂️ Logs']],
+    ADMIN: [['view-dashboard','📊 Dashboard'],['view-employees','👥 Colaboradores'],['view-depts','🏢 Departamentos'],['view-att','🕒 Presenças'],['view-leaves','🏖️ Afastamentos'],['view-payroll','💸 Folha'],['view-reviews','📈 Avaliações'],['view-train','🎓 Treinamentos'],['view-jobs','📋 Vagas'],['view-cand','🧑‍💼 Candidatos'],['view-bulk-documents','📁 Documentos Massa'],['view-protocol','📋 Protocolo'],['view-reports','📑 Relatórios'],['view-audit','🗂️ Logs'],['view-settings','⚙️ Usuários']],
+    RH: [['view-dashboard','📊 Dashboard'],['view-employees','👥 Colaboradores'],['view-depts','🏢 Departamentos'],['view-att','🕒 Presenças'],['view-leaves','🏖️ Afastamentos'],['view-payroll','💸 Folha'],['view-reviews','📈 Avaliações'],['view-train','🎓 Treinamentos'],['view-jobs','📋 Vagas'],['view-cand','🧑‍💼 Candidatos'],['view-bulk-documents','📁 Documentos Massa'],['view-protocol','📋 Protocolo'],['view-reports','📑 Relatórios'],['view-audit','🗂️ Logs']],
     GESTOR: [['view-dashboard','📊 Dashboard'],['view-employees','👥 Colaboradores'],['view-att','🕒 Presenças'],['view-leaves','🏖️ Afastamentos'],['view-reviews','📈 Avaliações'],['view-protocol','📋 Protocolo'],['view-reports','📑 Relatórios']],
     COLAB: [['view-dashboard','📊 Dashboard'],['view-att','🕒 Presenças'],['view-leaves','🏖️ Afastamentos'],['view-payroll','💸 Folha'],['view-reviews','📈 Avaliações'],['view-protocol','📋 Protocolo']]
   };
@@ -582,6 +775,12 @@ async function openView(id){
   if(id==='view-jobs') renderJobs();
   if(id==='view-cand') renderCandidates();
   if(id==='view-protocol') renderProtocol();
+  if(id==='view-bulk-documents') { 
+    // Initialize bulk document manager
+    if(typeof BulkDocumentManager !== 'undefined') {
+      window.bulkDocManager = new BulkDocumentManager();
+    }
+  }
   if(id==='view-audit'){ try{ const logs = await api('/logs'); renderAudit(logs);}catch{ alert('Sem permissão'); openView('view-dashboard'); } }
   if(id==='view-settings') renderUsers();
 }
@@ -1883,5 +2082,9 @@ if(TOKEN){
   fetch(API+'/summary',{headers:{'Authorization':'Bearer '+TOKEN}}).then(r=>{ if(r.ok){ ROLE='ADMIN'; WHO='Sessão'; initApp(); } }).catch(()=>{});
 }
 </script>
+
+<!-- Bulk Documents JavaScript -->
+<script src="bulk-documents.js"></script>
+
 </body>
 </html>

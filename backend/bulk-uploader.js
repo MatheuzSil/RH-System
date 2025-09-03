@@ -1,16 +1,19 @@
-// Sistema de Upload em Lote para Documentos Massivos
+// Sistema de Upload em Lote para Documentos Massivos (SQL Server)
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import { insertDocumentsBulk, logToDB } from './utils/dbHelpers.js';
 
 class BulkDocumentUploader {
-  constructor(documentsDir) {
+  constructor(documentsDir, useSql = process.env.USE_SQL === 'true') {
     this.documentsDir = documentsDir;
+    this.useSql = useSql;
     this.uploadQueue = [];
     this.isProcessing = false;
     this.maxConcurrentUploads = 5;
     this.maxFileSize = 100 * 1024 * 1024; // 100MB
     
+    console.log(`📤 BulkUploader inicializado - Modo: ${this.useSql ? 'SQL Server' : 'JSON'}`);
     this.initializeStorage();
   }
 
@@ -62,7 +65,7 @@ class BulkDocumentUploader {
     return this.upload.array('documents', 100);
   }
 
-  // Processar upload em lote com retry
+  // Processar upload em lote com retry (SQL Server)
   async processBulkUpload(files, empId, metadata = {}) {
     const results = {
       success: [],
@@ -72,6 +75,7 @@ class BulkDocumentUploader {
     };
 
     console.log(`🚀 Iniciando upload em lote: ${files.length} arquivos para funcionário ${empId}`);
+    console.log(`📊 Modo: ${this.useSql ? 'SQL Server' : 'JSON'}`);
 
     // Processar arquivos em chunks para não sobrecarregar
     const chunks = this.chunkArray(files, this.maxConcurrentUploads);
@@ -86,6 +90,8 @@ class BulkDocumentUploader {
       
       const chunkResults = await Promise.allSettled(chunkPromises);
       
+      const successfulDocs = [];
+      
       chunkResults.forEach((result, index) => {
         const file = chunk[index];
         results.processedSize += file.size;
@@ -96,6 +102,7 @@ class BulkDocumentUploader {
             id: result.value.id,
             size: file.size
           });
+          successfulDocs.push(result.value);
         } else {
           results.failed.push({
             filename: file.originalname,
@@ -105,11 +112,35 @@ class BulkDocumentUploader {
         }
       });
 
+      // Inserir documentos bem-sucedidos no SQL Server em lote
+      if (this.useSql && successfulDocs.length > 0) {
+        try {
+          console.log(`💾 Salvando ${successfulDocs.length} documentos no SQL Server...`);
+          await insertDocumentsBulk(successfulDocs);
+          console.log(`✅ ${successfulDocs.length} documentos salvos no SQL Server`);
+        } catch (error) {
+          console.error('❌ Erro ao salvar no SQL Server:', error);
+          // Mover documentos de success para failed
+          successfulDocs.forEach(doc => {
+            const successIndex = results.success.findIndex(s => s.id === doc.id);
+            if (successIndex !== -1) {
+              const failedDoc = results.success.splice(successIndex, 1)[0];
+              results.failed.push({
+                filename: failedDoc.filename,
+                error: 'Erro ao salvar no banco: ' + error.message,
+                size: failedDoc.size
+              });
+            }
+          });
+        }
+      }
+
       // Progresso
       const progress = ((i + 1) / chunks.length) * 100;
       console.log(`📊 Progresso: ${progress.toFixed(1)}%`);
     }
 
+    console.log(`🎉 Upload em lote concluído: ${results.success.length} sucessos, ${results.failed.length} falhas`);
     return results;
   }
 

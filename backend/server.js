@@ -2,17 +2,46 @@ import express from 'express';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { loadFromDB, insertToDB, updateInDB, deleteFromDB, logToDB, getDashboardSummary } from './utils/dbHelpers.js';
+import { config } from 'dotenv';
 import BulkDocumentUploader from './bulk-uploader.js';
 import DocumentStorageOptimizer from './storage-optimization.js';
+
+config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DATA_PATH = path.join(__dirname, 'db.json');
 const DOCUMENTS_DIR = path.join(__dirname, '../documents');
 
+// Variável para controlar se usamos SQL ou JSON
+const USE_SQL = process.env.USE_SQL === 'true';
+
+// Mapeamento de coleções para tabelas SQL (incluindo documentos)
+const TABLE_MAPPING = {
+  users: 'marh_users',
+  employees: 'marh_employees',
+  departments: 'marh_departments',
+  attendance: 'marh_attendance',
+  leaves: 'marh_leaves',
+  payroll: 'marh_payroll',
+  reviews: 'marh_reviews',
+  evaluations: 'marh_evaluations',
+  trainings: 'marh_trainings',
+  jobs: 'marh_jobs',
+  candidates: 'marh_candidates',
+  documents: 'marh_documents',
+  logs: 'marh_logs'
+};
+
 // Initialize bulk systems
 const bulkUploader = new BulkDocumentUploader(DOCUMENTS_DIR);
 const storageOptimizer = new DocumentStorageOptimizer(DOCUMENTS_DIR);
+
+// Log do modo atual
+console.log(`\n🔄 MARH Backend iniciado no modo: ${USE_SQL ? '🗄️ SQL SERVER' : '📄 JSON'}`);
+console.log(`📊 Fonte de dados: ${USE_SQL ? 'SQL Server Database' : 'JSON File (db.json)'}`);
+console.log(`🔗 USE_SQL=${USE_SQL}\n`);
 
 function loadDB(){ return JSON.parse(fs.readFileSync(DATA_PATH,'utf-8')); }
 function saveDB(db){ fs.writeFileSync(DATA_PATH, JSON.stringify(db,null,2), 'utf-8'); }
