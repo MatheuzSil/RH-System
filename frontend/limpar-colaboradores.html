@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Limpar Colaboradores - MARH</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn.danger {
+            background: #dc3545;
+        }
+        .btn:hover {
+            opacity: 0.9;
+        }
+        .progress {
+            background: #e9ecef;
+            border-radius: 4px;
+            height: 20px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        .progress-bar {
+            background: #007bff;
+            height: 100%;
+            transition: width 0.3s;
+            width: 0%;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 20px 0;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            text-align: center;
+            border: 1px solid #dee2e6;
+        }
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗑️ Limpeza de Colaboradores</h1>
+        <p>Esta ferramenta permite limpar colaboradores criados durante testes.</p>
+        
+        <div class="stats" id="stats">
+            <div class="stat">
+                <div class="stat-number" id="total-employees">-</div>
+                <div class="stat-label">Total de Colaboradores</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number" id="selected-count">0</div>
+                <div class="stat-label">Selecionados</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number" id="deleted-count">0</div>
+                <div class="stat-label">Deletados</div>
+            </div>
+        </div>
+
+        <div style="margin: 20px 0;">
+            <button id="load-employees" class="btn">📊 Carregar Colaboradores</button>
+            <button id="select-test-employees" class="btn">🎯 Selecionar Colaboradores de Teste</button>
+            <button id="select-all" class="btn">☑️ Selecionar Todos</button>
+            <button id="clear-selection" class="btn">🔲 Limpar Seleção</button>
+            <button id="delete-selected" class="btn danger" disabled>🗑️ Deletar Selecionados</button>
+        </div>
+
+        <div class="progress" id="progress-container" style="display: none;">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+        <div id="progress-text" style="text-align: center; margin: 10px 0;"></div>
+
+        <div id="employee-list" style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 10px; margin: 20px 0;">
+            <p style="text-align: center; color: #666;">Clique em "Carregar Colaboradores" para ver a lista</p>
+        </div>
+
+        <div class="log" id="log"></div>
+    </div>
+
+    <script>
+        const API = 'https://marhbackend-production.up.railway.app/api';
+        let TOKEN = localStorage.getItem('MARH_TOKEN') || null;
+        let employees = [];
+        let selectedEmployees = new Set();
+        let deletedCount = 0;
+
+        // Verificar se tem token
+        if (!TOKEN) {
+            alert('❌ Token não encontrado! Faça login no MARH primeiro.');
+            window.location.href = 'index.html';
+        }
+
+        async function api(path, method = 'GET', body = null) {
+            const response = await fetch(API + path, {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + TOKEN
+                },
+                body: body ? JSON.stringify(body) : null
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+            }
+
+            const contentType = response.headers.get('content-type');
+            return contentType && contentType.includes('application/json') 
+                ? response.json() 
+                : response.text();
+        }
+
+        function log(message) {
+            const logEl = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logEl.innerHTML += `[${timestamp}] ${message}\n`;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function updateStats() {
+            document.getElementById('total-employees').textContent = employees.length;
+            document.getElementById('selected-count').textContent = selectedEmployees.size;
+            document.getElementById('deleted-count').textContent = deletedCount;
+        }
+
+        async function loadEmployees() {
+            try {
+                log('📊 Carregando colaboradores...');
+                employees = await api('/employees');
+                log(`✅ ${employees.length} colaboradores carregados`);
+                renderEmployeeList();
+                updateStats();
+            } catch (error) {
+                log(`❌ Erro ao carregar colaboradores: ${error.message}`);
+                alert('Erro ao carregar colaboradores: ' + error.message);
+            }
+        }
+
+        function renderEmployeeList() {
+            const container = document.getElementById('employee-list');
+            
+            if (employees.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #666;">Nenhum colaborador encontrado</p>';
+                return;
+            }
+
+            container.innerHTML = employees.map(emp => `
+                <div style="display: flex; align-items: center; padding: 8px; border-bottom: 1px solid #eee;">
+                    <input type="checkbox" id="emp-${emp.id}" data-emp-id="${emp.id}" style="margin-right: 10px;">
+                    <label for="emp-${emp.id}" style="flex: 1; cursor: pointer;">
+                        <strong>${emp.name}</strong> - ${emp.email} 
+                        <span style="color: #666; font-size: 0.9em;">
+                            (${emp.position || 'Sem cargo'} - ${emp.department || 'Sem depto'})
+                        </span>
+                    </label>
+                </div>
+            `).join('');
+
+            // Adicionar event listeners para checkboxes
+            container.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                checkbox.onchange = function() {
+                    const empId = this.dataset.empId;
+                    if (this.checked) {
+                        selectedEmployees.add(empId);
+                    } else {
+                        selectedEmployees.delete(empId);
+                    }
+                    updateStats();
+                    document.getElementById('delete-selected').disabled = selectedEmployees.size === 0;
+                };
+            });
+        }
+
+        function selectTestEmployees() {
+            // Selecionar colaboradores que parecem ser de teste
+            // (nomes genéricos, emails de teste, etc.)
+            const testPatterns = [
+                /^(teste|test|usuario|user)\d*$/i,
+                /^(funcionario|colaborador|empregado)\d*$/i,
+                /^(joao|maria|jose|ana)\s*(silva|santos|oliveira|souza)$/i,
+                /@(test|teste|example|temp)\.com$/i,
+                /^\d+$/,  // Apenas números
+                /^[a-z]+\d+$/i  // Letra seguida de números
+            ];
+
+            selectedEmployees.clear();
+            employees.forEach(emp => {
+                const isTest = testPatterns.some(pattern => 
+                    pattern.test(emp.name) || 
+                    pattern.test(emp.email) ||
+                    (!emp.phone || emp.phone.length < 8) ||
+                    (!emp.position) ||
+                    (!emp.department)
+                );
+                
+                if (isTest) {
+                    selectedEmployees.add(emp.id);
+                }
+            });
+
+            // Marcar checkboxes
+            document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                checkbox.checked = selectedEmployees.has(checkbox.dataset.empId);
+            });
+
+            updateStats();
+            document.getElementById('delete-selected').disabled = selectedEmployees.size === 0;
+            log(`🎯 ${selectedEmployees.size} colaboradores de teste selecionados`);
+        }
+
+        function selectAll() {
+            selectedEmployees.clear();
+            employees.forEach(emp => selectedEmployees.add(emp.id));
+            
+            document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                checkbox.checked = true;
+            });
+
+            updateStats();
+            document.getElementById('delete-selected').disabled = false;
+            log(`☑️ Todos os ${employees.length} colaboradores selecionados`);
+        }
+
+        function clearSelection() {
+            selectedEmployees.clear();
+            
+            document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+
+            updateStats();
+            document.getElementById('delete-selected').disabled = true;
+            log('🔲 Seleção limpa');
+        }
+
+        async function deleteSelected() {
+            if (selectedEmployees.size === 0) {
+                alert('Selecione pelo menos um colaborador para deletar');
+                return;
+            }
+
+            const confirmation = confirm(
+                `⚠️ ATENÇÃO!\n\n` +
+                `Você está prestes a deletar ${selectedEmployees.size} colaboradores.\n` +
+                `Esta ação NÃO PODE SER DESFEITA!\n\n` +
+                `Tem certeza que deseja continuar?`
+            );
+
+            if (!confirmation) {
+                return;
+            }
+
+            const secondConfirmation = confirm(
+                `🚨 ÚLTIMA CONFIRMAÇÃO!\n\n` +
+                `Deletar ${selectedEmployees.size} colaboradores permanentemente?\n\n` +
+                `Digite OK para confirmar ou Cancelar para abortar.`
+            );
+
+            if (!secondConfirmation) {
+                return;
+            }
+
+            // Mostrar barra de progresso
+            document.getElementById('progress-container').style.display = 'block';
+            const progressBar = document.getElementById('progress-bar');
+            const progressText = document.getElementById('progress-text');
+
+            deletedCount = 0;
+            const total = selectedEmployees.size;
+            const employeeIds = Array.from(selectedEmployees);
+
+            log(`🗑️ Iniciando deleção de ${total} colaboradores...`);
+
+            // Deletar em batches para não sobrecarregar
+            const batchSize = 5;
+            for (let i = 0; i < employeeIds.length; i += batchSize) {
+                const batch = employeeIds.slice(i, i + batchSize);
+                
+                await Promise.all(batch.map(async (empId) => {
+                    try {
+                        await api(`/employees/${empId}`, 'DELETE');
+                        deletedCount++;
+                        
+                        const emp = employees.find(e => e.id === empId);
+                        log(`✅ Deletado: ${emp ? emp.name : empId}`);
+                        
+                        // Atualizar progresso
+                        const progress = (deletedCount / total) * 100;
+                        progressBar.style.width = progress + '%';
+                        progressText.textContent = `${deletedCount}/${total} colaboradores deletados (${Math.round(progress)}%)`;
+                        updateStats();
+                        
+                    } catch (error) {
+                        log(`❌ Erro ao deletar ${empId}: ${error.message}`);
+                    }
+                }));
+
+                // Pequena pausa entre batches
+                if (i + batchSize < employeeIds.length) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+            }
+
+            log(`🎉 Processo concluído! ${deletedCount} colaboradores deletados de ${total} selecionados.`);
+            
+            // Esconder progresso após 3 segundos
+            setTimeout(() => {
+                document.getElementById('progress-container').style.display = 'none';
+                progressText.textContent = '';
+            }, 3000);
+
+            // Recarregar lista
+            await loadEmployees();
+            clearSelection();
+        }
+
+        // Event Listeners
+        document.getElementById('load-employees').onclick = loadEmployees;
+        document.getElementById('select-test-employees').onclick = selectTestEmployees;
+        document.getElementById('select-all').onclick = selectAll;
+        document.getElementById('clear-selection').onclick = clearSelection;
+        document.getElementById('delete-selected').onclick = deleteSelected;
+
+        // Inicializar
+        updateStats();
+        log('🔧 Sistema de limpeza inicializado');
+        log('ℹ️ Token encontrado, pronto para usar');
+    </script>
+</body>
+</html>

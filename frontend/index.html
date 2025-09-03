@@ -534,6 +534,18 @@
           <p style="font-size: 0.9em;">Importe colaboradores diretamente de planilhas Excel ou CSV</p>
         </div>
       </div>
+
+      <!-- Limpador de Colaboradores -->
+      <div id="limpar-colaboradores" class="hidden">
+        <div class="card" style="text-align: center; padding: 3rem; color: #666;">
+          <h2>🗑️ Limpador de Colaboradores</h2>
+          <p>Clique no menu para carregar o limpador</p>
+          <div style="margin: 2rem 0; font-size: 2rem;">
+            👥 ➡️ 🗑️
+          </div>
+          <p style="font-size: 0.9em;">Limpe colaboradores de teste em lote com segurança</p>
+        </div>
+      </div>
     </main>
   </div>
 </section>
@@ -746,8 +758,8 @@ function initApp(){
 }
 function buildMenu(){
   const NAV = {
-    ADMIN: [['view-dashboard','📊 Dashboard'],['view-employees','👥 Colaboradores'],['import-colaboradores','📥 Importar Colaboradores'],['view-depts','🏢 Departamentos'],['view-att','🕒 Presenças'],['view-leaves','🏖️ Afastamentos'],['view-payroll','💸 Folha'],['view-reviews','📈 Avaliações'],['view-train','🎓 Treinamentos'],['view-jobs','📋 Vagas'],['view-cand','🧑‍💼 Candidatos'],['view-bulk-documents','📁 Documentos Massa'],['view-protocol','📋 Protocolo'],['view-reports','📑 Relatórios'],['view-audit','🗂️ Logs'],['view-settings','⚙️ Usuários']],
-    RH: [['view-dashboard','📊 Dashboard'],['view-employees','👥 Colaboradores'],['import-colaboradores','📥 Importar Colaboradores'],['view-depts','🏢 Departamentos'],['view-att','🕒 Presenças'],['view-leaves','🏖️ Afastamentos'],['view-payroll','💸 Folha'],['view-reviews','📈 Avaliações'],['view-train','🎓 Treinamentos'],['view-jobs','📋 Vagas'],['view-cand','🧑‍💼 Candidatos'],['view-bulk-documents','📁 Documentos Massa'],['view-protocol','📋 Protocolo'],['view-reports','📑 Relatórios'],['view-audit','🗂️ Logs']],
+    ADMIN: [['view-dashboard','📊 Dashboard'],['view-employees','👥 Colaboradores'],['import-colaboradores','📥 Importar Colaboradores'],['limpar-colaboradores','🗑️ Limpar Colaboradores'],['view-depts','🏢 Departamentos'],['view-att','🕒 Presenças'],['view-leaves','🏖️ Afastamentos'],['view-payroll','💸 Folha'],['view-reviews','📈 Avaliações'],['view-train','🎓 Treinamentos'],['view-jobs','📋 Vagas'],['view-cand','🧑‍💼 Candidatos'],['view-bulk-documents','📁 Documentos Massa'],['view-protocol','📋 Protocolo'],['view-reports','📑 Relatórios'],['view-audit','🗂️ Logs'],['view-settings','⚙️ Usuários']],
+    RH: [['view-dashboard','📊 Dashboard'],['view-employees','👥 Colaboradores'],['import-colaboradores','📥 Importar Colaboradores'],['limpar-colaboradores','🗑️ Limpar Colaboradores'],['view-depts','🏢 Departamentos'],['view-att','🕒 Presenças'],['view-leaves','🏖️ Afastamentos'],['view-payroll','💸 Folha'],['view-reviews','📈 Avaliações'],['view-train','🎓 Treinamentos'],['view-jobs','📋 Vagas'],['view-cand','🧑‍💼 Candidatos'],['view-bulk-documents','📁 Documentos Massa'],['view-protocol','📋 Protocolo'],['view-reports','📑 Relatórios'],['view-audit','🗂️ Logs']],
     GESTOR: [['view-dashboard','📊 Dashboard'],['view-employees','👥 Colaboradores'],['view-att','🕒 Presenças'],['view-leaves','🏖️ Afastamentos'],['view-reviews','📈 Avaliações'],['view-protocol','📋 Protocolo'],['view-reports','📑 Relatórios']],
     COLAB: [['view-dashboard','📊 Dashboard'],['view-att','🕒 Presenças'],['view-leaves','🏖️ Afastamentos'],['view-payroll','💸 Folha'],['view-reviews','📈 Avaliações'],['view-protocol','📋 Protocolo']]
   };
@@ -797,6 +809,10 @@ async function openView(id){
     // Carregar importador de colaboradores inline
     loadImportColaboradores();
   }
+  if(id==='limpar-colaboradores') {
+    // Carregar limpador de colaboradores inline
+    loadLimparColaboradores();
+  }
   if(id==='view-audit'){ try{ const logs = await api('/logs'); renderAudit(logs);}catch{ alert('Sem permissão'); openView('view-dashboard'); } }
   if(id==='view-settings') renderUsers();
 }
@@ -827,6 +843,37 @@ function loadImportColaboradores() {
     container.innerHTML = `
       <div style="background: white; border-radius: 8px; overflow: hidden;">
         <iframe src="import-colaboradores.html" style="width: 100%; height: 85vh; border: none;"></iframe>
+      </div>
+    `;
+  }, 1000);
+}
+
+function loadLimparColaboradores() {
+  const container = document.getElementById('limpar-colaboradores');
+  
+  // Mostrar loading
+  container.innerHTML = `
+    <div class="card" style="text-align: center; padding: 3rem;">
+      <h2>🗑️ Limpador de Colaboradores</h2>
+      <p>🔄 Carregando limpador...</p>
+      <div style="margin: 2rem 0;">
+        <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #dc3545; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+      </div>
+      <p style="color: #666;">Aguarde um momento...</p>
+    </div>
+    <style>
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
+  `;
+  
+  // Carregar após um pequeno delay
+  setTimeout(() => {
+    container.innerHTML = `
+      <div style="background: white; border-radius: 8px; overflow: hidden;">
+        <iframe src="limpar-colaboradores.html" style="width: 100%; height: 85vh; border: none;"></iframe>
       </div>
     `;
   }, 1000);
