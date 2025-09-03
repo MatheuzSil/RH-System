@@ -702,11 +702,11 @@
                         'cod_situacao': ['cod_situacao', 'codigo_situacao', 'sit_cod'],
                         'situacao': ['situacao', 'desc_situacao', 'status_desc'],
                         'salary': ['salario', 'valor', 'remuneracao'],
-                        'admissionDate': ['admissao', 'data_admissao', 'inicio', 'dt_admissao'],
-                        'data_rescisao': ['rescisao', 'data_rescisao', 'desligamento', 'dt_rescisao'],
-                        'birthDate': ['nascimento', 'data_nascimento', 'aniversario'],
+                        'admissionDate': ['admissao', 'data_admissao', 'inicio', 'dt_admissao', 'admissiondate'],
+                        'data_rescisao': ['rescisao', 'data_rescisao', 'desligamento', 'dt_rescisao', 'data_rescisao'],
+                        'birthDate': ['nascimento', 'data_nascimento', 'aniversario', 'birthdate', 'dt_nascimento'],
                         'address': ['endereco', 'rua', 'logradouro'],
-                        'city': ['cidade', 'municipio', 'local'],
+                        'city': ['cidade', 'municipio', 'local', 'city'],
                         'state': ['estado', 'uf', 'unidade_federativa'],
                         'zipCode': ['cep', 'codigo_postal'],
                         'status': ['status', 'situacao', 'ativo']
@@ -878,8 +878,60 @@
                 let value = row[config.column] || '';
                 console.log(`Campo ${field}: coluna "${config.column}" = "${value}"`);
                 
-                // Aplicar transformação
-                if (config.transform) {
+                // Tratamento especial para datas
+                if (field.includes('Date') || field.includes('data_') || field === 'admissionDate' || field === 'birthDate' || field === 'data_rescisao') {
+                    if (value && value !== '') {
+                        try {
+                            // Se for número (data do Excel)
+                            if (!isNaN(value) && typeof value === 'number') {
+                                // Excel date to JS date
+                                const excelDate = new Date((value - 25569) * 86400 * 1000);
+                                value = excelDate.toISOString().split('T')[0]; // YYYY-MM-DD
+                                console.log(`Data convertida do Excel: ${row[config.column]} -> ${value}`);
+                            }
+                            // Se for string de data
+                            else if (typeof value === 'string') {
+                                // Tentar diferentes formatos de data
+                                let parsedDate = null;
+                                
+                                // Formato DD/MM/YYYY
+                                if (value.includes('/')) {
+                                    const parts = value.split('/');
+                                    if (parts.length === 3) {
+                                        // Assumir DD/MM/YYYY
+                                        parsedDate = new Date(parts[2], parts[1] - 1, parts[0]);
+                                    }
+                                }
+                                // Formato DD-MM-YYYY
+                                else if (value.includes('-') && value.split('-')[0].length <= 2) {
+                                    const parts = value.split('-');
+                                    if (parts.length === 3) {
+                                        // Assumir DD-MM-YYYY
+                                        parsedDate = new Date(parts[2], parts[1] - 1, parts[0]);
+                                    }
+                                }
+                                // Formato YYYY-MM-DD
+                                else if (value.includes('-') && value.split('-')[0].length === 4) {
+                                    parsedDate = new Date(value);
+                                }
+                                
+                                if (parsedDate && !isNaN(parsedDate.getTime())) {
+                                    value = parsedDate.toISOString().split('T')[0]; // YYYY-MM-DD
+                                    console.log(`Data convertida: ${row[config.column]} -> ${value}`);
+                                } else {
+                                    console.warn(`Não foi possível converter a data: ${value}`);
+                                    value = ''; // Limpar valor inválido
+                                }
+                            }
+                        } catch (e) {
+                            console.warn(`Erro ao converter data ${field}:`, e);
+                            value = '';
+                        }
+                    }
+                }
+                
+                // Aplicar transformação personalizada (se houver)
+                if (config.transform && value !== '') {
                     try {
                         const originalValue = value;
                         value = new Function('value', `return ${config.transform}`)(value);
