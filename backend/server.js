@@ -2,10 +2,17 @@ import express from 'express';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import BulkDocumentUploader from './bulk-uploader.js';
+import DocumentStorageOptimizer from './storage-optimization.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DATA_PATH = path.join(__dirname, 'db.json');
+const DOCUMENTS_DIR = path.join(__dirname, '../documents');
+
+// Initialize bulk systems
+const bulkUploader = new BulkDocumentUploader(DOCUMENTS_DIR);
+const storageOptimizer = new DocumentStorageOptimizer(DOCUMENTS_DIR);
 
 function loadDB(){ return JSON.parse(fs.readFileSync(DATA_PATH,'utf-8')); }
 function saveDB(db){ fs.writeFileSync(DATA_PATH, JSON.stringify(db,null,2), 'utf-8'); }
@@ -361,9 +368,310 @@ app.get('/api/export/:entity.csv', auth, (req,res)=>{
   res.send(csv);
 });
 
+// === BULK DOCUMENTS ENDPOINTS ===
+
+// Upload em lote
+app.post('/api/documents/bulk-upload', auth, requireRole('ADMIN', 'RH'), bulkUploader.handleBulkUpload(), async (req, res) => {
+  try {
+    const { empId, type, description, expirationDate } = req.body;
+    const files = req.files;
+    
+    if (!files || files.length === 0) {
+      return res.status(400).json({ error: 'Nenhum arquivo enviado' });
+    }
+
+    if (!empId) {
+      return res.status(400).json({ error: 'ID do funcionário é obrigatório' });
+    }
+
+    const metadata = {
+      type: type || 'DOCUMENTO_GERAL',
+      description: description || 'Upload em lote',
+      expirationDate: expirationDate || null,
+      uploadedBy: req.user.email,
+      batchId: `BATCH_${Date.now()}`
+    };
+
+    console.log(`📤 Iniciando upload em lote: ${files.length} arquivos para funcionário ${empId}`);
+
+    const results = await bulkUploader.processBulkUpload(files, empId, metadata);
+    
+    // Salvar documentos no banco
+    const db = loadDB();
+    if (!db.documents) db.documents = [];
+
+    results.success.forEach(doc => {
+      db.documents.push(doc);
+    });
+
+    log(db, req.user.email, 'documents.bulk_upload', `${empId}:${results.success.length} arquivos`);
+    saveDB(db);
+
+    res.json({
+      message: 'Upload em lote processado',
+      results: {
+        total: results.total,
+        success: results.success.length,
+        failed: results.failed.length,
+        processedSize: results.processedSize
+      },
+      details: results
+    });
+
+  } catch (error) {
+    console.error('❌ Erro no upload em lote:', error);
+    res.status(500).json({ error: 'Erro no upload em lote: ' + error.message });
+  }
+});
+
+// Estatísticas de documentos
+app.get('/api/documents/stats', auth, (req, res) => {
+  try {
+    const db = loadDB();
+    const documents = db.documents || [];
+    const employees = db.employees || [];
+    
+    const stats = {
+      totalDocuments: documents.length,
+      totalSize: documents.reduce((sum, doc) => sum + (doc.fileSize || 0), 0),
+      employeesWithDocs: new Set(documents.map(doc => doc.empId)).size,
+      totalEmployees: employees.length,
+      documentsByType: {},
+      documentsByMonth: {},
+      expiredDocs: 0,
+      expiringDocs: 0
+    };
+
+    const now = new Date();
+    const thirtyDaysFromNow = new Date(now.getTime() + (30 * 24 * 60 * 60 * 1000));
+
+    documents.forEach(doc => {
+      // Por tipo
+      stats.documentsByType[doc.type] = (stats.documentsByType[doc.type] || 0) + 1;
+      
+      // Por mês
+      const month = doc.uploadDate ? new Date(doc.uploadDate).toISOString().slice(0, 7) : 'unknown';
+      stats.documentsByMonth[month] = (stats.documentsByMonth[month] || 0) + 1;
+      
+      // Expiração
+      if (doc.expirationDate) {
+        const expiryDate = new Date(doc.expirationDate);
+        if (expiryDate < now) {
+          stats.expiredDocs++;
+        } else if (expiryDate < thirtyDaysFromNow) {
+          stats.expiringDocs++;
+        }
+      }
+    });
+
+    res.json(stats);
+    
+  } catch (error) {
+    console.error('❌ Erro ao calcular estatísticas:', error);
+    res.status(500).json({ error: 'Erro ao calcular estatísticas' });
+  }
+});
+
+// Busca avançada de documentos
+app.get('/api/documents/search', auth, (req, res) => {
+  try {
+    const db = loadDB();
+    const documents = db.documents || [];
+    const employees = db.employees || [];
+    
+    const { query, type, status, empId, page = 1, limit = 50 } = req.query;
+    
+    let filteredDocs = documents;
+
+    // Filtro por funcionário
+    if (empId) {
+      filteredDocs = filteredDocs.filter(doc => doc.empId === empId);
+    }
+
+    // Filtro por tipo
+    if (type) {
+      filteredDocs = filteredDocs.filter(doc => doc.type === type);
+    }
+
+    // Filtro por status de expiração
+    if (status) {
+      const now = new Date();
+      const thirtyDaysFromNow = new Date(now.getTime() + (30 * 24 * 60 * 60 * 1000));
+
+      filteredDocs = filteredDocs.filter(doc => {
+        if (!doc.expirationDate) return status === 'valid';
+        
+        const expiryDate = new Date(doc.expirationDate);
+        
+        switch (status) {
+          case 'expired': return expiryDate < now;
+          case 'expiring': return expiryDate >= now && expiryDate < thirtyDaysFromNow;
+          case 'valid': return expiryDate >= thirtyDaysFromNow;
+          default: return true;
+        }
+      });
+    }
+
+    // Busca textual
+    if (query) {
+      const searchQuery = query.toLowerCase();
+      filteredDocs = filteredDocs.filter(doc => {
+        const employee = employees.find(emp => emp.id === doc.empId);
+        return (
+          doc.fileName.toLowerCase().includes(searchQuery) ||
+          doc.description.toLowerCase().includes(searchQuery) ||
+          doc.type.toLowerCase().includes(searchQuery) ||
+          (employee && employee.name.toLowerCase().includes(searchQuery))
+        );
+      });
+    }
+
+    // Paginação
+    const total = filteredDocs.length;
+    const pageSize = parseInt(limit);
+    const pageNum = parseInt(page);
+    const startIndex = (pageNum - 1) * pageSize;
+    const paginatedDocs = filteredDocs.slice(startIndex, startIndex + pageSize);
+
+    // Adicionar informações do funcionário
+    const docsWithEmployeeInfo = paginatedDocs.map(doc => {
+      const employee = employees.find(emp => emp.id === doc.empId);
+      return {
+        ...doc,
+        employeeName: employee ? employee.name : 'Funcionário não encontrado',
+        fileData: undefined // Não incluir dados do arquivo na busca
+      };
+    });
+
+    res.json({
+      documents: docsWithEmployeeInfo,
+      pagination: {
+        page: pageNum,
+        limit: pageSize,
+        total: total,
+        pages: Math.ceil(total / pageSize)
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Erro na busca de documentos:', error);
+    res.status(500).json({ error: 'Erro na busca de documentos' });
+  }
+});
+
+// Exclusão em lote
+app.delete('/api/documents/bulk-delete', auth, requireRole('ADMIN', 'RH'), (req, res) => {
+  try {
+    const { documentIds } = req.body;
+    
+    if (!documentIds || !Array.isArray(documentIds) || documentIds.length === 0) {
+      return res.status(400).json({ error: 'IDs dos documentos são obrigatórios' });
+    }
+
+    const db = loadDB();
+    const initialCount = db.documents ? db.documents.length : 0;
+    
+    if (!db.documents) {
+      return res.status(404).json({ error: 'Nenhum documento encontrado' });
+    }
+
+    const deletedDocs = [];
+    db.documents = db.documents.filter(doc => {
+      if (documentIds.includes(doc.id)) {
+        deletedDocs.push(doc);
+        return false;
+      }
+      return true;
+    });
+
+    const deletedCount = deletedDocs.length;
+    
+    log(db, req.user.email, 'documents.bulk_delete', `${deletedCount} documentos excluídos`);
+    saveDB(db);
+
+    res.json({
+      message: `${deletedCount} documentos excluídos com sucesso`,
+      deleted: deletedCount,
+      remaining: db.documents.length
+    });
+    
+  } catch (error) {
+    console.error('❌ Erro na exclusão em lote:', error);
+    res.status(500).json({ error: 'Erro na exclusão em lote' });
+  }
+});
+
+// Status do sistema de armazenamento
+app.get('/api/storage/status', auth, requireRole('ADMIN'), (req, res) => {
+  try {
+    const documentsPath = DOCUMENTS_DIR;
+    
+    if (!fs.existsSync(documentsPath)) {
+      return res.json({
+        status: 'not_initialized',
+        message: 'Diretório de documentos não existe'
+      });
+    }
+
+    const getDirectorySize = (dirPath) => {
+      let size = 0;
+      let fileCount = 0;
+      
+      const scan = (currentPath) => {
+        const items = fs.readdirSync(currentPath);
+        items.forEach(item => {
+          const itemPath = path.join(currentPath, item);
+          const stats = fs.statSync(itemPath);
+          
+          if (stats.isDirectory()) {
+            scan(itemPath);
+          } else {
+            size += stats.size;
+            fileCount++;
+          }
+        });
+      };
+      
+      scan(dirPath);
+      return { size, fileCount };
+    };
+
+    const { size, fileCount } = getDirectorySize(documentsPath);
+    const employees = fs.existsSync(path.join(documentsPath, 'employees')) 
+      ? fs.readdirSync(path.join(documentsPath, 'employees')).length 
+      : 0;
+
+    res.json({
+      status: 'active',
+      storage: {
+        totalSize: size,
+        totalFiles: fileCount,
+        employeeFolders: employees,
+        path: documentsPath
+      },
+      system: {
+        maxFileSize: bulkUploader.maxFileSize,
+        maxConcurrentUploads: bulkUploader.maxConcurrentUploads,
+        supportedTypes: [
+          'application/pdf',
+          'image/jpeg', 
+          'image/png',
+          'application/msword',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        ]
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Erro ao verificar status do armazenamento:', error);
+    res.status(500).json({ error: 'Erro ao verificar status do armazenamento' });
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', ()=> {
   console.log(`🚀 MARH Backend API running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔗 Access: http://localhost:${PORT}`);
+  console.log(`📁 Documents directory: ${DOCUMENTS_DIR}`);
 });
