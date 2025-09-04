@@ -10,6 +10,20 @@
 #protocol-tabs button { margin-right: 0.5rem; margin-bottom: 0.5rem; }
 #protocol-tabs button.active { background-color: #0056b3; color: white; }
 .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }
+
+/* Estilos para campos de exibição de data */
+.date-display {
+  background-color: #f8f9fa !important;
+  border: 1px solid #dee2e6 !important;
+  color: #495057 !important;
+  font-weight: 500;
+  cursor: default;
+}
+
+.date-display:focus {
+  box-shadow: none !important;
+  border-color: #dee2e6 !important;
+}
 </style>
 </head>
 <body>
@@ -644,11 +658,21 @@
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label>Data de Admissão</label>
+              <label>📅 Data de Admissão (Exibição)</label>
+              <input id="emp-admissao-display" class="input date-display" type="text" readonly>
+            </div>
+            <div class="form-group">
+              <label>📅 Data de Rescisão (Exibição)</label>
+              <input id="emp-rescisao-display" class="input date-display" type="text" readonly>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Data de Admissão (Editar)</label>
               <input id="emp-hire-date" class="input" type="date">
             </div>
             <div class="form-group">
-              <label>Data de Rescisão</label>
+              <label>Data de Rescisão (Editar)</label>
               <input id="emp-data-rescisao" class="input" type="date">
             </div>
           </div>
@@ -1268,6 +1292,38 @@ function closeEmployeeModal() {
   currentEmployee = null;
 }
 
+// Função para formatar data para exibição
+function formatDateForDisplay(dateStr) {
+  if (!dateStr) return 'Não informado';
+  
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return 'Data inválida';
+    
+    return date.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit', 
+      year: 'numeric'
+    });
+  } catch (error) {
+    return 'Data inválida';
+  }
+}
+
+// Função para formatar data para input type="date" (YYYY-MM-DD)
+function formatDateForInput(dateStr) {
+  if (!dateStr) return '';
+  
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return '';
+    
+    return date.toISOString().split('T')[0];
+  } catch (error) {
+    return '';
+  }
+}
+
 function populateEmployeeForm(emp) {
   qs('#emp-name').value = emp.name || '';
   qs('#emp-chapa').value = emp.chapa || '';
@@ -1284,8 +1340,14 @@ function populateEmployeeForm(emp) {
   qs('#emp-cod-situacao').value = emp.cod_situacao || '';
   qs('#emp-situacao').value = emp.situacao || '';
   qs('#emp-status').value = emp.status || 'ATIVO';
-  qs('#emp-hire-date').value = emp.admissionDate || emp.hireDate || '';
-  qs('#emp-data-rescisao').value = emp.data_rescisao || '';
+  
+  // Campos de exibição das datas (formatados para leitura)
+  qs('#emp-admissao-display').value = formatDateForDisplay(emp.admissionDate || emp.hireDate);
+  qs('#emp-rescisao-display').value = formatDateForDisplay(emp.data_rescisao);
+  
+  // Campos de edição das datas (formato YYYY-MM-DD para input type="date")
+  qs('#emp-hire-date').value = formatDateForInput(emp.admissionDate || emp.hireDate);
+  qs('#emp-data-rescisao').value = formatDateForInput(emp.data_rescisao);
   qs('#emp-salary').value = emp.salary || '';
   qs('#emp-birth-date').value = emp.birthDate || '';
   qs('#emp-marital-status').value = emp.maritalStatus || '';
