@@ -437,7 +437,7 @@
         }
         
         function validateMapping() {
-            const requiredFields = ['name', 'department', 'position'];
+            const requiredFields = ['name', 'roleTitle'];
             const missingFields = [];
             
             requiredFields.forEach(field => {
@@ -690,15 +690,15 @@
             const container = document.getElementById('mappingContainer');
             container.innerHTML = '';
             
-            // Campos específicos do sistema MARH baseados na estrutura
+            // Campos específicos do sistema MARH baseados na estrutura da tabela marh_employees
             const marhFields = {
                 'name': 'Nome Completo *',
                 'chapa': 'Chapa',
                 'cpf': 'CPF',
                 'email': 'E-mail',
                 'phone': 'Telefone',
-                'department': 'Departamento *',
-                'position': 'Cargo/Posição *',
+                'deptId': 'ID do Departamento',
+                'roleTitle': 'Cargo/Posição *',
                 'cod_cargo': 'Código do Cargo',
                 'cargo': 'Nome do Cargo',
                 'local': 'Local de Trabalho',
@@ -710,10 +710,12 @@
                 'admissionDate': 'Data de Admissão',
                 'data_rescisao': 'Data de Rescisão',
                 'birthDate': 'Data de Nascimento',
-                'address': 'Endereço',
-                'city': 'Cidade',
-                'state': 'Estado',
-                'zipCode': 'CEP',
+                'type': 'Tipo de Funcionário',
+                'gender': 'Gênero',
+                'maritalStatus': 'Estado Civil',
+                'hasChildren': 'Tem Filhos',
+                'childrenCount': 'Quantidade de Filhos',
+                'userId': 'ID do Usuário',
                 'status': 'Status (ATIVO/INATIVO)'
             };
             
@@ -763,8 +765,8 @@
                         'cpf': ['cpf', 'cod_darg', 'documento', 'doc'],
                         'email': ['email', 'e-mail', 'e_mail'],
                         'phone': ['telefone', 'fone', 'celular'],
-                        'department': ['departamento', 'depto', 'setor'],
-                        'position': ['cargo', 'posicao', 'funcao', 'descricao'],
+                        'deptId': ['departamento', 'depto', 'setor', 'dept_id', 'id_depto'],
+                        'roleTitle': ['cargo', 'posicao', 'funcao', 'descricao', 'position', 'role'],
                         'cod_cargo': ['cod_cargo', 'codigo_cargo', 'id_cargo'],
                         'cargo': ['nome_cargo', 'desc_cargo', 'titulo_cargo'],
                         'local': ['local', 'local_trabalho', 'filial', 'unidade'],
@@ -776,10 +778,12 @@
                         'admissionDate': ['admissao', 'data_admissao', 'inicio', 'dt_admissao', 'admissiondate', 'datadmiss'],
                         'data_rescisao': ['rescisao', 'data_rescisao', 'desligamento', 'dt_rescisao', 'data_rescisao', 'datarescis'],
                         'birthDate': ['nascimento', 'data_nascimento', 'aniversario', 'birthdate', 'dt_nascimento'],
-                        'address': ['endereco', 'rua', 'logradouro'],
-                        'city': ['cidade', 'municipio', 'local', 'city'],
-                        'state': ['estado', 'uf', 'unidade_federativa'],
-                        'zipCode': ['cep', 'codigo_postal'],
+                        'type': ['tipo', 'tipo_funcionario', 'categoria'],
+                        'gender': ['sexo', 'genero', 'gender'],
+                        'maritalStatus': ['estado_civil', 'civil', 'marital'],
+                        'hasChildren': ['tem_filhos', 'filhos', 'children'],
+                        'childrenCount': ['qtd_filhos', 'num_filhos', 'count_children'],
+                        'userId': ['user_id', 'id_usuario', 'usuario_id'],
                         'status': ['status', 'situacao', 'ativo']
                     };
                     
@@ -1125,29 +1129,29 @@
         }
         
         function validateAndFormatPayload(payload) {
-            // Formatação específica para o sistema MARH
+            // Formatação específica para o sistema MARH baseada na tabela marh_employees
             const marhPayload = {
                 id: payload.id || generateEmployeeId(),
                 name: payload.name || 'Nome não informado',
                 email: payload.email || generateEmailFromName(payload.name),
-                phone: payload.phone || '',
-                department: payload.department || 'Não informado',
-                position: payload.position || 'Colaborador',
-                salary: payload.salary ? parseFloat(payload.salary.toString().replace(/[^\d.,]/g, '').replace(',', '.')) : 0,
-                status: payload.status || 'ATIVO',
-                admissionDate: formatDate(payload.admissionDate) || new Date().toISOString().split('T')[0],
-                birthDate: formatDate(payload.birthDate) || null,
                 cpf: formatCPF(payload.cpf) || '',
-                address: payload.address || '',
-                city: payload.city || '',
-                state: payload.state || '',
-                zipCode: formatZipCode(payload.zipCode) || '',
+                phone: payload.phone || '',
+                deptId: payload.deptId || null,
+                roleTitle: payload.roleTitle || 'Colaborador',
+                salary: payload.salary ? parseFloat(payload.salary.toString().replace(/[^\d.,]/g, '').replace(',', '.')) : null,
+                status: payload.status || 'ATIVO',
+                admissionDate: formatDate(payload.admissionDate) || null,
+                type: payload.type || null,
+                gender: payload.gender || null,
+                maritalStatus: payload.maritalStatus || null,
+                hasChildren: payload.hasChildren || null,
+                childrenCount: payload.childrenCount || null,
                 userId: payload.userId || null
             };
             
             // Remover campos vazios para não quebrar a validação
             Object.keys(marhPayload).forEach(key => {
-                if (marhPayload[key] === '' || marhPayload[key] === null) {
+                if (marhPayload[key] === '' || marhPayload[key] === null || marhPayload[key] === undefined) {
                     delete marhPayload[key];
                 }
             });
@@ -1171,11 +1175,6 @@
         function formatCPF(cpf) {
             if (!cpf) return '';
             return cpf.toString().replace(/\D/g, '').slice(0, 11);
-        }
-        
-        function formatZipCode(zipCode) {
-            if (!zipCode) return '';
-            return zipCode.toString().replace(/\D/g, '').slice(0, 8);
         }
         
         function formatDate(dateStr) {
