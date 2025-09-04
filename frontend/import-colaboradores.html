@@ -697,7 +697,7 @@
                 'cpf': 'CPF',
                 'email': 'E-mail',
                 'phone': 'Telefone',
-                'deptId': 'ID do Departamento',
+                'department': 'Departamento *',
                 'roleTitle': 'Cargo/Posição *',
                 'cod_cargo': 'Código do Cargo',
                 'cargo': 'Nome do Cargo',
@@ -765,7 +765,7 @@
                         'cpf': ['cpf', 'cod_darg', 'documento', 'doc'],
                         'email': ['email', 'e-mail', 'e_mail'],
                         'phone': ['telefone', 'fone', 'celular'],
-                        'deptId': ['departamento', 'depto', 'setor', 'dept_id', 'id_depto'],
+                        'department': ['departamento', 'depto', 'setor', 'dept'],
                         'roleTitle': ['cargo', 'posicao', 'funcao', 'descricao', 'position', 'role'],
                         'cod_cargo': ['cod_cargo', 'codigo_cargo', 'id_cargo'],
                         'cargo': ['nome_cargo', 'desc_cargo', 'titulo_cargo'],
@@ -936,6 +936,18 @@
             }
         }
         
+        // Função para limpar caracteres especiais problemáticos
+        function cleanSpecialChars(value) {
+            if (!value || typeof value !== 'string') return value;
+            
+            return value
+                .replace(/[^\x00-\x7F]/g, '') // Remove caracteres não-ASCII
+                .replace(/�/g, '') // Remove caracteres de replacement
+                .replace(/\uFFFD/g, '') // Remove caracteres de replacement Unicode
+                .replace(/\0/g, '') // Remove null bytes
+                .trim();
+        }
+        
         function buildPayload(row) {
             const payload = {};
             
@@ -952,6 +964,15 @@
                 
                 let value = row[config.column] || '';
                 console.log(`Campo ${field}: coluna "${config.column}" = "${value}"`);
+                
+                // Limpar caracteres especiais problemáticos para campos de texto
+                if (typeof value === 'string' && !field.includes('Date') && !field.includes('data_')) {
+                    const originalValue = value;
+                    value = cleanSpecialChars(value);
+                    if (originalValue !== value) {
+                        console.log(`Caracteres especiais removidos em ${field}: "${originalValue}" -> "${value}"`);
+                    }
+                }
                 
                 // Tratamento especial para datas
                 if (field.includes('Date') || field.includes('data_') || field === 'admissionDate' || field === 'birthDate' || field === 'data_rescisao') {
@@ -1136,7 +1157,7 @@
                 email: payload.email || generateEmailFromName(payload.name),
                 cpf: formatCPF(payload.cpf) || '',
                 phone: payload.phone || '',
-                deptId: payload.deptId || null,
+                department: payload.department || null,
                 roleTitle: payload.roleTitle || 'Colaborador',
                 salary: payload.salary ? parseFloat(payload.salary.toString().replace(/[^\d.,]/g, '').replace(',', '.')) : null,
                 status: payload.status || 'ATIVO',
