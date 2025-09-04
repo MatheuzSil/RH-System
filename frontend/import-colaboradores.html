@@ -1146,7 +1146,17 @@
                 maritalStatus: payload.maritalStatus || null,
                 hasChildren: payload.hasChildren || null,
                 childrenCount: payload.childrenCount || null,
-                userId: payload.userId || null
+                userId: payload.userId || null,
+                // Campos adicionais que estavam faltando
+                chapa: payload.chapa || null,
+                cod_cargo: payload.cod_cargo || null,
+                cargo: payload.cargo || null,
+                local: payload.local || null,
+                descricao_folha: payload.descricao_folha || null,
+                centro_custo: payload.centro_custo || null,
+                cod_situacao: payload.cod_situacao || null,
+                situacao: payload.situacao || null,
+                data_rescisao: formatDate(payload.data_rescisao) || null
             };
             
             // Remover campos vazios para não quebrar a validação

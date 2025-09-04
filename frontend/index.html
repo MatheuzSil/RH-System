@@ -957,8 +957,10 @@ function filterEmployees(employees) {
     return (
       (emp.name && emp.name.toLowerCase().includes(term)) ||
       (emp.email && emp.email.toLowerCase().includes(term)) ||
+      (emp.roleTitle && emp.roleTitle.toLowerCase().includes(term)) ||
       (emp.position && emp.position.toLowerCase().includes(term)) ||
       (emp.cargo && emp.cargo.toLowerCase().includes(term)) ||
+      (emp.deptId && emp.deptId.toLowerCase().includes(term)) ||
       (emp.department && emp.department.toLowerCase().includes(term)) ||
       (emp.local && emp.local.toLowerCase().includes(term)) ||
       (emp.phone && emp.phone.toLowerCase().includes(term)) ||
@@ -1165,13 +1167,14 @@ function createEmployeeCard(emp) {
   // Format salary
   const salary = emp.salary ? brl(emp.salary) : 'Não informado';
   
-  // Format hire date
-  const hireDate = emp.hireDate ? new Date(emp.hireDate).toLocaleDateString('pt-BR') : 'Não informado';
+  // Format hire date - usar admissionDate do banco ou hireDate como fallback
+  const hireDate = emp.admissionDate ? new Date(emp.admissionDate).toLocaleDateString('pt-BR') : 
+                   emp.hireDate ? new Date(emp.hireDate).toLocaleDateString('pt-BR') : 'Não informado';
   
   card.innerHTML = `
     <div class="employee-avatar">${initials}</div>
     <div class="employee-name">${emp.name}</div>
-    <div class="employee-position">${emp.cargo || emp.position || 'Cargo não informado'}</div>
+    <div class="employee-position">${emp.roleTitle || emp.cargo || emp.position || 'Cargo não informado'}</div>
     <div class="employee-department">${emp.local || emp.department || 'Local não informado'}</div>
     <div class="employee-info">
       <div>📧 ${emp.email}</div>
@@ -1271,17 +1274,17 @@ function populateEmployeeForm(emp) {
   qs('#emp-email').value = emp.email || '';
   qs('#emp-cpf').value = emp.cpf || '';
   qs('#emp-phone').value = emp.phone || '';
-  qs('#emp-position').value = emp.position || '';
+  qs('#emp-position').value = emp.roleTitle || emp.position || '';
   qs('#emp-cod-cargo').value = emp.cod_cargo || '';
   qs('#emp-cargo').value = emp.cargo || '';
-  qs('#emp-department').value = emp.department || '';
+  qs('#emp-department').value = emp.deptId || emp.department || '';
   qs('#emp-local').value = emp.local || '';
   qs('#emp-centro-custo').value = emp.centro_custo || '';
   qs('#emp-descricao-folha').value = emp.descricao_folha || '';
   qs('#emp-cod-situacao').value = emp.cod_situacao || '';
   qs('#emp-situacao').value = emp.situacao || '';
   qs('#emp-status').value = emp.status || 'ATIVO';
-  qs('#emp-hire-date').value = emp.hireDate || '';
+  qs('#emp-hire-date').value = emp.admissionDate || emp.hireDate || '';
   qs('#emp-data-rescisao').value = emp.data_rescisao || '';
   qs('#emp-salary').value = emp.salary || '';
   qs('#emp-birth-date').value = emp.birthDate || '';
