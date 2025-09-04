@@ -7,11 +7,10 @@ import fs from 'fs-extra';
 import path from 'path';
 import { extractCandidates, extractIdentifiers } from './nameExtract.js';
 import { bestMatch, identifiersMatch } from './similarity.js';
-import { sql } from '../../backend/config/database.js';
+import { insertToDB } from '../../backend/utils/dbHelpers.js';
 
 export class UploadManager {
-  constructor(pool, config, employees) {
-    this.pool = pool;
+  constructor(config, employees) {
     this.config = config;
     this.employees = employees;
     this.uploadedFiles = new Set();
@@ -82,12 +81,12 @@ export class UploadManager {
     let matchReason = '';
 
     try {
-      // 1. Tentar por identificadores exatos (CPF, matrícula)
+      // 1. Tentar por identificadores exatos (CPF, chapa)
       const identifiers = extractIdentifiers('', fileInfo.name);
       for (const identifier of identifiers) {
         const employee = this.employees.find(emp => 
           identifiersMatch(emp.cpf, identifier) || 
-          identifiersMatch(emp.matricula, identifier)
+          identifiersMatch(emp.chapa, identifier)
         );
         
         if (employee) {
@@ -120,8 +119,7 @@ export class UploadManager {
         }
       }
 
-      // 3. Tentar por email se estiver no nome do arquivo (desabilitado pois não temos campo email)
-      /*
+      // 3. Tentar por email se estiver no nome do arquivo
       if (!matchedEmployee) {
         const emailMatch = fileInfo.name.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
         if (emailMatch) {
@@ -136,7 +134,6 @@ export class UploadManager {
           }
         }
       }
-      */
 
     } catch (error) {
       console.warn(`Erro ao buscar match para ${fileInfo.name}: ${error.message}`);
@@ -166,43 +163,33 @@ export class UploadManager {
    */
   async insertDocument(fileInfo, employee) {
     try {
-      // Gerar GUID para o NomeArquivo (seguindo padrão da tabela)
-      const arquivoGuid = this.generateGUID();
+      // Gerar ID único
+      const documentId = this.generateId('DOC');
       
-      const request = this.pool.request()
-        .input('ClienteId', sql.Int, 1) // Valor padrão observado nos dados
-        .input('ModuloId', sql.Int, 130) // Valor padrão observado nos dados  
-        .input('ArquivoAreaId', sql.Int, 1) // Valor padrão observado nos dados
-        .input('RegistroId', sql.Int, employee.id)
-        .input('Ordem', sql.Int, 0)
-        .input('Descricao', sql.NVarChar, null)
-        .input('Diretorio', sql.NVarChar, '0130\\\\0084\\\\') // Diretório padrão observado
-        .input('NomeArquivo', sql.NVarChar, arquivoGuid)
-        .input('NomeOriginal', sql.NVarChar, fileInfo.name)
-        .input('Extensao', sql.NVarChar, fileInfo.extension.replace('.', ''))
-        .input('Tamanho', sql.Numeric(18, 2), fileInfo.size)
-        .input('Upload', sql.Bit, true)
-        .input('ArquivoAtual', sql.Bit, true)
-        .input('ArquivoRestrito', sql.Bit, false)
-        .input('UsuarioCadastroId', sql.Int, 1) // ID do robô ou usuário sistema
-        .input('DataHoraCadastro', sql.DateTime, new Date());
+      // Ler arquivo em chunks para arquivos grandes
+      const fileData = await this.readFileAsBase64(fileInfo.path);
+      
+      // Determinar tipo de documento baseado no nome do arquivo
+      const docType = this.determineDocumentType(fileInfo.name);
+      
+      // Preparar dados para inserção
+      const documentData = {
+        id: documentId,
+        empId: employee.id,
+        type: docType,
+        description: `Documento: ${fileInfo.name}`,
+        fileName: fileInfo.name,
+        fileData: fileData,
+        fileSize: fileInfo.size,
+        mimeType: this.getMimeType(fileInfo.extension),
+        uploadDate: new Date().toISOString().split('T')[0],
+        uploadedBy: 'UPLOAD_ROBOT',
+        notes: `Upload automático - Match: ${employee.matchReason || 'Não especificado'}`
+      };
+      
+      // Inserir documento usando dbHelpers
+      await insertToDB('documents', documentData);
 
-      const result = await request.query(`
-        INSERT INTO Arquivo (
-          ClienteId, ModuloId, ArquivoAreaId, RegistroId, Ordem, 
-          Descricao, Diretorio, NomeArquivo, NomeOriginal, Extensao, 
-          Tamanho, Upload, ArquivoAtual, ArquivoRestrito, 
-          UsuarioCadastroId, DataHoraCadastro
-        ) VALUES (
-          @ClienteId, @ModuloId, @ArquivoAreaId, @RegistroId, @Ordem,
-          @Descricao, @Diretorio, @NomeArquivo, @NomeOriginal, @Extensao,
-          @Tamanho, @Upload, @ArquivoAtual, @ArquivoRestrito,
-          @UsuarioCadastroId, @DataHoraCadastro
-        );
-        SELECT SCOPE_IDENTITY() as Id;
-      `);
-
-      const documentId = result.recordset[0].Id;
       return { success: true, documentId, matchReason: employee.matchReason };
 
     } catch (error) {
@@ -311,16 +298,6 @@ export class UploadManager {
 
     await fs.writeJson(filePath, report, { spaces: 2 });
     console.log(`📊 Relatório de matches exportado para: ${filePath}`);
-  }
-  /**
-   * Gera um GUID único para o arquivo
-   */
-  generateGUID() {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-      const r = Math.random() * 16 | 0;
-      const v = c == 'x' ? r : (r & 0x3 | 0x8);
-      return v.toString(16).toUpperCase();
-    });
   }
 }
 

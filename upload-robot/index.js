@@ -23,8 +23,8 @@ import { UploadManager } from './lib/uploadManager.js';
 console.log('UploadManager importado');
 import { ProgressMonitor } from './lib/progressMonitor.js';
 console.log('ProgressMonitor importado');
-import { sql, getConnection, closeConnection } from '../backend/config/database.js';
-console.log('Database config importado');
+import { loadFromDB, insertToDB } from '../backend/utils/dbHelpers.js';
+console.log('Database helpers importado');
 
 console.log('Todos os módulos importados com sucesso!');
 
@@ -63,7 +63,6 @@ const DEFAULT_CONFIG = {
 class UploadRobot {
   constructor(config) {
     this.config = { ...DEFAULT_CONFIG, ...config };
-    this.pool = null;
     this.employees = [];
     this.fileScanner = null;
     this.uploadManager = null;
@@ -108,57 +107,52 @@ class UploadRobot {
    */
   async connectDatabase() {
     try {
-      console.log('🔌 Conectando ao banco de dados...');
-      this.pool = await getConnection();
+      console.log('🔌 Testando conexão com SQL Server...');
       
-      // Testar conexão
-      await this.pool.request().query('SELECT 1');
-      console.log('✅ Conexão com banco estabelecida');
+      // Testar se conseguimos acessar a tabela de funcionários
+      const testEmployees = await loadFromDB('employees', '', {});
+      console.log('✅ Conexão com SQL Server estabelecida');
+      console.log(`📊 Teste inicial: ${testEmployees.length} funcionários encontrados`);
       
     } catch (error) {
-      console.error('❌ Erro ao conectar com banco:', error.message);
+      console.error('❌ Erro ao conectar com SQL Server:', error.message);
       console.error('Detalhes do erro:', error);
       throw error;
     }
   }
 
   /**
-   * Carrega lista de colaboradores do banco
+   * Carrega lista de colaboradores do banco SQL Server
    */
   async loadEmployees() {
     try {
-      console.log('👥 Carregando lista de colaboradores...');
+      console.log('👥 Carregando colaboradores da tabela marh_employees...');
       
-      const result = await this.pool.request().query(`
-        SELECT 
-          Id, Nome, Cpf, Matricula, Status
-        FROM Funcionario 
-        WHERE Status = 'Ativo' OR Status IS NULL
-        ORDER BY Nome
-      `);
+      // Usar as funções do dbHelpers que já estão configuradas
+      const employees = await loadFromDB('employees');
       
-      console.log('Query executada com sucesso, resultado:', result.recordset.length, 'registros');
+      console.log('✅ Query executada com sucesso, resultado:', employees.length, 'registros');
       
-      this.employees = result.recordset.map(emp => ({
-        id: emp.Id,
-        name: emp.Nome?.trim(),
-        cpf: emp.Cpf?.replace(/\D/g, ''), // apenas números
-        matricula: emp.Matricula?.toString().trim(),
+      this.employees = employees.map(emp => ({
+        id: emp.id,
+        name: emp.name?.trim(),
+        cpf: emp.cpf?.replace(/\D/g, ''), // apenas números
+        chapa: emp.chapa?.toString().trim(),
+        email: emp.email?.toLowerCase().trim(),
+        phone: emp.phone,
         // Campos originais também disponíveis
-        Id: emp.Id,
-        Nome: emp.Nome,
-        Cpf: emp.Cpf,
-        Matricula: emp.Matricula,
-        Status: emp.Status
+        original: emp
       }));
       
-      console.log(`✅ ${this.employees.length} colaboradores carregados`);
+      console.log(`✅ ${this.employees.length} colaboradores carregados do SQL Server`);
       
       if (this.employees.length === 0) {
-        console.warn('⚠️ Nenhum colaborador ativo encontrado no banco de dados');
-        console.warn('Continuando sem colaboradores para teste...');
-        // Não vamos parar o robô, apenas alertar
-        // throw new Error('Nenhum colaborador ativo encontrado no banco de dados');
+        console.warn('⚠️ Nenhum colaborador encontrado na tabela marh_employees');
+        throw new Error('Nenhum colaborador encontrado no banco de dados SQL Server');
+      } else if (this.employees.length > 20000) {
+        console.log('🎉 PERFEITO! Encontrados mais de 20k funcionários - conectado na base correta!');
+      } else {
+        console.log(`📊 Total de ${this.employees.length} funcionários encontrados`);
       }
       
     } catch (error) {
@@ -188,7 +182,7 @@ class UploadRobot {
       console.log(`📊 ${files.length} arquivos encontrados para processar`);
       
       // Inicializar componentes de upload
-      this.uploadManager = new UploadManager(this.pool, this.config, this.employees);
+      this.uploadManager = new UploadManager(this.config, this.employees);
       
       // Inicializar monitor de progresso
       if (this.config.showProgress) {
@@ -318,10 +312,6 @@ class UploadRobot {
     try {
       if (this.uploadManager) {
         this.uploadManager.cleanup();
-      }
-      
-      if (this.pool) {
-        await closeConnection();
       }
       
       console.log('🧹 Recursos limpos com sucesso');
