@@ -597,6 +597,7 @@ async function refreshLookups(){ DEPTS = await api('/departments'); EMPS = await
 
 // Employees
 let currentEmployee = null;
+let currentDocuments = []; // 🔥 NOVA: Cache dos documentos atuais
 let viewMode = 'cards'; // 'cards' or 'table'
 let searchTerm = ''; // Para filtrar colaboradores
 
@@ -1013,9 +1014,11 @@ async function deleteEmployee(employeeId) {
 async function loadEmployeeDocuments(employeeId) {
   try {
     const documents = await api(`/employees/${employeeId}/documents`); // Mudança aqui
+    currentDocuments = documents; // 🔥 ARMAZENAR GLOBALMENTE
     renderEmployeeDocuments(documents);
   } catch (error) {
     console.error('Erro ao carregar documentos:', error);
+    currentDocuments = []; // 🔥 LIMPAR CACHE EM CASO DE ERRO
     qs('#employee-documents').innerHTML = '<div class="no-documents">Erro ao carregar documentos</div>';
   }
 }
@@ -1073,7 +1076,27 @@ function getExpiryInfo(expirationDate) {
 }
 
 function downloadDocument(documentId) {
-  console.log('📥 Iniciando download simplificado para documento:', documentId);
+  console.log('📥 Iniciando download para documento:', documentId);
+  
+  // 🔥 NOVA LÓGICA: Verificar primeiro nos dados já carregados
+  const cachedDoc = currentDocuments.find(doc => doc.id === documentId);
+  
+  if (cachedDoc && cachedDoc.fileUrl) {
+    console.log('🔗 Download direto via URL (FTP):', cachedDoc.fileUrl);
+    
+    // Para FTP, criar um link temporário para download
+    const link = document.createElement('a');
+    link.href = cachedDoc.fileUrl;
+    link.download = cachedDoc.fileName || 'documento.pdf';
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    return;
+  }
+  
+  // Se não tem fileUrl no cache, fazer fetch tradicional (BLOB)
+  console.log('📡 Fazendo download via fetch (BLOB):', documentId);
   
   // Verificar se tem token válido
   if (!TOKEN) {
@@ -1131,6 +1154,22 @@ function downloadDocument(documentId) {
 
 function viewDocument(documentId) {
   console.log('👁️ Abrindo visualização do documento:', documentId);
+  
+  // 🔥 NOVA LÓGICA: Verificar primeiro nos dados já carregados
+  const cachedDoc = currentDocuments.find(doc => doc.id === documentId);
+  
+  if (cachedDoc && cachedDoc.fileUrl) {
+    console.log('🔗 Abrindo arquivo via URL (FTP):', cachedDoc.fileUrl);
+    const newWindow = window.open(cachedDoc.fileUrl, '_blank');
+    
+    if (!newWindow) {
+      alert('Pop-up foi bloqueado! Permita pop-ups para visualizar documentos.');
+    }
+    return;
+  }
+  
+  // Se não tem fileUrl no cache, ou é documento antigo (BLOB), fazer fetch
+  console.log('📡 Fazendo fetch para documento (BLOB):', documentId);
   
   // Verificar se tem token válido
   if (!TOKEN) {
