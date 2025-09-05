@@ -388,7 +388,7 @@ async function main() {
     setTimeout(async () => {
       await robot.cleanup();
       process.exit(0);
-    }, 5000);
+    }, 20000);
   };
   
   process.on('SIGINT', () => gracefulShutdown('SIGINT'));

@@ -8,6 +8,7 @@ import path from 'path';
 import { extractCandidates, extractIdentifiers } from './nameExtract.js';
 import { bestMatch, identifiersMatch } from './similarity.js';
 import { insertToDB } from '../../backend/utils/dbHelpers.js';
+import { FTPUploader } from './ftpUploader.js';
 
 export class UploadManager {
   constructor(config, employees) {
@@ -15,6 +16,7 @@ export class UploadManager {
     this.employees = employees;
     this.uploadedFiles = new Set();
     this.matchCache = new Map();
+    this.ftpUploader = new FTPUploader(); // Inicializar FTP uploader
     this.stats = {
       processed: 0,
       matched: 0,
@@ -166,20 +168,28 @@ export class UploadManager {
       // Gerar ID único
       const documentId = this.generateId('DOC');
       
-      // Ler arquivo em chunks para arquivos grandes
-      const fileData = await this.readFileAsBase64(fileInfo.path);
+      // Upload do arquivo para FTP
+      const ftpResult = await this.ftpUploader.uploadFile(
+        fileInfo.path, 
+        employee.id, 
+        fileInfo.name
+      );
+
+      if (!ftpResult.success) {
+        throw new Error(`Falha no upload FTP: ${ftpResult.error}`);
+      }
       
       // Determinar tipo de documento baseado no nome do arquivo
       const docType = this.determineDocumentType(fileInfo.name);
       
-      // Preparar dados para inserção
+      // Preparar dados para inserção (SEM fileData, apenas URL)
       const documentData = {
         id: documentId,
         empId: employee.id,
         type: docType,
         description: `Documento: ${fileInfo.name}`,
         fileName: fileInfo.name,
-        fileData: fileData,
+        fileUrl: ftpResult.url, // URL do arquivo no FTP
         fileSize: fileInfo.size,
         mimeType: this.getMimeType(fileInfo.extension),
         uploadDate: new Date().toISOString().split('T')[0],
@@ -276,9 +286,13 @@ export class UploadManager {
   /**
    * Limpa cache e recursos
    */
-  cleanup() {
+  async cleanup() {
     this.matchCache.clear();
     this.uploadedFiles.clear();
+    // Desconectar do FTP
+    if (this.ftpUploader) {
+      await this.ftpUploader.disconnect();
+    }
   }
 
   /**

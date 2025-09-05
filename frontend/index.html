@@ -1160,6 +1160,24 @@ function viewDocument(documentId) {
     
     console.log('📄 Dados recebidos para visualização:', data.fileName);
     
+    // Verificar se é URL (novo formato) ou base64 (formato antigo)
+    if (data.fileUrl) {
+      // Novo formato: URL direta para o arquivo no FTP
+      console.log('🌐 Abrindo arquivo via URL:', data.fileUrl);
+      const newWindow = window.open(data.fileUrl, '_blank');
+      
+      if (!newWindow) {
+        alert('Pop-up foi bloqueado! Permita pop-ups para visualizar documentos.');
+      }
+      return;
+    }
+    
+    // Formato antigo: base64 (manter compatibilidade)
+    if (!data.fileData) {
+      alert('❌ Arquivo não encontrado. Documento pode ter sido migrado.');
+      return;
+    }
+    
     // Convert base64 to blob
     const byteCharacters = atob(data.fileData);
     const byteNumbers = new Array(byteCharacters.length);
