@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Limpar Colaboradores - MARH</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -79,6 +80,55 @@
             color: #666;
             font-size: 0.9em;
         }
+        .file-input-area {
+            border: 2px dashed #007bff;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin: 20px 0;
+            background: #f8f9ff;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .file-input-area:hover {
+            background: #e8f0ff;
+        }
+        .file-input-area.dragover {
+            border-color: #28a745;
+            background: #f0fff0;
+        }
+        .hidden {
+            display: none;
+        }
+        .excel-preview {
+            background: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            margin: 15px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .excel-preview table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .excel-preview th, .excel-preview td {
+            border: 1px solid #dee2e6;
+            padding: 8px;
+            text-align: left;
+        }
+        .excel-preview th {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+        .protected-employee {
+            background-color: #d4edda !important;
+            border-left: 4px solid #28a745;
+        }
+        .to-delete-employee {
+            background-color: #f8d7da !important;
+            border-left: 4px solid #dc3545;
+        }
     </style>
 </head>
 <body>
@@ -92,8 +142,12 @@
                 <div class="stat-label">Total de Colaboradores</div>
             </div>
             <div class="stat">
+                <div class="stat-number" id="protected-count">0</div>
+                <div class="stat-label">Protegidos (Excel)</div>
+            </div>
+            <div class="stat">
                 <div class="stat-number" id="selected-count">0</div>
-                <div class="stat-label">Selecionados</div>
+                <div class="stat-label">Para Deletar</div>
             </div>
             <div class="stat">
                 <div class="stat-number" id="deleted-count">0</div>
@@ -101,9 +155,38 @@
             </div>
         </div>
 
+        <div class="file-input-area" id="file-drop-area">
+            <input type="file" id="excel-file" accept=".xlsx,.xls,.csv" class="hidden">
+            <div>
+                <h3>📄 Upload da Planilha de Proteção</h3>
+                <p>Arraste um arquivo Excel/CSV aqui ou clique para selecionar</p>
+                <p style="font-size: 0.9em; color: #666;">
+                    A planilha deve conter uma coluna com os nomes dos colaboradores que NÃO devem ser deletados
+                </p>
+                <button type="button" class="btn" onclick="document.getElementById('excel-file').click()">
+                    📁 Selecionar Arquivo
+                </button>
+            </div>
+        </div>
+
+        <div id="excel-preview" class="excel-preview hidden">
+            <h4>👀 Preview da Planilha:</h4>
+            <div id="excel-content"></div>
+            <div style="margin: 15px 0;">
+                <label>Coluna com os nomes dos colaboradores:</label>
+                <select id="name-column" class="btn" style="margin-left: 10px;">
+                    <option value="">Selecione a coluna...</option>
+                </select>
+                <button id="apply-protection" class="btn" style="margin-left: 10px;">
+                    🛡️ Aplicar Proteção
+                </button>
+            </div>
+        </div>
+
         <div style="margin: 20px 0;">
             <button id="load-employees" class="btn">📊 Carregar Colaboradores</button>
-            <button id="select-test-employees" class="btn">🎯 Selecionar Colaboradores de Teste</button>
+            <button id="select-unprotected" class="btn">🎯 Selecionar Não Protegidos</button>
+            <button id="select-test-employees" class="btn">🧪 Selecionar Colaboradores de Teste</button>
             <button id="select-all" class="btn">☑️ Selecionar Todos</button>
             <button id="clear-selection" class="btn">🔲 Limpar Seleção</button>
             <button id="delete-selected" class="btn danger" disabled>🗑️ Deletar Selecionados</button>
@@ -126,6 +209,8 @@
         let TOKEN = localStorage.getItem('MARH_TOKEN') || null;
         let employees = [];
         let selectedEmployees = new Set();
+        let protectedEmployees = new Set(); // Nomes dos colaboradores protegidos do Excel
+        let excelData = null;
         let deletedCount = 0;
 
         // Verificar se tem token
@@ -163,6 +248,7 @@
 
         function updateStats() {
             document.getElementById('total-employees').textContent = employees.length;
+            document.getElementById('protected-count').textContent = protectedEmployees.size;
             document.getElementById('selected-count').textContent = selectedEmployees.size;
             document.getElementById('deleted-count').textContent = deletedCount;
         }
@@ -188,20 +274,28 @@
                 return;
             }
 
-            container.innerHTML = employees.map(emp => `
-                <div style="display: flex; align-items: center; padding: 8px; border-bottom: 1px solid #eee;">
-                    <input type="checkbox" id="emp-${emp.id}" data-emp-id="${emp.id}" style="margin-right: 10px;">
+            container.innerHTML = employees.map(emp => {
+                const isProtected = isEmployeeProtected(emp.name);
+                const cssClass = isProtected ? 'protected-employee' : 
+                               (selectedEmployees.has(emp.id) ? 'to-delete-employee' : '');
+                
+                return `
+                <div style="display: flex; align-items: center; padding: 8px; border-bottom: 1px solid #eee;" class="${cssClass}">
+                    <input type="checkbox" id="emp-${emp.id}" data-emp-id="${emp.id}" 
+                           style="margin-right: 10px;" ${isProtected ? 'disabled title="Protegido pelo Excel"' : ''}>
                     <label for="emp-${emp.id}" style="flex: 1; cursor: pointer;">
                         <strong>${emp.name}</strong> - ${emp.email} 
                         <span style="color: #666; font-size: 0.9em;">
                             (${emp.position || 'Sem cargo'} - ${emp.department || 'Sem depto'})
                         </span>
+                        ${isProtected ? '<span style="color: #28a745; font-weight: bold;"> 🛡️ PROTEGIDO</span>' : ''}
                     </label>
                 </div>
-            `).join('');
+            `;
+            }).join('');
 
             // Adicionar event listeners para checkboxes
-            container.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            container.querySelectorAll('input[type="checkbox"]:not([disabled])').forEach(checkbox => {
                 checkbox.onchange = function() {
                     const empId = this.dataset.empId;
                     if (this.checked) {
@@ -210,9 +304,171 @@
                         selectedEmployees.delete(empId);
                     }
                     updateStats();
+                    updateEmployeeVisuals();
                     document.getElementById('delete-selected').disabled = selectedEmployees.size === 0;
                 };
             });
+        }
+
+        function updateEmployeeVisuals() {
+            // Atualizar cores visuais
+            employees.forEach(emp => {
+                const div = document.querySelector(`#emp-${emp.id}`).parentElement;
+                div.className = '';
+                
+                if (isEmployeeProtected(emp.name)) {
+                    div.classList.add('protected-employee');
+                } else if (selectedEmployees.has(emp.id)) {
+                    div.classList.add('to-delete-employee');
+                }
+            });
+        }
+
+        function isEmployeeProtected(employeeName) {
+            if (protectedEmployees.size === 0) return false;
+            
+            // Normalizar nome para comparação (remover acentos, converter para minúsculo)
+            const normalized = employeeName.toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .trim();
+            
+            for (let protectedName of protectedEmployees) {
+                const normalizedProtected = protectedName.toLowerCase()
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .trim();
+                
+                // Verificar correspondência exata ou parcial
+                if (normalized === normalizedProtected || 
+                    normalized.includes(normalizedProtected) ||
+                    normalizedProtected.includes(normalized)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Funções de Excel
+        function handleExcelFile(file) {
+            log(`📄 Processando arquivo: ${file.name}`);
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    
+                    // Pegar primeira planilha
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    
+                    // Converter para JSON
+                    excelData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    log(`✅ Arquivo Excel processado: ${excelData.length} linhas encontradas`);
+                    showExcelPreview();
+                    
+                } catch (error) {
+                    log(`❌ Erro ao processar Excel: ${error.message}`);
+                    alert('Erro ao processar arquivo Excel: ' + error.message);
+                }
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }
+
+        function showExcelPreview() {
+            const preview = document.getElementById('excel-preview');
+            const content = document.getElementById('excel-content');
+            const columnSelect = document.getElementById('name-column');
+            
+            if (!excelData || excelData.length === 0) {
+                content.innerHTML = '<p>Nenhum dado encontrado no arquivo</p>';
+                return;
+            }
+            
+            // Mostrar preview
+            preview.classList.remove('hidden');
+            
+            // Construir tabela de preview (máximo 10 linhas)
+            const previewRows = excelData.slice(0, 10);
+            const table = `
+                <table>
+                    ${previewRows.map((row, index) => `
+                        <tr>
+                            ${row.map((cell, cellIndex) => `
+                                <${index === 0 ? 'th' : 'td'}>
+                                    ${cell || ''} ${index === 0 ? `<br><small>(Coluna ${String.fromCharCode(65 + cellIndex)})</small>` : ''}
+                                </${index === 0 ? 'th' : 'td'}>
+                            `).join('')}
+                        </tr>
+                    `).join('')}
+                </table>
+                ${excelData.length > 10 ? `<p><em>... e mais ${excelData.length - 10} linhas</em></p>` : ''}
+            `;
+            
+            content.innerHTML = table;
+            
+            // Popular select de colunas
+            columnSelect.innerHTML = '<option value="">Selecione a coluna...</option>';
+            if (excelData[0]) {
+                excelData[0].forEach((header, index) => {
+                    const letter = String.fromCharCode(65 + index);
+                    columnSelect.innerHTML += `<option value="${index}">Coluna ${letter}: ${header || 'Sem título'}</option>`;
+                });
+            }
+        }
+
+        function applyProtection() {
+            const columnIndex = document.getElementById('name-column').value;
+            
+            if (columnIndex === '') {
+                alert('Selecione a coluna com os nomes dos colaboradores');
+                return;
+            }
+            
+            protectedEmployees.clear();
+            
+            // Extrair nomes da coluna selecionada (pular primeira linha se for cabeçalho)
+            const startRow = 1; // Assumir que primeira linha é cabeçalho
+            for (let i = startRow; i < excelData.length; i++) {
+                const name = excelData[i][columnIndex];
+                if (name && typeof name === 'string' && name.trim()) {
+                    protectedEmployees.add(name.trim());
+                }
+            }
+            
+            log(`🛡️ Proteção aplicada para ${protectedEmployees.size} nomes do Excel`);
+            log(`📋 Nomes protegidos: ${Array.from(protectedEmployees).join(', ')}`);
+            
+            // Atualizar visualização
+            if (employees.length > 0) {
+                renderEmployeeList();
+            }
+            updateStats();
+            
+            alert(`✅ Proteção aplicada!\n\n${protectedEmployees.size} nomes foram marcados como protegidos.\n\nColaboradores com esses nomes NÃO poderão ser deletados.`);
+        }
+
+        function selectUnprotected() {
+            selectedEmployees.clear();
+            
+            employees.forEach(emp => {
+                if (!isEmployeeProtected(emp.name)) {
+                    selectedEmployees.add(emp.id);
+                }
+            });
+            
+            // Marcar checkboxes
+            document.querySelectorAll('input[type="checkbox"]:not([disabled])').forEach(checkbox => {
+                checkbox.checked = selectedEmployees.has(checkbox.dataset.empId);
+            });
+            
+            updateStats();
+            updateEmployeeVisuals();
+            document.getElementById('delete-selected').disabled = selectedEmployees.size === 0;
+            log(`🎯 ${selectedEmployees.size} colaboradores não protegidos selecionados para deleção`);
         }
 
         function selectTestEmployees() {
@@ -283,11 +539,17 @@
                 return;
             }
 
+            const protectedCount = protectedEmployees.size;
+            const protectedMessage = protectedCount > 0 ? 
+                `\n\n🛡️ ${protectedCount} colaboradores estão protegidos pelo Excel e NÃO serão deletados.` : 
+                '\n\n⚠️ NENHUMA PROTEÇÃO ATIVA! Certifique-se de ter carregado a planilha de proteção.';
+
             const confirmation = confirm(
                 `⚠️ ATENÇÃO!\n\n` +
                 `Você está prestes a deletar ${selectedEmployees.size} colaboradores.\n` +
-                `Esta ação NÃO PODE SER DESFEITA!\n\n` +
-                `Tem certeza que deseja continuar?`
+                `Esta ação NÃO PODE SER DESFEITA!` +
+                protectedMessage +
+                `\n\nTem certeza que deseja continuar?`
             );
 
             if (!confirmation) {
@@ -360,10 +622,46 @@
 
         // Event Listeners
         document.getElementById('load-employees').onclick = loadEmployees;
+        document.getElementById('select-unprotected').onclick = selectUnprotected;
         document.getElementById('select-test-employees').onclick = selectTestEmployees;
         document.getElementById('select-all').onclick = selectAll;
         document.getElementById('clear-selection').onclick = clearSelection;
         document.getElementById('delete-selected').onclick = deleteSelected;
+        document.getElementById('apply-protection').onclick = applyProtection;
+
+        // Event listeners para upload de arquivo
+        const fileInput = document.getElementById('excel-file');
+        const dropArea = document.getElementById('file-drop-area');
+
+        fileInput.onchange = function(e) {
+            if (e.target.files.length > 0) {
+                handleExcelFile(e.target.files[0]);
+            }
+        };
+
+        dropArea.onclick = function() {
+            fileInput.click();
+        };
+
+        // Drag and drop
+        dropArea.ondragover = function(e) {
+            e.preventDefault();
+            dropArea.classList.add('dragover');
+        };
+
+        dropArea.ondragleave = function(e) {
+            e.preventDefault();
+            dropArea.classList.remove('dragover');
+        };
+
+        dropArea.ondrop = function(e) {
+            e.preventDefault();
+            dropArea.classList.remove('dragover');
+            
+            if (e.dataTransfer.files.length > 0) {
+                handleExcelFile(e.dataTransfer.files[0]);
+            }
+        };
 
         // Inicializar
         updateStats();

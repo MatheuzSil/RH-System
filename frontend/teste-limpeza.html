@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste - Limpar Colaboradores</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn.success {
+            background: #28a745;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 20px 0;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Teste - Sistema de Limpeza</h1>
+        <p>Esta página cria colaboradores de teste para validar o sistema de limpeza baseado em Excel.</p>
+        
+        <div style="margin: 20px 0;">
+            <button id="create-test-data" class="btn">📝 Criar Dados de Teste</button>
+            <button id="open-cleaner" class="btn success">🗑️ Abrir Limpador</button>
+            <button id="download-example" class="btn">📄 Baixar Excel Exemplo</button>
+        </div>
+
+        <div class="log" id="log"></div>
+    </div>
+
+    <script>
+        const API = 'https://marhbackend-production.up.railway.app/api';
+        let TOKEN = localStorage.getItem('MARH_TOKEN') || null;
+
+        // Verificar se tem token
+        if (!TOKEN) {
+            alert('❌ Token não encontrado! Faça login no MARH primeiro.');
+            window.location.href = 'index.html';
+        }
+
+        async function api(path, method = 'GET', body = null) {
+            const response = await fetch(API + path, {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + TOKEN
+                },
+                body: body ? JSON.stringify(body) : null
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+            }
+
+            const contentType = response.headers.get('content-type');
+            return contentType && contentType.includes('application/json') 
+                ? response.json() 
+                : response.text();
+        }
+
+        function log(message) {
+            const logEl = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logEl.innerHTML += `[${timestamp}] ${message}\n`;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        // Dados de teste
+        const testEmployees = [
+            // Estes DEVEM estar protegidos no Excel
+            { name: 'João Silva', email: 'joao.silva@empresa.com', position: 'Gerente' },
+            { name: 'Maria Santos', email: 'maria.santos@empresa.com', position: 'Analista' },
+            { name: 'Pedro Oliveira', email: 'pedro.oliveira@empresa.com', position: 'Coordenador' },
+            { name: 'Ana Costa', email: 'ana.costa@empresa.com', position: 'Assistente' },
+            { name: 'Carlos Pereira', email: 'carlos.pereira@empresa.com', position: 'Supervisor' },
+            
+            // Estes NÃO estão no Excel e devem ser deletados
+            { name: 'Teste Usuario 1', email: 'teste1@test.com', position: 'Teste' },
+            { name: 'Colaborador Temporario', email: 'temp@example.com', position: 'Temporário' },
+            { name: 'Usuario 123', email: 'user123@teste.com', position: 'Teste' },
+            { name: 'Funcionario Demo', email: 'demo@demo.com', position: 'Demo' },
+            { name: 'João Teste', email: 'joao.teste@test.com', position: 'Tester' }
+        ];
+
+        async function createTestData() {
+            log('📝 Iniciando criação de dados de teste...');
+            
+            let created = 0;
+            let errors = 0;
+            
+            for (const emp of testEmployees) {
+                try {
+                    await api('/employees', 'POST', {
+                        name: emp.name,
+                        email: emp.email,
+                        position: emp.position,
+                        department: 'TI',
+                        status: 'ATIVO',
+                        salary: 5000
+                    });
+                    
+                    log(`✅ Criado: ${emp.name}`);
+                    created++;
+                    
+                } catch (error) {
+                    log(`❌ Erro ao criar ${emp.name}: ${error.message}`);
+                    errors++;
+                }
+                
+                // Pequena pausa para não sobrecarregar
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            
+            log(`🎉 Processo concluído! ${created} colaboradores criados, ${errors} erros.`);
+            alert(`✅ Dados de teste criados!\n\n${created} colaboradores adicionados\n\nAgora você pode:\n1. Baixar o Excel exemplo\n2. Abrir o limpador\n3. Testar a proteção`);
+        }
+
+        function downloadExample() {
+            const csvContent = `Nome,Email,Cargo
+João Silva,joao.silva@empresa.com,Gerente
+Maria Santos,maria.santos@empresa.com,Analista
+Pedro Oliveira,pedro.oliveira@empresa.com,Coordenador
+Ana Costa,ana.costa@empresa.com,Assistente
+Carlos Pereira,carlos.pereira@empresa.com,Supervisor`;
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'colaboradores-protegidos.csv';
+            link.click();
+            
+            log('📄 Excel exemplo baixado: colaboradores-protegidos.csv');
+            alert('📄 Arquivo baixado!\n\nEste arquivo contém os nomes dos colaboradores que NÃO devem ser deletados.\n\nUse este arquivo no sistema de limpeza para proteger esses colaboradores.');
+        }
+
+        function openCleaner() {
+            window.open('limpar-colaboradores.html', '_blank');
+        }
+
+        // Event Listeners
+        document.getElementById('create-test-data').onclick = createTestData;
+        document.getElementById('open-cleaner').onclick = openCleaner;
+        document.getElementById('download-example').onclick = downloadExample;
+
+        // Inicializar
+        log('🧪 Sistema de teste inicializado');
+        log('ℹ️ Token encontrado, pronto para criar dados de teste');
+    </script>
+</body>
+</html>
