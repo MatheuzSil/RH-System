@@ -1,0 +1,36 @@
+[
+  {
+    "file": "00b0a21d-1674-470b-862e-6f6441e0e711.pdf",
+    "size": 1671616,
+    "path": "test-docs\\00b0a21d-1674-470b-862e-6f6441e0e711.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T18:58:48.670Z"
+  },
+  {
+    "file": "ARTHUR_MIRANDA_SANTANA_25293.pdf",
+    "size": 1671616,
+    "path": "test-docs\\ARTHUR_MIRANDA_SANTANA_25293.pdf",
+    "result": {
+      "success": true,
+      "matched": true,
+      "employee": {
+        "id": 2,
+        "name": "ARTHUR MIRANDA SANTANA",
+        "cpf": "11067377921",
+        "matricula": "25293",
+        "Id": 2,
+        "Nome": "ARTHUR MIRANDA SANTANA",
+        "Cpf": "110.673.779-21",
+        "Matricula": "25293",
+        "Status": "Ativo",
+        "matchReason": "Nome: Arthur Miranda Santana → ARTHUR MIRANDA SANTANA (100.0%)"
+      },
+      "matchReason": "Nome: Arthur Miranda Santana → ARTHUR MIRANDA SANTANA (100.0%)"
+    },
+    "timestamp": "2025-09-03T18:58:48.699Z"
+  }
+]

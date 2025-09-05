@@ -1,0 +1,717 @@
+[
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ADITIVO_CONTRATUAL_00125983.pdf",
+    "size": 82949,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ADITIVO_CONTRATUAL_00125983.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.431Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ATESTADO_DE_SAUDE_OCUPACIONAL_ASO__00140414.pdf",
+    "size": 77751,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ATESTADO_DE_SAUDE_OCUPACIONAL_ASO__00140414.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.434Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_BANCO_DE_HORAS_00149168.pdf",
+    "size": 89482,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_BANCO_DE_HORAS_00149168.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.438Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_CARTA_DE_OPOSICAO_AO_SINDICATO_DOCTOS_SINDICAIS_GUIAS_00145525.pdf",
+    "size": 91549,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_CARTA_DE_OPOSICAO_AO_SINDICATO_DOCTOS_SINDICAIS_GUIAS_00145525.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.441Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_CARTEIRA_DE_TRABALHO_00074981.pdf",
+    "size": 43193,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_CARTEIRA_DE_TRABALHO_00074981.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.442Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_CERTIDAO_DE_NASCIMENTO_DO_S_FILHO_S__00074988.pdf",
+    "size": 23684,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_CERTIDAO_DE_NASCIMENTO_DO_S_FILHO_S__00074988.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.444Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_CIRCULAR_INTERNA_COMUNICADO_00132177.pdf",
+    "size": 23804,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_CIRCULAR_INTERNA_COMUNICADO_00132177.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.446Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_CONTRATO_DE_EXPERIENCIA_TRABALHO_00074971.pdf",
+    "size": 57943,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_CONTRATO_DE_EXPERIENCIA_TRABALHO_00074971.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.447Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_DECLARACAO_DE_DEPENDENTE_P_IRRF_00074972.pdf",
+    "size": 26984,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_DECLARACAO_DE_DEPENDENTE_P_IRRF_00074972.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.449Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_DECLARACAO_ESCOLARIDADE_DIPLOMA_00074979.pdf",
+    "size": 71065,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_DECLARACAO_ESCOLARIDADE_DIPLOMA_00074979.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.451Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_DECLARACAO_SEGURO_DE_VIDA_00074977.pdf",
+    "size": 35182,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_DECLARACAO_SEGURO_DE_VIDA_00074977.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.452Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_DOCUMENTOS_COMPLEMENTARES_00074974.pdf",
+    "size": 93951,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_DOCUMENTOS_COMPLEMENTARES_00074974.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.453Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_012016.pdf",
+    "size": 54404,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_012016.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.454Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_012017.pdf",
+    "size": 39464,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_012017.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.456Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_012018.pdf",
+    "size": 53302,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_012018.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.457Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_012019.pdf",
+    "size": 56886,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_012019.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.459Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_022016.pdf",
+    "size": 60801,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_022016.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.460Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_022017.pdf",
+    "size": 63023,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_022017.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.461Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_022018.pdf",
+    "size": 32484,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_022018.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.463Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_022019.pdf",
+    "size": 58440,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_022019.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.465Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_032016.pdf",
+    "size": 54159,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_032016.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.467Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_032017.pdf",
+    "size": 47144,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_032017.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.469Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_032018.pdf",
+    "size": 41526,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_032018.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.471Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_032019.pdf",
+    "size": 56706,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_032019.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.472Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_042016.pdf",
+    "size": 52200,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_042016.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.474Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_042017.pdf",
+    "size": 30264,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_042017.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.476Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_042018.pdf",
+    "size": 47252,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_042018.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.477Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_042019.pdf",
+    "size": 72914,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_042019.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.478Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_052016.pdf",
+    "size": 55109,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_052016.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.480Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_052017.pdf",
+    "size": 42326,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_052017.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.481Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_052018.pdf",
+    "size": 49944,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_052018.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.483Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_062016.pdf",
+    "size": 44038,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_062016.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.484Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_062017.pdf",
+    "size": 56582,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_062017.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.486Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_062018.pdf",
+    "size": 76476,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_062018.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.488Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_062019.pdf",
+    "size": 53732,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_062019.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.489Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_072016.pdf",
+    "size": 55912,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_072016.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.490Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_072017.pdf",
+    "size": 146282,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_072017.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.493Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_072018.pdf",
+    "size": 49692,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_072018.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.494Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_082015.pdf",
+    "size": 38290,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_082015.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.495Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_082016.pdf",
+    "size": 41308,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_082016.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.497Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_082017.pdf",
+    "size": 39716,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_082017.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.499Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_082018.pdf",
+    "size": 38846,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_082018.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.500Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_092015.pdf",
+    "size": 43976,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_092015.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.502Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_092016.pdf",
+    "size": 73522,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_092016.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.503Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_092017.pdf",
+    "size": 26760,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_092017.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.505Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_102015.pdf",
+    "size": 59021,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_102015.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.507Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_102016.pdf",
+    "size": 57864,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_102016.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.508Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_102017.pdf",
+    "size": 54406,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_102017.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.509Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_102018.pdf",
+    "size": 36372,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_102018.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.511Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_112015.pdf",
+    "size": 33108,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_112015.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.512Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_112016.pdf",
+    "size": 32888,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_112016.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.514Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_112017.pdf",
+    "size": 50938,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_112017.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.515Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_112018.pdf",
+    "size": 46842,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_112018.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.516Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_122015.pdf",
+    "size": 40506,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_122015.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.518Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_122016.pdf",
+    "size": 45044,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_122016.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.519Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_122018.pdf",
+    "size": 44484,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_ESPELHO_DE_PONTO_00077515_122018.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.520Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_FERIAS_AVISO_00117447.pdf",
+    "size": 41627,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_FERIAS_AVISO_00117447.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.520Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_FERIAS_RECIBO_00117448.pdf",
+    "size": 48089,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_FERIAS_RECIBO_00117448.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.522Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_FICHA_DE_REGISTRO_00074970.pdf",
+    "size": 638715,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_FICHA_DE_REGISTRO_00074970.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.523Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_FORMULARIO_DE_ASSISTENCIA_MEDICA_00074976.pdf",
+    "size": 78657,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_FORMULARIO_DE_ASSISTENCIA_MEDICA_00074976.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.524Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_OPCAO_DE_VALE_TRANSPORTE_00074978.pdf",
+    "size": 50455,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_OPCAO_DE_VALE_TRANSPORTE_00074978.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.526Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_PRONTUARIO_MEDICO_00074764.pdf",
+    "size": 180732,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_PRONTUARIO_MEDICO_00074764.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.527Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_SEGURANCA_NO_TRABALHO_EPI_00140467.pdf",
+    "size": 32714,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_SEGURANCA_NO_TRABALHO_EPI_00140467.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.528Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_SOLICITACAO_DE_CORRECAO_DE_JORNADA_00077516.pdf",
+    "size": 1160541,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_SOLICITACAO_DE_CORRECAO_DE_JORNADA_00077516.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.529Z"
+  },
+  {
+    "file": "ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_TERMO_DE_CONDUTA_00182738.pdf",
+    "size": 54827,
+    "path": "documentos\\ABDENEGO HENRIQUE DA SILVA ALBUQUERQUE_TERMO_DE_CONDUTA_00182738.pdf",
+    "result": {
+      "success": true,
+      "matched": false,
+      "employee": null
+    },
+    "timestamp": "2025-09-03T19:10:39.529Z"
+  }
+]

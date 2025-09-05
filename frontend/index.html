@@ -10,6 +10,20 @@
 #protocol-tabs button { margin-right: 0.5rem; margin-bottom: 0.5rem; }
 #protocol-tabs button.active { background-color: #0056b3; color: white; }
 .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }
+
+/* Estilos para campos de exibição de data */
+.date-display {
+  background-color: #f8f9fa !important;
+  border: 1px solid #dee2e6 !important;
+  color: #495057 !important;
+  font-weight: 500;
+  cursor: default;
+}
+
+.date-display:focus {
+  box-shadow: none !important;
+  border-color: #dee2e6 !important;
+}
 </style>
 </head>
 <body>
@@ -19,7 +33,6 @@
     <div class="mt1"><label>E-mail</label><input id="login-email" class="input" value="admin@marh.local"></div>
     <div class="mt1"><label>Senha</label><input id="login-pass" class="input" type="password" value="123"></div>
     <div class="mt2 right"><button id="btn-login" class="btn ok">Entrar</button></div>
-    <div class="note mt1"><b>Usuários:</b> admin@marh.local, rh@marh.local, gestor@marh.local, colab@marh.local (senha: 123)</div>
     <div id="login-msg" class="note mt1 hidden"></div>
   </div>
 </section>
@@ -88,11 +101,12 @@
             <thead>
               <tr>
                 <th>Nome</th>
+                <th>Chapa</th>
                 <th>E-mail</th>
-                <th>Departamento</th>
                 <th>Cargo</th>
+                <th>Local</th>
+                <th>Situação</th>
                 <th>Salário</th>
-                <th>Status</th>
                 <th></th>
               </tr>
             </thead>
@@ -139,6 +153,199 @@
       <div id="view-cand" class="hidden">
         <div class="toolbar mb1"><button id="new-cand" class="btn ok">Novo candidato</button><a id="exp-cand" class="btn" href="#">Exportar CSV</a></div>
         <div class="card"><table id="tbl-cand"><thead><tr><th>Nome</th><th>E-mail</th><th>Vaga</th><th>Etapa</th><th></th></tr></thead><tbody></tbody></table></div>
+      </div>
+
+      <!-- Aba de Documentos Massivos -->
+      <div id="view-bulk-documents" class="hidden">
+        <div class="page-header">
+          <h2>📁 Gestão de Documentos em Massa</h2>
+          <p>Sistema para upload e organização de grandes volumes de documentos de funcionários</p>
+        </div>
+
+        <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 2rem;">
+          <!-- Seção de Upload -->
+          <div class="card">
+            <h3>🚀 Upload em Lote</h3>
+            <div class="form-section">
+              <div class="form-group">
+                <label>Selecionar Funcionário</label>
+                <select id="bulk-employee-select" class="input">
+                  <option value="">Carregando funcionários...</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label>Tipo de Documento</label>
+                <select id="bulk-doc-type" class="input">
+                  <option value="RG">RG</option>
+                  <option value="CPF">CPF</option>
+                  <option value="CONTRATO">Contrato</option>
+                  <option value="DIPLOMA">Diploma</option>
+                  <option value="CERTIFICADO">Certificado</option>
+                  <option value="PRONTUARIO">Prontuário</option>
+                  <option value="EXAME">Exame Médico</option>
+                  <option value="OUTROS">Outros</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Descrição Geral</label>
+                <input id="bulk-description" class="input" placeholder="Descrição dos documentos">
+              </div>
+
+              <div class="form-group">
+                <label>Data de Expiração (opcional)</label>
+                <input id="bulk-expiry" class="input" type="date">
+              </div>
+
+              <div class="form-group">
+                <label>Selecionar Arquivos (PDF, DOC, IMG)</label>
+                <div class="file-drop-zone" id="bulk-drop-zone">
+                  <input id="bulk-file-input" type="file" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt,.xls,.xlsx" style="display: none;">
+                  <div class="drop-message">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">📄</div>
+                    <p><strong>Arraste arquivos aqui</strong> ou <button type="button" onclick="document.getElementById('bulk-file-input').click()" class="link-button">clique para selecionar</button></p>
+                    <p style="color: #666; font-size: 0.9rem;">Máximo: 100 arquivos por vez, 100MB por arquivo</p>
+                  </div>
+                  <div id="file-preview" class="file-preview hidden"></div>
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button id="bulk-upload-btn" class="btn ok" disabled>
+                  📤 Iniciar Upload em Lote
+                </button>
+                <button id="clear-files-btn" class="btn">
+                  🗑️ Limpar Seleção
+                </button>
+              </div>
+
+              <!-- Progress Section -->
+              <div id="upload-progress" class="progress-section hidden">
+                <h4>📊 Progresso do Upload</h4>
+                <div class="progress-bar">
+                  <div id="progress-fill" class="progress-fill"></div>
+                </div>
+                <div id="progress-info" class="progress-info">
+                  <span id="progress-text">Preparando...</span>
+                  <span id="progress-speed"></span>
+                </div>
+                <div id="upload-results" class="upload-results"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Seção de Monitoramento -->
+          <div class="card">
+            <h3>📈 Estatísticas</h3>
+            <div class="stats-grid">
+              <div class="stat-card">
+                <div class="stat-number" id="total-documents">0</div>
+                <div class="stat-label">Total de Documentos</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-number" id="total-size">0 MB</div>
+                <div class="stat-label">Espaço Utilizado</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-number" id="employees-with-docs">0</div>
+                <div class="stat-label">Funcionários com Docs</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-number" id="pending-uploads">0</div>
+                <div class="stat-label">Uploads Pendentes</div>
+              </div>
+            </div>
+
+            <div class="mt2">
+              <h4>🔍 Busca Rápida</h4>
+              <input id="doc-search" class="input" placeholder="Buscar por nome do funcionário ou documento...">
+              <div id="search-results" class="search-results mt1"></div>
+            </div>
+
+            <div class="mt2">
+              <h4>🏷️ Filtros</h4>
+              <div class="filter-group">
+                <select id="filter-type" class="input" style="width: 48%; margin-right: 4%;">
+                  <option value="">Todos os tipos</option>
+                  <option value="RG">RG</option>
+                  <option value="CPF">CPF</option>
+                  <option value="CONTRATO">Contrato</option>
+                  <option value="DIPLOMA">Diploma</option>
+                  <option value="CERTIFICADO">Certificado</option>
+                  <option value="PRONTUARIO">Prontuário</option>
+                  <option value="EXAME">Exame Médico</option>
+                  <option value="OUTROS">Outros</option>
+                </select>
+                <select id="filter-status" class="input" style="width: 48%;">
+                  <option value="">Todos os status</option>
+                  <option value="valid">Válidos</option>
+                  <option value="expired">Expirados</option>
+                  <option value="expiring">Expirando em 30 dias</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Seção de Listagem -->
+        <div class="card mt2">
+          <div class="card-header">
+            <h3>📋 Documentos Recentes</h3>
+            <div class="toolbar">
+              <button id="export-docs" class="btn">📥 Exportar Lista</button>
+              <button id="bulk-delete" class="btn danger">🗑️ Exclusão em Lote</button>
+              <button id="refresh-docs" class="btn">🔄 Atualizar</button>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th><input type="checkbox" id="select-all-docs"></th>
+                  <th>Funcionário</th>
+                  <th>Documento</th>
+                  <th>Tipo</th>
+                  <th>Tamanho</th>
+                  <th>Upload</th>
+                  <th>Status</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="bulk-docs-list">
+                <!-- Documentos serão carregados aqui -->
+              </tbody>
+            </table>
+          </div>
+
+          <div class="pagination">
+            <button id="prev-page" class="btn">← Anterior</button>
+            <span id="page-info">Página 1 de 1</span>
+            <button id="next-page" class="btn">Próximo →</button>
+          </div>
+        </div>
+
+        <!-- Seção de Importação -->
+        <div class="card mt2">
+          <h3>📂 Importação de Diretório</h3>
+          <p>Para volumes muito grandes (400GB+), use a ferramenta de linha de comando:</p>
+          <div class="code-block">
+            <code>
+              # 1. Organize os arquivos em pastas por funcionário<br>
+              documentos/<br>
+              ├── EMP001/<br>
+              │   ├── contrato.pdf<br>
+              │   └── rg.pdf<br>
+              ├── EMP002/<br>
+              │   └── diploma.pdf<br>
+              <br>
+              # 2. Execute o script de importação<br>
+              node backend/bulk-import.js ./documentos
+            </code>
+          </div>
+          <button id="start-cli-import" class="btn ok mt1">🚀 Iniciar Importação CLI</button>
+        </div>
       </div>
 
       <div id="view-reports" class="hidden">
@@ -329,6 +536,30 @@
           <table id="tbl-users"><thead><tr><th>E-mail</th><th>Nome</th><th>Papel</th><th>Status</th><th></th></tr></thead><tbody></tbody></table>
         </div>
       </div>
+
+      <!-- Importador de Colaboradores -->
+      <div id="import-colaboradores" class="hidden">
+        <div class="card" style="text-align: center; padding: 3rem; color: #666;">
+          <h2>📥 Importador de Colaboradores</h2>
+          <p>Clique no menu para carregar o importador</p>
+          <div style="margin: 2rem 0; font-size: 2rem;">
+            📊 ➡️ 👥
+          </div>
+          <p style="font-size: 0.9em;">Importe colaboradores diretamente de planilhas Excel ou CSV</p>
+        </div>
+      </div>
+
+      <!-- Limpador de Colaboradores -->
+      <div id="limpar-colaboradores" class="hidden">
+        <div class="card" style="text-align: center; padding: 3rem; color: #666;">
+          <h2>🗑️ Limpador de Colaboradores</h2>
+          <p>Clique no menu para carregar o limpador</p>
+          <div style="margin: 2rem 0; font-size: 2rem;">
+            👥 ➡️ 🗑️
+          </div>
+          <p style="font-size: 0.9em;">Limpe colaboradores de teste em lote com segurança</p>
+        </div>
+      </div>
     </main>
   </div>
 </section>
@@ -350,8 +581,18 @@
               <input id="emp-name" class="input" type="text" required>
             </div>
             <div class="form-group">
+              <label>Chapa</label>
+              <input id="emp-chapa" class="input" type="text">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
               <label>E-mail</label>
               <input id="emp-email" class="input" type="email" required>
+            </div>
+            <div class="form-group">
+              <label>CPF</label>
+              <input id="emp-cpf" class="input" type="text">
             </div>
           </div>
           <div class="form-row">
@@ -366,9 +607,45 @@
           </div>
           <div class="form-row">
             <div class="form-group">
+              <label>Código do Cargo</label>
+              <input id="emp-cod-cargo" class="input" type="text">
+            </div>
+            <div class="form-group">
+              <label>Nome do Cargo</label>
+              <input id="emp-cargo" class="input" type="text">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
               <label>Departamento</label>
               <input id="emp-department" class="input" type="text">
             </div>
+            <div class="form-group">
+              <label>Local de Trabalho</label>
+              <input id="emp-local" class="input" type="text">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Centro de Custo</label>
+              <input id="emp-centro-custo" class="input" type="text">
+            </div>
+            <div class="form-group">
+              <label>Descrição da Folha</label>
+              <input id="emp-descricao-folha" class="input" type="text">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Código da Situação</label>
+              <input id="emp-cod-situacao" class="input" type="text">
+            </div>
+            <div class="form-group">
+              <label>Situação</label>
+              <input id="emp-situacao" class="input" type="text">
+            </div>
+          </div>
+          <div class="form-row">
             <div class="form-group">
               <label>Status</label>
               <select id="emp-status" class="input">
@@ -380,9 +657,25 @@
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label>Data de Admissão</label>
+              <label>📅 Data de Admissão (Exibição)</label>
+              <input id="emp-admissao-display" class="input date-display" type="text" readonly>
+            </div>
+            <div class="form-group">
+              <label>📅 Data de Rescisão (Exibição)</label>
+              <input id="emp-rescisao-display" class="input date-display" type="text" readonly>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Data de Admissão (Editar)</label>
               <input id="emp-hire-date" class="input" type="date">
             </div>
+            <div class="form-group">
+              <label>Data de Rescisão (Editar)</label>
+              <input id="emp-data-rescisao" class="input" type="date">
+            </div>
+          </div>
+          <div class="form-row">
             <div class="form-group">
               <label>Salário</label>
               <input id="emp-salary" class="input" type="number" step="0.01">
@@ -517,11 +810,6 @@ async function api(path, method='GET', body=null){
 qs('#btn-login').onclick = async ()=>{
   const email = qs('#login-email').value.trim(); const password = qs('#login-pass').value;
   try{ const r = await api('/login','POST',{email,password});
-    // Mostrar código MFA em alert destacado
-    alert('🔐 CÓDIGO DE VERIFICAÇÃO EM 2 ETAPAS\n\n' + 
-          '📱 Seu código MFA é: ' + r.demoCode + '\n\n' +
-          '⚠️  Digite este código na próxima tela para continuar');
-    
     qs('#login-msg').classList.remove('hidden'); qs('#login-msg').textContent = 'Código MFA (demo): '+r.demoCode;
     qs('#view-login').classList.add('hidden'); qs('#view-mfa').classList.remove('hidden'); qs('#mfa-hint').textContent='Digite o código: ' + r.demoCode; sessionStorage.setItem('MFA_EMAIL', email);
   }catch(e){ alert('Falha no login'); }
@@ -541,8 +829,8 @@ function initApp(){
 }
 function buildMenu(){
   const NAV = {
-    ADMIN: [['view-dashboard','📊 Dashboard'],['view-employees','👥 Colaboradores'],['view-depts','🏢 Departamentos'],['view-att','🕒 Presenças'],['view-leaves','🏖️ Afastamentos'],['view-payroll','💸 Folha'],['view-reviews','📈 Avaliações'],['view-train','🎓 Treinamentos'],['view-jobs','📋 Vagas'],['view-cand','🧑‍💼 Candidatos'],['view-protocol','📋 Protocolo'],['view-reports','📑 Relatórios'],['view-audit','🗂️ Logs'],['view-settings','⚙️ Usuários']],
-    RH: [['view-dashboard','📊 Dashboard'],['view-employees','👥 Colaboradores'],['view-depts','🏢 Departamentos'],['view-att','🕒 Presenças'],['view-leaves','🏖️ Afastamentos'],['view-payroll','💸 Folha'],['view-reviews','📈 Avaliações'],['view-train','🎓 Treinamentos'],['view-jobs','📋 Vagas'],['view-cand','🧑‍💼 Candidatos'],['view-protocol','📋 Protocolo'],['view-reports','📑 Relatórios'],['view-audit','🗂️ Logs']],
+    ADMIN: [['view-dashboard','📊 Dashboard'],['view-employees','👥 Colaboradores'],['import-colaboradores','📥 Importar Colaboradores'],['limpar-colaboradores','🗑️ Limpar Colaboradores'],['view-depts','🏢 Departamentos'],['view-att','🕒 Presenças'],['view-leaves','🏖️ Afastamentos'],['view-payroll','💸 Folha'],['view-reviews','📈 Avaliações'],['view-train','🎓 Treinamentos'],['view-jobs','📋 Vagas'],['view-cand','🧑‍💼 Candidatos'],['view-bulk-documents','📁 Documentos Massa'],['view-protocol','📋 Protocolo'],['view-reports','📑 Relatórios'],['view-audit','🗂️ Logs'],['view-settings','⚙️ Usuários']],
+    RH: [['view-dashboard','📊 Dashboard'],['view-employees','👥 Colaboradores'],['import-colaboradores','📥 Importar Colaboradores'],['limpar-colaboradores','🗑️ Limpar Colaboradores'],['view-depts','🏢 Departamentos'],['view-att','🕒 Presenças'],['view-leaves','🏖️ Afastamentos'],['view-payroll','💸 Folha'],['view-reviews','📈 Avaliações'],['view-train','🎓 Treinamentos'],['view-jobs','📋 Vagas'],['view-cand','🧑‍💼 Candidatos'],['view-bulk-documents','📁 Documentos Massa'],['view-protocol','📋 Protocolo'],['view-reports','📑 Relatórios'],['view-audit','🗂️ Logs']],
     GESTOR: [['view-dashboard','📊 Dashboard'],['view-employees','👥 Colaboradores'],['view-att','🕒 Presenças'],['view-leaves','🏖️ Afastamentos'],['view-reviews','📈 Avaliações'],['view-protocol','📋 Protocolo'],['view-reports','📑 Relatórios']],
     COLAB: [['view-dashboard','📊 Dashboard'],['view-att','🕒 Presenças'],['view-leaves','🏖️ Afastamentos'],['view-payroll','💸 Folha'],['view-reviews','📈 Avaliações'],['view-protocol','📋 Protocolo']]
   };
@@ -582,8 +870,84 @@ async function openView(id){
   if(id==='view-jobs') renderJobs();
   if(id==='view-cand') renderCandidates();
   if(id==='view-protocol') renderProtocol();
+  if(id==='view-bulk-documents') { 
+    // Initialize bulk document manager
+    if(typeof BulkDocumentManager !== 'undefined') {
+      window.bulkDocManager = new BulkDocumentManager();
+    }
+  }
+  if(id==='import-colaboradores') {
+    // Carregar importador de colaboradores inline
+    loadImportColaboradores();
+  }
+  if(id==='limpar-colaboradores') {
+    // Carregar limpador de colaboradores inline
+    loadLimparColaboradores();
+  }
   if(id==='view-audit'){ try{ const logs = await api('/logs'); renderAudit(logs);}catch{ alert('Sem permissão'); openView('view-dashboard'); } }
   if(id==='view-settings') renderUsers();
+}
+
+function loadImportColaboradores() {
+  const container = document.getElementById('import-colaboradores');
+  
+  // Mostrar loading
+  container.innerHTML = `
+    <div class="card" style="text-align: center; padding: 3rem;">
+      <h2>📥 Importador de Colaboradores</h2>
+      <p>🔄 Carregando importador...</p>
+      <div style="margin: 2rem 0;">
+        <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #007bff; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+      </div>
+      <p style="color: #666;">Aguarde um momento...</p>
+    </div>
+    <style>
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
+  `;
+  
+  // Carregar após um pequeno delay
+  setTimeout(() => {
+    container.innerHTML = `
+      <div style="background: white; border-radius: 8px; overflow: hidden;">
+        <iframe src="import-colaboradores.html" style="width: 100%; height: 85vh; border: none;"></iframe>
+      </div>
+    `;
+  }, 1000);
+}
+
+function loadLimparColaboradores() {
+  const container = document.getElementById('limpar-colaboradores');
+  
+  // Mostrar loading
+  container.innerHTML = `
+    <div class="card" style="text-align: center; padding: 3rem;">
+      <h2>🗑️ Limpador de Colaboradores</h2>
+      <p>🔄 Carregando limpador...</p>
+      <div style="margin: 2rem 0;">
+        <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #dc3545; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+      </div>
+      <p style="color: #666;">Aguarde um momento...</p>
+    </div>
+    <style>
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
+  `;
+  
+  // Carregar após um pequeno delay
+  setTimeout(() => {
+    container.innerHTML = `
+      <div style="background: white; border-radius: 8px; overflow: hidden;">
+        <iframe src="limpar-colaboradores.html" style="width: 100%; height: 85vh; border: none;"></iframe>
+      </div>
+    `;
+  }, 1000);
 }
 function renderLogs(logs){ qs('#log-recent').innerHTML = (logs||[]).slice(0,8).map(l=>`<div class="mb1"><span class="tag">${l.at}</span> — <b>${l.who}</b> • ${l.action} <span class="note" style="display:inline-block;padding:.1rem .3rem">${l.details||''}</span></div>`).join('') || '<i class="muted">Sem registros</i>'; }
 function renderAudit(logs){ qs('#tbl-logs tbody').innerHTML = logs.map(l=> `<tr><td>${l.at}</td><td>${l.who}</td><td>${l.action}</td><td>${l.details||''}</td></tr>`).join(''); }
@@ -611,9 +975,16 @@ function filterEmployees(employees) {
     return (
       (emp.name && emp.name.toLowerCase().includes(term)) ||
       (emp.email && emp.email.toLowerCase().includes(term)) ||
+      (emp.roleTitle && emp.roleTitle.toLowerCase().includes(term)) ||
       (emp.position && emp.position.toLowerCase().includes(term)) ||
+      (emp.cargo && emp.cargo.toLowerCase().includes(term)) ||
+      (emp.deptId && emp.deptId.toLowerCase().includes(term)) ||
       (emp.department && emp.department.toLowerCase().includes(term)) ||
-      (emp.phone && emp.phone.toLowerCase().includes(term))
+      (emp.local && emp.local.toLowerCase().includes(term)) ||
+      (emp.phone && emp.phone.toLowerCase().includes(term)) ||
+      (emp.chapa && emp.chapa.toLowerCase().includes(term)) ||
+      (emp.cpf && emp.cpf.toLowerCase().includes(term)) ||
+      (emp.situacao && emp.situacao.toLowerCase().includes(term))
     );
   });
   
@@ -766,7 +1137,7 @@ function renderEmployeeTable() {
   if (filteredEmployees.length === 0) {
     body.innerHTML = `
       <tr>
-        <td colspan="7" style="text-align: center; padding: 2rem;">
+        <td colspan="8" style="text-align: center; padding: 2rem;">
           <div style="font-size: 2rem; margin-bottom: 1rem;">🔍</div>
           <div>Nenhum colaborador encontrado</div>
           ${searchTerm ? `<button type="button" class="btn mt1" onclick="clearEmployeeSearch()">Limpar Busca</button>` : ''}
@@ -780,11 +1151,12 @@ function renderEmployeeTable() {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${e.name}</td>
+      <td>${e.chapa || 'N/A'}</td>
       <td>${e.email}</td>
-      <td>${deptName(e.department)}</td>
-      <td>${e.position||''}</td>
+      <td>${e.cargo || e.position || 'N/A'}</td>
+      <td>${e.local || e.department || 'N/A'}</td>
+      <td>${e.situacao || e.status || 'N/A'}</td>
       <td>${brl(e.salary||0)}</td>
-      <td>${e.status}</td>
       <td class="right"></td>
     `;
     const td = tr.querySelector('td:last-child');
@@ -813,22 +1185,25 @@ function createEmployeeCard(emp) {
   // Format salary
   const salary = emp.salary ? brl(emp.salary) : 'Não informado';
   
-  // Format hire date
-  const hireDate = emp.hireDate ? new Date(emp.hireDate).toLocaleDateString('pt-BR') : 'Não informado';
+  // Format hire date - usar admissionDate do banco ou hireDate como fallback
+  const hireDate = emp.admissionDate ? new Date(emp.admissionDate).toLocaleDateString('pt-BR') : 
+                   emp.hireDate ? new Date(emp.hireDate).toLocaleDateString('pt-BR') : 'Não informado';
   
   card.innerHTML = `
     <div class="employee-avatar">${initials}</div>
     <div class="employee-name">${emp.name}</div>
-    <div class="employee-position">${emp.position || 'Cargo não informado'}</div>
-    <div class="employee-department">${emp.department || 'Departamento não informado'}</div>
+    <div class="employee-position">${emp.roleTitle || emp.cargo || emp.position || 'Cargo não informado'}</div>
+    <div class="employee-department">${emp.local || emp.department || 'Local não informado'}</div>
     <div class="employee-info">
       <div>📧 ${emp.email}</div>
       <div>📱 ${emp.phone || 'Não informado'}</div>
+      <div>🏷️ Chapa: ${emp.chapa || 'Não informado'}</div>
       <div>💰 ${salary}</div>
       <div>📅 Admissão: ${hireDate}</div>
+      <div>🏢 Centro de Custo: ${emp.centro_custo || 'Não informado'}</div>
     </div>
     <div style="margin-top: 1rem;">
-      <span class="employee-status ${emp.status || 'ATIVO'}">${emp.status || 'ATIVO'}</span>
+      <span class="employee-status ${emp.status || 'ATIVO'}">${emp.situacao || emp.status || 'ATIVO'}</span>
     </div>
     <div class="employee-actions" style="margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: center;">
       <button type="button" class="btn small view-btn">👁️ Ver</button>
@@ -911,14 +1286,62 @@ function closeEmployeeModal() {
   currentEmployee = null;
 }
 
+// Função para formatar data para exibição
+function formatDateForDisplay(dateStr) {
+  if (!dateStr) return 'Não informado';
+  
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return 'Data inválida';
+    
+    return date.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit', 
+      year: 'numeric'
+    });
+  } catch (error) {
+    return 'Data inválida';
+  }
+}
+
+// Função para formatar data para input type="date" (YYYY-MM-DD)
+function formatDateForInput(dateStr) {
+  if (!dateStr) return '';
+  
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return '';
+    
+    return date.toISOString().split('T')[0];
+  } catch (error) {
+    return '';
+  }
+}
+
 function populateEmployeeForm(emp) {
   qs('#emp-name').value = emp.name || '';
+  qs('#emp-chapa').value = emp.chapa || '';
   qs('#emp-email').value = emp.email || '';
+  qs('#emp-cpf').value = emp.cpf || '';
   qs('#emp-phone').value = emp.phone || '';
-  qs('#emp-position').value = emp.position || '';
-  qs('#emp-department').value = emp.department || '';
+  qs('#emp-position').value = emp.roleTitle || emp.position || '';
+  qs('#emp-cod-cargo').value = emp.cod_cargo || '';
+  qs('#emp-cargo').value = emp.cargo || '';
+  qs('#emp-department').value = emp.deptId || emp.department || '';
+  qs('#emp-local').value = emp.local || '';
+  qs('#emp-centro-custo').value = emp.centro_custo || '';
+  qs('#emp-descricao-folha').value = emp.descricao_folha || '';
+  qs('#emp-cod-situacao').value = emp.cod_situacao || '';
+  qs('#emp-situacao').value = emp.situacao || '';
   qs('#emp-status').value = emp.status || 'ATIVO';
-  qs('#emp-hire-date').value = emp.hireDate || '';
+  
+  // Campos de exibição das datas (formatados para leitura)
+  qs('#emp-admissao-display').value = formatDateForDisplay(emp.admissionDate || emp.hireDate);
+  qs('#emp-rescisao-display').value = formatDateForDisplay(emp.data_rescisao);
+  
+  // Campos de edição das datas (formato YYYY-MM-DD para input type="date")
+  qs('#emp-hire-date').value = formatDateForInput(emp.admissionDate || emp.hireDate);
+  qs('#emp-data-rescisao').value = formatDateForInput(emp.data_rescisao);
   qs('#emp-salary').value = emp.salary || '';
   qs('#emp-birth-date').value = emp.birthDate || '';
   qs('#emp-marital-status').value = emp.maritalStatus || '';
@@ -942,12 +1365,22 @@ function clearEmployeeForm() {
 async function saveEmployee() {
   const employeeData = {
     name: qs('#emp-name').value.trim(),
+    chapa: qs('#emp-chapa').value.trim(),
     email: qs('#emp-email').value.trim(),
+    cpf: qs('#emp-cpf').value.trim(),
     phone: qs('#emp-phone').value.trim(),
     position: qs('#emp-position').value.trim(),
+    cod_cargo: qs('#emp-cod-cargo').value.trim(),
+    cargo: qs('#emp-cargo').value.trim(),
     department: qs('#emp-department').value.trim(),
+    local: qs('#emp-local').value.trim(),
+    centro_custo: qs('#emp-centro-custo').value.trim(),
+    descricao_folha: qs('#emp-descricao-folha').value.trim(),
+    cod_situacao: qs('#emp-cod-situacao').value.trim(),
+    situacao: qs('#emp-situacao').value.trim(),
     status: qs('#emp-status').value,
     hireDate: qs('#emp-hire-date').value,
+    data_rescisao: qs('#emp-data-rescisao').value,
     salary: parseFloat(qs('#emp-salary').value) || 0,
     birthDate: qs('#emp-birth-date').value,
     maritalStatus: qs('#emp-marital-status').value,
@@ -1883,5 +2316,9 @@ if(TOKEN){
   fetch(API+'/summary',{headers:{'Authorization':'Bearer '+TOKEN}}).then(r=>{ if(r.ok){ ROLE='ADMIN'; WHO='Sessão'; initApp(); } }).catch(()=>{});
 }
 </script>
+
+<!-- Bulk Documents JavaScript -->
+<script src="bulk-documents.js"></script>
+
 </body>
 </html>

@@ -1,0 +1,43 @@
+{
+  "timestamp": "2025-09-05T01:50:33.380Z",
+  "config": {
+    "documentsPath": "./documentos",
+    "tempPath": "./temp",
+    "batchSize": 10,
+    "maxConcurrent": 5,
+    "search": {
+      "extensions": [
+        ".pdf",
+        ".doc",
+        ".docx",
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".txt"
+      ],
+      "minSimilarity": 0.7,
+      "searchInContent": true,
+      "skipDuplicates": true
+    },
+    "verbose": true,
+    "logFile": "./logs/upload-robot.log",
+    "saveReports": true,
+    "showProgress": false,
+    "maxFileSize": 52428800,
+    "timeoutMs": 30000
+  },
+  "employees": 23027,
+  "stats": {
+    "processed": 4,
+    "matched": 4,
+    "uploaded": 4,
+    "errors": 0,
+    "duplicates": 0
+  },
+  "summary": {
+    "totalFiles": 4,
+    "successRate": "100.00",
+    "matchRate": "100.00",
+    "errorRate": "0.00"
+  }
+}

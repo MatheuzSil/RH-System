@@ -1,0 +1,20 @@
+{
+  "timestamp": "2025-09-03T19:04:33.740Z",
+  "summary": {
+    "totalFiles": 65,
+    "processedFiles": 65,
+    "metrics": {
+      "matched": 0,
+      "uploaded": 0,
+      "errors": 0,
+      "duplicates": 0,
+      "skipped": 65,
+      "totalSize": 5258847,
+      "uploadedSize": 0,
+      "avgFileSize": 80905.33846153846,
+      "filesPerSecond": 575.221238938053,
+      "estimatedTimeRemaining": 0
+    },
+    "elapsedTime": 0.117
+  }
+}

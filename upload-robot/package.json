@@ -1,0 +1,63 @@
+{
+  "name": "marh-upload-robot",
+  "version": "1.0.0",
+  "description": "Robô para upload massivo de documentos MARH - 400GB",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js --verbose ./documentos",
+    "test": "node index.js --no-content --concurrent 2 ./test-docs",
+    "fast": "node index.js --concurrent 15 --no-verbose --no-progress",
+    "resume": "node index.js --resume",
+    "scan": "node scan.js",
+    "report": "node scripts/generate-report.js",
+    "clean": "rm -rf reports/* logs/* temp/*"
+  },
+  "dependencies": {
+    "basic-ftp": "^5.0.5",
+    "colors": "^1.4.0",
+    "dotenv": "^16.6.1",
+    "fs-extra": "^11.2.0",
+    "mime-types": "^2.1.35",
+    "minimist": "^1.2.8",
+    "mssql": "^10.0.2",
+    "mysql2": "^3.6.5",
+    "node-fetch": "^3.3.2",
+    "progress": "^2.0.3",
+    "sharp": "^0.32.6",
+    "string-similarity": "^4.0.4"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "marh",
+    "upload",
+    "documents",
+    "massive",
+    "robot",
+    "matching",
+    "pdf",
+    "automation"
+  ],
+  "author": "MARH System",
+  "license": "MIT",
+  "config": {
+    "defaultConcurrency": 5,
+    "maxFileSize": "50MB",
+    "supportedExtensions": [
+      ".pdf",
+      ".doc",
+      ".docx",
+      ".jpg",
+      ".jpeg",
+      ".png",
+      ".txt"
+    ],
+    "minSimilarity": 0.7
+  }
+}
