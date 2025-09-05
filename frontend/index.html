@@ -798,6 +798,9 @@ let TOKEN = localStorage.getItem('MARH_TOKEN') || null;
 let ROLE = null;
 let WHO = null;
 
+// Cache global para documentos do funcionário atual
+let currentDocuments = [];
+
 function qs(s){return document.querySelector(s)} function qsa(s){return Array.from(document.querySelectorAll(s))}
 function brl(v){return (v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
 async function api(path, method='GET', body=null){
@@ -1446,9 +1449,11 @@ async function deleteEmployee(employeeId) {
 async function loadEmployeeDocuments(employeeId) {
   try {
     const documents = await api(`/employees/${employeeId}/documents`); // Mudança aqui
+    currentDocuments = documents; // Armazenar globalmente
     renderEmployeeDocuments(documents);
   } catch (error) {
     console.error('Erro ao carregar documentos:', error);
+    currentDocuments = []; // Limpar cache em caso de erro
     qs('#employee-documents').innerHTML = '<div class="no-documents">Erro ao carregar documentos</div>';
   }
 }
@@ -1514,7 +1519,25 @@ function downloadDocument(documentId) {
     return;
   }
   
-  // Use fetch para baixar o arquivo
+  // Primeiro, verificar se temos os dados do documento no cache
+  const cachedDoc = currentDocuments.find(doc => doc.id === documentId);
+  
+  if (cachedDoc && cachedDoc.fileUrl) {
+    // Se tem fileUrl (documento no FTP), baixar diretamente
+    console.log('📥 Baixando documento FTP diretamente:', cachedDoc.fileUrl);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = cachedDoc.fileUrl;
+    a.download = cachedDoc.fileName || 'documento';
+    a.target = '_blank'; // Abrir em nova aba se download falhar
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    console.log('✅ Download iniciado!', cachedDoc.fileName);
+    return;
+  }
+  
+  // Se não tem fileUrl, usar o método tradicional (BLOB)
   fetch(`${API}/documents/${documentId}/download`, {
     headers: {
       'Authorization': 'Bearer ' + TOKEN
@@ -1571,6 +1594,17 @@ function viewDocument(documentId) {
     return;
   }
   
+  // Primeiro, verificar se temos os dados do documento no cache
+  const cachedDoc = currentDocuments.find(doc => doc.id === documentId);
+  
+  if (cachedDoc && cachedDoc.fileUrl) {
+    // Se tem fileUrl (documento no FTP), abrir diretamente
+    console.log('📄 Abrindo documento FTP diretamente:', cachedDoc.fileUrl);
+    window.open(cachedDoc.fileUrl, '_blank');
+    return;
+  }
+  
+  // Se não tem fileUrl, usar o método tradicional (BLOB)
   fetch(`${API}/documents/${documentId}/data`, {
     headers: {
       'Authorization': 'Bearer ' + TOKEN
