@@ -1,29 +1,22 @@
 {
   "version": 2,
-  "builds": [
+  "public": true,
+  "cleanUrls": true,
+  "rewrites": [
     {
-      "src": "frontend/server.js",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": ["frontend/**"]
-      }
+      "source": "/(.*)",
+      "destination": "/frontend/index.html"
     }
   ],
-  "routes": [
+  "headers": [
     {
-      "src": "/api/(.*)",
-      "dest": "frontend/server.js"
-    },
-    {
-      "src": "/.*\\.(html|css|js|png|jpg|jpeg|gif|ico|svg)$",
-      "dest": "frontend/server.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "frontend/server.js"
+      "source": "/frontend/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
+        }
+      ]
     }
-  ],
-  "env": {
-    "NODE_ENV": "production"
-  }
+  ]
 }
