@@ -13,7 +13,7 @@
     "multer": "^1.4.5-lts.1"
   },
   "engines": {
-    "node": "18.x"
+    "node": "18.17.0"
   },
   "keywords": ["marh", "rh", "frontend", "backend"],
   "author": "MARH Team",
