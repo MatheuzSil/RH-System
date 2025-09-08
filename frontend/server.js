@@ -24,6 +24,9 @@ const pendingMFA = new Map();
 
 const app = express();
 
+// Servir arquivos estáticos (HTML, CSS, JS)
+app.use(express.static(__dirname));
+
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
