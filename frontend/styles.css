@@ -749,3 +749,34 @@ tr:hover td {
 .document-item.search-highlight .document-title {
   color: #856404;
 }
+
+/* Botão de download em massa */
+#download-all-documents {
+  background: var(--ok);
+  border-color: var(--ok);
+  font-weight: 600;
+  font-size: 0.9rem;
+  min-width: 140px;
+  justify-content: center;
+}
+
+#download-all-documents:hover {
+  background: #218838;
+  border-color: #1e7e34;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+}
+
+#download-all-documents:disabled {
+  background: var(--muted);
+  border-color: var(--muted);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+#download-all-documents:disabled:hover {
+  background: var(--muted);
+  border-color: var(--muted);
+  transform: none;
+}

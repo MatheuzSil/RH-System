@@ -779,9 +779,12 @@
           <div class="documents-list">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
               <h5>Documentos do Colaborador</h5>
-              <div class="document-search" style="display: flex; gap: 10px; align-items: center;">
-                <input id="document-search-input" class="input" type="text" placeholder="🔍 Buscar documentos..." style="width: 200px;">
-                <button id="clear-document-search" class="btn small" type="button" style="display: none;">✖</button>
+              <div class="document-actions" style="display: flex; gap: 10px; align-items: center;">
+                <button id="download-all-documents" class="btn small ok" type="button" style="display: none;" onclick="downloadAllDocuments()">📦 Baixar Todos</button>
+                <div class="document-search" style="display: flex; gap: 10px; align-items: center;">
+                  <input id="document-search-input" class="input" type="text" placeholder="🔍 Buscar documentos..." style="width: 200px;">
+                  <button id="clear-document-search" class="btn small" type="button" style="display: none;">✖</button>
+                </div>
               </div>
             </div>
             <div id="employee-documents" class="documents-container">
@@ -1257,6 +1260,10 @@ function openEmployeeModal(employee = null) {
   currentEmployee = employee;
   const modal = qs('#employee-modal');
   const title = qs('#modal-title');
+  const downloadAllBtn = qs('#download-all-documents');
+  
+  // Esconder botão "Baixar Todos" inicialmente
+  if (downloadAllBtn) downloadAllBtn.style.display = 'none';
   
   if (employee) {
     title.textContent = 'Detalhes do Colaborador';
@@ -1475,6 +1482,7 @@ async function loadEmployeeDocuments(employeeId) {
 
 function renderEmployeeDocuments(documents) {
   const container = qs('#employee-documents');
+  const downloadAllBtn = qs('#download-all-documents');
   
   if (!documents || documents.length === 0) {
     const message = documentSearchTerm ? 
@@ -1482,7 +1490,16 @@ function renderEmployeeDocuments(documents) {
       '<div class="no-documents">Nenhum documento encontrado</div>';
     container.innerHTML = message;
     updateDocumentSearchStats(0, allDocuments.length);
+    
+    // Esconder botão "Baixar Todos" se não há documentos
+    if (downloadAllBtn) downloadAllBtn.style.display = 'none';
     return;
+  }
+  
+  // Mostrar botão "Baixar Todos" se há documentos
+  if (downloadAllBtn) {
+    downloadAllBtn.style.display = 'block';
+    downloadAllBtn.textContent = `📦 Baixar Todos (${documents.length})`;
   }
   
   container.innerHTML = documents.map(doc => {
@@ -1699,6 +1716,110 @@ function downloadDocument(documentId) {
     console.error('❌ Erro no download:', error);
     alert('Erro no download: ' + error.message);
   });
+}
+
+// Função para baixar todos os documentos de um funcionário
+async function downloadAllDocuments() {
+  if (!currentDocuments || currentDocuments.length === 0) {
+    alert('Nenhum documento disponível para download.');
+    return;
+  }
+
+  // Confirmar ação
+  const employeeName = qs('#edit-emp-name').value || 'funcionário';
+  const totalDocs = currentDocuments.length;
+  
+  if (!confirm(`Deseja baixar todos os ${totalDocs} documentos de ${employeeName}?\n\nIsso pode levar alguns segundos...`)) {
+    return;
+  }
+
+  console.log('📦 Iniciando download em massa de', totalDocs, 'documentos');
+  
+  // Mostrar progresso
+  const downloadBtn = qs('#download-all-documents');
+  const originalText = downloadBtn.textContent;
+  let downloaded = 0;
+  
+  downloadBtn.textContent = `📦 Baixando... (0/${totalDocs})`;
+  downloadBtn.disabled = true;
+  
+  // Criar um delay entre downloads para não sobrecarregar
+  const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+  
+  try {
+    for (const doc of currentDocuments) {
+      try {
+        console.log(`📥 Baixando documento ${downloaded + 1}/${totalDocs}:`, doc.fileName);
+        
+        // Verificar se tem fileUrl (FTP) ou usar API
+        if (doc.fileUrl) {
+          // Download direto do FTP
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = doc.fileUrl;
+          a.download = doc.fileName || `documento_${doc.id}`;
+          a.target = '_blank';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        } else {
+          // Download via API
+          const response = await fetch(`${API}/documents/${doc.id}/download`, {
+            headers: {
+              'Authorization': 'Bearer ' + TOKEN
+            }
+          });
+          
+          if (!response.ok) {
+            throw new Error(`Erro ${response.status} no documento ${doc.fileName}`);
+          }
+          
+          // Pegar nome do arquivo
+          const contentDisposition = response.headers.get('Content-Disposition');
+          let filename = doc.fileName || `documento_${doc.id}`;
+          if (contentDisposition) {
+            const matches = contentDisposition.match(/filename="?(.+)"?/);
+            if (matches && matches[1]) {
+              filename = matches[1];
+            }
+          }
+          
+          // Criar blob e baixar
+          const blob = await response.blob();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }
+        
+        downloaded++;
+        downloadBtn.textContent = `📦 Baixando... (${downloaded}/${totalDocs})`;
+        
+        // Delay pequeno entre downloads
+        await delay(500);
+        
+      } catch (error) {
+        console.error(`❌ Erro ao baixar documento ${doc.fileName}:`, error);
+        // Continuar com os próximos mesmo se um falhar
+      }
+    }
+    
+    console.log('✅ Download em massa concluído!', downloaded, 'de', totalDocs, 'documentos baixados');
+    alert(`✅ Download concluído!\n\n${downloaded} de ${totalDocs} documentos foram baixados com sucesso.`);
+    
+  } catch (error) {
+    console.error('❌ Erro geral no download em massa:', error);
+    alert('❌ Erro durante o download: ' + error.message);
+  } finally {
+    // Restaurar botão
+    downloadBtn.textContent = originalText;
+    downloadBtn.disabled = false;
+  }
 }
 
 function viewDocument(documentId) {
