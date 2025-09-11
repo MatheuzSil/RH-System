@@ -1720,7 +1720,11 @@ function downloadDocument(documentId) {
 
 // Função para baixar todos os documentos de um funcionário
 async function downloadAllDocuments() {
+  console.log('🔍 Verificando documentos disponíveis...');
+  console.log('currentDocuments:', currentDocuments);
+  
   if (!currentDocuments || currentDocuments.length === 0) {
+    console.log('❌ Nenhum documento encontrado no cache');
     alert('Nenhum documento disponível para download.');
     return;
   }
@@ -1729,7 +1733,9 @@ async function downloadAllDocuments() {
   const employeeName = qs('#edit-emp-name').value || 'funcionário';
   const totalDocs = currentDocuments.length;
   
-  if (!confirm(`Deseja baixar todos os ${totalDocs} documentos de ${employeeName}?\n\nIsso pode levar alguns segundos...`)) {
+  console.log('📊 Preparando download:', { employeeName, totalDocs });
+  
+  if (!confirm(`Deseja baixar todos os ${totalDocs} documentos de ${employeeName}?\n\nOs downloads serão iniciados em sequência.`)) {
     return;
   }
 
@@ -1737,80 +1743,57 @@ async function downloadAllDocuments() {
   
   // Mostrar progresso
   const downloadBtn = qs('#download-all-documents');
-  const originalText = downloadBtn.textContent;
-  let downloaded = 0;
+  if (!downloadBtn) {
+    console.error('❌ Botão de download não encontrado');
+    alert('Erro: Botão de download não encontrado');
+    return;
+  }
   
-  downloadBtn.textContent = `📦 Baixando... (0/${totalDocs})`;
+  const originalText = downloadBtn.textContent;
+  downloadBtn.textContent = `📦 Baixando ${totalDocs} docs...`;
   downloadBtn.disabled = true;
   
-  // Criar um delay entre downloads para não sobrecarregar
-  const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-  
   try {
-    for (const doc of currentDocuments) {
+    let downloaded = 0;
+    let failed = 0;
+    
+    // Download sequencial com delay maior
+    for (let i = 0; i < currentDocuments.length; i++) {
+      const doc = currentDocuments[i];
+      
       try {
-        console.log(`📥 Baixando documento ${downloaded + 1}/${totalDocs}:`, doc.fileName);
+        console.log(`📥 Baixando documento ${i + 1}/${totalDocs}:`, doc.fileName);
+        downloadBtn.textContent = `📦 ${i + 1}/${totalDocs}: ${doc.fileName.substring(0, 20)}...`;
         
-        // Verificar se tem fileUrl (FTP) ou usar API
+        // Usar sempre a função de download individual que já funciona
         if (doc.fileUrl) {
-          // Download direto do FTP
-          const a = document.createElement('a');
-          a.style.display = 'none';
-          a.href = doc.fileUrl;
-          a.download = doc.fileName || `documento_${doc.id}`;
-          a.target = '_blank';
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
+          // Download direto do FTP (funciona melhor)
+          console.log('📡 Download via FTP:', doc.fileUrl);
+          window.open(doc.fileUrl, '_blank');
         } else {
-          // Download via API
-          const response = await fetch(`${API}/documents/${doc.id}/download`, {
-            headers: {
-              'Authorization': 'Bearer ' + TOKEN
-            }
-          });
-          
-          if (!response.ok) {
-            throw new Error(`Erro ${response.status} no documento ${doc.fileName}`);
-          }
-          
-          // Pegar nome do arquivo
-          const contentDisposition = response.headers.get('Content-Disposition');
-          let filename = doc.fileName || `documento_${doc.id}`;
-          if (contentDisposition) {
-            const matches = contentDisposition.match(/filename="?(.+)"?/);
-            if (matches && matches[1]) {
-              filename = matches[1];
-            }
-          }
-          
-          // Criar blob e baixar
-          const blob = await response.blob();
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.style.display = 'none';
-          a.href = url;
-          a.download = filename;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
+          // Usar a função downloadDocument que já existe e funciona
+          console.log('� Chamando downloadDocument para:', doc.id);
+          downloadDocument(doc.id);
         }
         
         downloaded++;
-        downloadBtn.textContent = `📦 Baixando... (${downloaded}/${totalDocs})`;
         
-        // Delay pequeno entre downloads
-        await delay(500);
+        // Delay maior entre downloads para dar tempo do browser processar
+        await new Promise(resolve => setTimeout(resolve, 1500));
         
       } catch (error) {
         console.error(`❌ Erro ao baixar documento ${doc.fileName}:`, error);
-        // Continuar com os próximos mesmo se um falhar
+        failed++;
       }
     }
     
-    console.log('✅ Download em massa concluído!', downloaded, 'de', totalDocs, 'documentos baixados');
-    alert(`✅ Download concluído!\n\n${downloaded} de ${totalDocs} documentos foram baixados com sucesso.`);
+    console.log('✅ Download em massa concluído!', downloaded, 'sucesso,', failed, 'falhas');
+    
+    if (failed === 0) {
+      alert(`✅ Todos os ${downloaded} documentos foram baixados com sucesso!`);
+    } else {
+      alert(`⚠️ Download concluído!\n\nSucesso: ${downloaded}\nFalhas: ${failed}\n\nVerifique a pasta de downloads.`);
+    }
     
   } catch (error) {
     console.error('❌ Erro geral no download em massa:', error);
