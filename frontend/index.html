@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MARH — Suite de RH</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <link rel="stylesheet" href="styles.css">
 <style>
 .protocol-section { margin-top: 1rem; }
@@ -779,9 +780,12 @@
           <div class="documents-list">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
               <h5>Documentos do Colaborador</h5>
-              <div class="document-search" style="display: flex; gap: 10px; align-items: center;">
-                <input id="document-search-input" class="input" type="text" placeholder="🔍 Buscar documentos..." style="width: 200px;">
-                <button id="clear-document-search" class="btn small" type="button" style="display: none;">✖</button>
+              <div class="document-actions" style="display: flex; gap: 10px; align-items: center;">
+                <button id="download-all-documents" class="btn small ok" type="button" style="display: none;" onclick="downloadAllDocuments()">📦 Baixar Todos</button>
+                <div class="document-search" style="display: flex; gap: 10px; align-items: center;">
+                  <input id="document-search-input" class="input" type="text" placeholder="🔍 Buscar documentos..." style="width: 200px;">
+                  <button id="clear-document-search" class="btn small" type="button" style="display: none;">✖</button>
+                </div>
               </div>
             </div>
             <div id="employee-documents" class="documents-container">
@@ -802,6 +806,7 @@
 </div>
 
 <script>
+console.log('🔍 TESTE: Script iniciando...');
 const API = 'https://marhbackend-production.up.railway.app/api';
 let TOKEN = localStorage.getItem('MARH_TOKEN') || null;
 let ROLE = null;
@@ -820,13 +825,21 @@ async function api(path, method='GET', body=null){
   const ct = res.headers.get('content-type')||''; return ct.includes('application/json')? res.json(): res.text();
 }
 
+console.log('✅ TESTE: Funções básicas carregadas');
+
 // Login
 qs('#btn-login').onclick = async ()=>{
+  console.log('🔑 TESTE: Botão login clicado!');
   const email = qs('#login-email').value.trim(); const password = qs('#login-pass').value;
+  console.log('📧 Email:', email, '🔒 Password:', password ? '***' : 'VAZIO');
   try{ const r = await api('/login','POST',{email,password});
+    console.log('✅ Login sucesso:', r);
     qs('#login-msg').classList.remove('hidden'); qs('#login-msg').textContent = 'Código MFA (demo): '+r.demoCode;
     qs('#view-login').classList.add('hidden'); qs('#view-mfa').classList.remove('hidden'); qs('#mfa-hint').textContent='Digite o código: ' + r.demoCode; sessionStorage.setItem('MFA_EMAIL', email);
-  }catch(e){ alert('Falha no login'); }
+  }catch(e){ 
+    console.error('❌ Erro no login:', e);
+    alert('Falha no login: ' + e.message); 
+  }
 };
 qs('#btn-verify').onclick = async ()=>{
   try{
@@ -1257,6 +1270,10 @@ function openEmployeeModal(employee = null) {
   currentEmployee = employee;
   const modal = qs('#employee-modal');
   const title = qs('#modal-title');
+  const downloadAllBtn = qs('#download-all-documents');
+  
+  // Esconder botão "Baixar Todos" inicialmente
+  if (downloadAllBtn) downloadAllBtn.style.display = 'none';
   
   if (employee) {
     title.textContent = 'Detalhes do Colaborador';
@@ -1475,6 +1492,7 @@ async function loadEmployeeDocuments(employeeId) {
 
 function renderEmployeeDocuments(documents) {
   const container = qs('#employee-documents');
+  const downloadAllBtn = qs('#download-all-documents');
   
   if (!documents || documents.length === 0) {
     const message = documentSearchTerm ? 
@@ -1482,7 +1500,16 @@ function renderEmployeeDocuments(documents) {
       '<div class="no-documents">Nenhum documento encontrado</div>';
     container.innerHTML = message;
     updateDocumentSearchStats(0, allDocuments.length);
+    
+    // Esconder botão "Baixar Todos" se não há documentos
+    if (downloadAllBtn) downloadAllBtn.style.display = 'none';
     return;
+  }
+  
+  // Mostrar botão "Baixar Todos" se há documentos
+  if (downloadAllBtn) {
+    downloadAllBtn.style.display = 'block';
+    downloadAllBtn.textContent = `📦 Baixar Todos (${documents.length})`;
   }
   
   container.innerHTML = documents.map(doc => {
@@ -1700,6 +1727,143 @@ function downloadDocument(documentId) {
     alert('Erro no download: ' + error.message);
   });
 }
+
+// Função para baixar todos os documentos de um funcionário em um ZIP
+async function downloadAllDocuments() {
+  console.log('� Iniciando download em massa...');
+  
+  if (!currentDocuments || currentDocuments.length === 0) {
+    console.log('❌ Nenhum documento encontrado no cache');
+    alert('Nenhum documento disponível para download.');
+    return;
+  }
+
+  // Verificar se JSZip está disponível
+  if (typeof JSZip === 'undefined') {
+    alert('❌ Erro: Biblioteca JSZip não carregada. Recarregue a página.');
+    return;
+  }
+
+  // Confirmar ação
+  // Tentar pegar nome do funcionário do objeto selecionado ou do input, ou usar padrão
+  let employeeName = (typeof currentEmployee !== 'undefined' && currentEmployee && currentEmployee.name) ? currentEmployee.name : null;
+  if (!employeeName) {
+    const nameInput = qs('#edit-emp-name');
+    employeeName = nameInput ? nameInput.value : 'funcionário';
+  }
+  const totalDocs = currentDocuments.length;
+  
+  if (!confirm(`Deseja baixar todos os ${totalDocs} documentos de ${employeeName} em um arquivo ZIP?\n\nO download pode demorar alguns segundos.`)) {
+    return;
+  }
+
+  console.log('📊 Preparando download ZIP para:', { employeeName, totalDocs });
+  
+  // Mostrar progresso
+  const downloadBtn = qs('#download-all-documents');
+  const originalText = downloadBtn ? downloadBtn.textContent : '';
+  
+  if (downloadBtn) {
+    downloadBtn.textContent = '📦 Preparando ZIP...';
+    downloadBtn.disabled = true;
+  }
+  
+  try {
+    const zip = new JSZip();
+    let processedDocs = 0;
+    let successCount = 0;
+    let errorCount = 0;
+    
+    // Processar cada documento
+    for (const doc of currentDocuments) {
+      try {
+        processedDocs++;
+        if (downloadBtn) {
+          downloadBtn.textContent = `📦 Processando ${processedDocs}/${totalDocs}: ${doc.fileName}`;
+        }
+        console.log(`📄 Processando documento ${processedDocs}/${totalDocs}:`, doc.fileName);
+        let fileBlob = null;
+        // Sempre baixar via API (backend faz proxy do FTP ou BLOB)
+        const response = await fetch(`${API}/documents/${doc.id}/download`, {
+          headers: { 'Authorization': 'Bearer ' + TOKEN }
+        });
+        if (response.ok) {
+          fileBlob = await response.blob();
+        } else {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        if (fileBlob) {
+          // Adicionar arquivo ao ZIP
+          const fileName = doc.fileName || `documento_${doc.id}.pdf`;
+          zip.file(fileName, fileBlob);
+          successCount++;
+          console.log(`✅ Adicionado ao ZIP: ${fileName}`);
+        } else {
+          throw new Error('Blob vazio');
+        }
+      } catch (error) {
+        errorCount++;
+        console.error(`❌ Erro ao processar ${doc.fileName}:`, error);
+        // Adicionar arquivo de erro no ZIP para referência
+        const errorFileName = `ERRO_${doc.fileName || `documento_${doc.id}`}.txt`;
+        const errorContent = `Erro ao baixar arquivo: ${error.message}\nID: ${doc.id}`;
+        zip.file(errorFileName, errorContent);
+      }
+      // Pequeno delay para não sobrecarregar
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    if (downloadBtn) {
+      downloadBtn.textContent = '📦 Gerando arquivo ZIP...';
+    }
+    
+    console.log(`📊 Processamento concluído: ${successCount} sucessos, ${errorCount} erros`);
+    
+    // Gerar e baixar o ZIP
+    const zipBlob = await zip.generateAsync({
+      type: 'blob',
+      compression: 'DEFLATE',
+      compressionOptions: { level: 6 }
+    });
+    
+    // Criar nome do arquivo ZIP
+    const sanitizedName = employeeName.replace(/[^a-zA-Z0-9\\s]/g, '').trim();
+    const zipFileName = `documentos_${sanitizedName}_${new Date().toISOString().slice(0, 10)}.zip`;
+    
+    // Fazer download do ZIP
+    const url = URL.createObjectURL(zipBlob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    a.download = zipFileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    console.log('✅ Download do ZIP iniciado:', zipFileName);
+    
+    // Mostrar resultado
+    if (errorCount === 0) {
+      alert(`✅ ZIP criado com sucesso!\n\nArquivo: ${zipFileName}\nDocumentos: ${successCount}/${totalDocs}\n\nVerifique sua pasta de downloads.`);
+    } else {
+      alert(`⚠️ ZIP criado com avisos!\n\nArquivo: ${zipFileName}\nSucessos: ${successCount}\nErros: ${errorCount}\n\nOs erros estão documentados no ZIP.\nVerifique sua pasta de downloads.`);
+    }
+    
+  } catch (error) {
+    console.error('❌ Erro geral no download ZIP:', error);
+    alert('❌ Erro ao criar ZIP: ' + error.message);
+  } finally {
+    // Restaurar botão
+    if (downloadBtn) {
+      downloadBtn.textContent = originalText;
+      downloadBtn.disabled = false;
+    }
+  }
+}
+
+
+
 
 function viewDocument(documentId) {
   console.log('👁️ Abrindo visualização do documento:', documentId);

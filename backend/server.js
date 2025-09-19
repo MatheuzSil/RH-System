@@ -1,4 +1,5 @@
   import express from 'express';
+  import { fetchFileBuffer } from './fetchFile.js';
   import fs from 'fs';
   import path from 'path';
   import { fileURLToPath } from 'url';
@@ -457,20 +458,25 @@
         }
       }
       
-      // 🔥 NOVA LÓGICA: Verificar se tem fileUrl (FTP) primeiro
+      // NOVA LÓGICA: Se tem fileUrl (FTP), baixar e enviar binário
       if (document.fileUrl) {
-        console.log('🔗 Redirecionando download para URL do FTP:', document.fileUrl);
-        return res.redirect(document.fileUrl);
+        try {
+          console.log('🔗 Baixando arquivo do FTP para download:', document.fileUrl);
+          const buffer = await fetchFileBuffer(document.fileUrl);
+          res.setHeader('Content-Type', document.mimeType || 'application/octet-stream');
+          res.setHeader('Content-Disposition', `attachment; filename="${document.fileName}"`);
+          return res.send(buffer);
+        } catch (ftpErr) {
+          console.error('Erro ao baixar do FTP:', ftpErr);
+          return res.status(502).json({ error: 'Erro ao baixar arquivo do FTP: ' + ftpErr.message });
+        }
       }
-      
       // Fallback para fileData (BLOB - documentos antigos)
       if (!document.fileData) {
         return res.status(404).json({ error: 'Dados do arquivo não encontrados' });
       }
-
       // Convert base64 back to buffer for old BLOB documents
       const buffer = Buffer.from(document.fileData, 'base64');
-      
       res.setHeader('Content-Type', document.mimeType || 'application/octet-stream');
       res.setHeader('Content-Disposition', `attachment; filename="${document.fileName}"`);
       res.send(buffer);
