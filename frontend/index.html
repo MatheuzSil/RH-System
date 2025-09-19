@@ -1778,58 +1778,20 @@ async function downloadAllDocuments() {
     for (const doc of currentDocuments) {
       try {
         processedDocs++;
-        
         if (downloadBtn) {
           downloadBtn.textContent = `📦 Processando ${processedDocs}/${totalDocs}: ${doc.fileName}`;
         }
-        
         console.log(`📄 Processando documento ${processedDocs}/${totalDocs}:`, doc.fileName);
-        
         let fileBlob = null;
-        
-        // Tentar baixar documento
-        if (doc.fileUrl) {
-          // Documento no FTP - baixar via URL
-          console.log('📡 Baixando via FTP:', doc.fileUrl);
-          
-          try {
-            const response = await fetch(doc.fileUrl, {
-              mode: 'cors'
-            });
-            
-            if (response.ok) {
-              fileBlob = await response.blob();
-            } else {
-              throw new Error(`HTTP ${response.status}`);
-            }
-          } catch (ftpError) {
-            console.warn('⚠️ Erro no FTP, tentando via API:', ftpError.message);
-            
-            // Fallback para API
-            const apiResponse = await fetch(`${API}/documents/${doc.id}/download`, {
-              headers: { 'Authorization': 'Bearer ' + TOKEN }
-            });
-            
-            if (apiResponse.ok) {
-              fileBlob = await apiResponse.blob();
-            } else {
-              throw new Error(`API falhou: HTTP ${apiResponse.status}`);
-            }
-          }
+        // Sempre baixar via API (backend faz proxy do FTP ou BLOB)
+        const response = await fetch(`${API}/documents/${doc.id}/download`, {
+          headers: { 'Authorization': 'Bearer ' + TOKEN }
+        });
+        if (response.ok) {
+          fileBlob = await response.blob();
         } else {
-          // Baixar via API
-          console.log('📱 Baixando via API:', doc.id);
-          const response = await fetch(`${API}/documents/${doc.id}/download`, {
-            headers: { 'Authorization': 'Bearer ' + TOKEN }
-          });
-          
-          if (response.ok) {
-            fileBlob = await response.blob();
-          } else {
-            throw new Error(`HTTP ${response.status}`);
-          }
+          throw new Error(`HTTP ${response.status}`);
         }
-        
         if (fileBlob) {
           // Adicionar arquivo ao ZIP
           const fileName = doc.fileName || `documento_${doc.id}.pdf`;
@@ -1839,17 +1801,14 @@ async function downloadAllDocuments() {
         } else {
           throw new Error('Blob vazio');
         }
-        
       } catch (error) {
         errorCount++;
         console.error(`❌ Erro ao processar ${doc.fileName}:`, error);
-        
         // Adicionar arquivo de erro no ZIP para referência
         const errorFileName = `ERRO_${doc.fileName || `documento_${doc.id}`}.txt`;
-        const errorContent = `Erro ao baixar arquivo: ${error.message}\nURL: ${doc.fileUrl || 'Via API'}\nID: ${doc.id}`;
+        const errorContent = `Erro ao baixar arquivo: ${error.message}\nID: ${doc.id}`;
         zip.file(errorFileName, errorContent);
       }
-      
       // Pequeno delay para não sobrecarregar
       await new Promise(resolve => setTimeout(resolve, 100));
     }
