@@ -1745,7 +1745,12 @@ async function downloadAllDocuments() {
   }
 
   // Confirmar ação
-  const employeeName = qs('#edit-emp-name').value || 'funcionário';
+  // Tentar pegar nome do funcionário do objeto selecionado ou do input, ou usar padrão
+  let employeeName = (typeof currentEmployee !== 'undefined' && currentEmployee && currentEmployee.name) ? currentEmployee.name : null;
+  if (!employeeName) {
+    const nameInput = qs('#edit-emp-name');
+    employeeName = nameInput ? nameInput.value : 'funcionário';
+  }
   const totalDocs = currentDocuments.length;
   
   if (!confirm(`Deseja baixar todos os ${totalDocs} documentos de ${employeeName} em um arquivo ZIP?\n\nO download pode demorar alguns segundos.`)) {
