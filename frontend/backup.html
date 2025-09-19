@@ -1,0 +1,2474 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MARH — Suite de RH</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+.protocol-section { margin-top: 1rem; }
+#protocol-tabs button { margin-right: 0.5rem; margin-bottom: 0.5rem; }
+#protocol-tabs button.active { background-color: #0056b3; color: white; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }
+
+/* Estilos para campos de exibição de data */
+.date-display {
+  background-color: #f8f9fa !important;
+  border: 1px solid #dee2e6 !important;
+  color: #495057 !important;
+  font-weight: 500;
+  cursor: default;
+}
+
+.date-display:focus {
+  box-shadow: none !important;
+  border-color: #dee2e6 !important;
+}
+</style>
+</head>
+<body>
+<section id="view-login" class="center">
+  <div class="login-card card">
+    <div class="brand"><div class="logo"></div><div><div class="pill">W-Doc</div><h2>MARH — Suite de RH</h2></div></div>
+    <div class="mt1"><label>E-mail</label><input id="login-email" class="input" value="admin@marh.local"></div>
+    <div class="mt1"><label>Senha</label><input id="login-pass" class="input" type="password" value="123"></div>
+    <div class="mt2 right"><button id="btn-login" class="btn ok">Entrar</button></div>
+    <div id="login-msg" class="note mt1 hidden"></div>
+  </div>
+</section>
+
+<section id="view-mfa" class="center hidden">
+  <div class="login-card card">
+    <div class="brand"><div class="logo"></div><div><div class="pill">MFA</div><h3>Verificação em 2 etapas</h3></div></div>
+    <div class="mt1"><label>Código</label><input id="mfa-code" class="input mono" maxlength="6"></div>
+    <div id="mfa-hint" class="note mt1">—</div>
+    <div class="mt2 right"><button id="btn-verify" class="btn ok">Verificar</button></div>
+  </div>
+</section>
+
+<section id="app" class="hidden">
+  <header class="top">
+    <div class="brand"><div class="logo"></div><div><div class="pill">MARH</div><div id="user-ctx" class="note" style="padding:.2rem .4rem"></div></div></div>
+    <div class="toolbar" style="min-width:40%">
+      <div class="search"><input id="global-search" class="input" placeholder="Buscar..."><button id="btn-search" class="btn">Buscar</button></div>
+      <button id="btn-print" class="btn">Imprimir</button>
+      <button id="btn-logout" class="btn bad">Sair</button>
+    </div>
+  </header>
+  <div class="wrap">
+    <aside>
+      <div class="section">Navegação</div>
+      <nav id="menu"></nav>
+      <div class="section">Sessão</div>
+      <div class="card">
+        <div class="mb1">Usuário: <b id="who"></b></div>
+        <div class="mb1">Perfil: <span id="role" class="badge"></span></div>
+      </div>
+    </aside>
+    <main>
+      <div id="view-dashboard" class="hidden">
+        <div class="kpis">
+          <div class="kpi"><div class="s">Colaboradores</div><div id="kpi-emp" class="v">0</div></div>
+          <div class="kpi"><div class="s">Ativos</div><div id="kpi-ativos" class="v">0</div></div>
+          <div class="kpi"><div class="s">Afastados/Férias</div><div id="kpi-leave" class="v">0</div></div>
+          <div class="kpi"><div class="s">Vagas abertas</div><div id="kpi-jobs" class="v">0</div></div>
+        </div>
+        <div class="grid mt2">
+          <div class="card"><b>Impressão</b><div class="mt1">Use o botão <span class="badge">Imprimir</span> no topo para gerar PDF.</div></div>
+          <div class="card"><b>Logs recentes</b><div id="log-recent" class="mt1"></div></div>
+        </div>
+      </div>
+
+      <div id="view-employees" class="hidden">
+        <div class="toolbar mb1">
+          <button id="new-emp" class="btn ok">Novo colaborador</button>
+          <button id="toggle-view" class="btn">📋 Tabela</button>
+          <a id="exp-emp" class="btn" href="#">Exportar CSV</a>
+          <div id="search-bar" class="search bar">
+            <input type="text" id="search-input" class="input" placeholder="Buscar colaborador...">
+            <button id="btn-search-employees" class="btn">Buscar</button>
+          </div>
+        </div>
+        
+        <!-- Cards View -->
+        <div id="employees-cards" class="grid">
+          <!-- Employee cards will be rendered here -->
+        </div>
+        
+        <!-- Table View (hidden by default) -->
+        <div id="employees-table" class="card hidden">
+          <table id="tbl-emp">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Chapa</th>
+                <th>E-mail</th>
+                <th>Cargo</th>
+                <th>Local</th>
+                <th>Situação</th>
+                <th>Salário</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="view-depts" class="hidden">
+        <div class="toolbar mb1"><button id="new-dept" class="btn ok">Novo departamento</button><a id="exp-dept" class="btn" href="#">Exportar CSV</a></div>
+        <div class="card"><table id="tbl-dept"><thead><tr><th>Nome</th><th>Centro de custo</th><th></th></tr></thead><tbody></tbody></table></div>
+      </div>
+
+      <div id="view-att" class="hidden">
+        <div class="toolbar mb1"><button id="new-att" class="btn ok">Registrar ponto</button><a id="exp-att" class="btn" href="#">Exportar CSV</a></div>
+        <div class="card"><table id="tbl-att"><thead><tr><th>Colaborador</th><th>Data</th><th>Entrada</th><th>Saída</th><th>Status</th><th></th></tr></thead><tbody></tbody></table></div>
+      </div>
+
+      <div id="view-leaves" class="hidden">
+        <div class="toolbar mb1"><button id="new-leave" class="btn ok">Novo afastamento/férias</button><a id="exp-leave" class="btn" href="#">Exportar CSV</a></div>
+        <div class="card"><table id="tbl-leave"><thead><tr><th>Colaborador</th><th>Tipo</th><th>Início</th><th>Fim</th><th>Status</th><th></th></tr></thead><tbody></tbody></table></div>
+      </div>
+
+      <div id="view-payroll" class="hidden">
+        <div class="toolbar mb1"><button id="new-pay" class="btn ok">Nova folha</button><a id="exp-pay" class="btn" href="#">Exportar CSV</a></div>
+        <div class="card"><table id="tbl-pay"><thead><tr><th>Colaborador</th><th>Referência</th><th>Bruto</th><th>Descontos</th><th>Líquido</th><th></th></tr></thead><tbody></tbody></table></div>
+      </div>
+
+      <div id="view-reviews" class="hidden">
+        <div class="toolbar mb1"><button id="new-review" class="btn ok">Nova avaliação</button><a id="exp-review" class="btn" href="#">Exportar CSV</a></div>
+        <div class="card"><table id="tbl-review"><thead><tr><th>Colaborador</th><th>Período</th><th>Score</th><th>Notas</th><th></th></tr></thead><tbody></tbody></table></div>
+      </div>
+
+      <div id="view-train" class="hidden">
+        <div class="toolbar mb1"><button id="new-train" class="btn ok">Novo treinamento</button><a id="exp-train" class="btn" href="#">Exportar CSV</a></div>
+        <div class="card"><table id="tbl-train"><thead><tr><th>Título</th><th>Data</th><th>Vagas</th><th>Inscritos</th><th></th></tr></thead><tbody></tbody></table></div>
+      </div>
+
+      <div id="view-jobs" class="hidden">
+        <div class="toolbar mb1"><button id="new-job" class="btn ok">Nova vaga</button><a id="exp-job" class="btn" href="#">Exportar CSV</a></div>
+        <div class="card"><table id="tbl-job"><thead><tr><th>Título</th><th>Depto</th><th>Abertas</th><th>Status</th><th></th></tr></thead><tbody></tbody></table></div>
+      </div>
+
+      <div id="view-cand" class="hidden">
+        <div class="toolbar mb1"><button id="new-cand" class="btn ok">Novo candidato</button><a id="exp-cand" class="btn" href="#">Exportar CSV</a></div>
+        <div class="card"><table id="tbl-cand"><thead><tr><th>Nome</th><th>E-mail</th><th>Vaga</th><th>Etapa</th><th></th></tr></thead><tbody></tbody></table></div>
+      </div>
+
+      <!-- Aba de Documentos Massivos -->
+      <div id="view-bulk-documents" class="hidden">
+        <div class="page-header">
+          <h2>📁 Gestão de Documentos em Massa</h2>
+          <p>Sistema para upload e organização de grandes volumes de documentos de funcionários</p>
+        </div>
+
+        <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 2rem;">
+          <!-- Seção de Upload -->
+          <div class="card">
+            <h3>🚀 Upload em Lote</h3>
+            <div class="form-section">
+              <div class="form-group">
+                <label>Selecionar Funcionário</label>
+                <select id="bulk-employee-select" class="input">
+                  <option value="">Carregando funcionários...</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label>Tipo de Documento</label>
+                <select id="bulk-doc-type" class="input">
+                  <option value="RG">RG</option>
+                  <option value="CPF">CPF</option>
+                  <option value="CONTRATO">Contrato</option>
+                  <option value="DIPLOMA">Diploma</option>
+                  <option value="CERTIFICADO">Certificado</option>
+                  <option value="PRONTUARIO">Prontuário</option>
+                  <option value="EXAME">Exame Médico</option>
+                  <option value="OUTROS">Outros</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Descrição Geral</label>
+                <input id="bulk-description" class="input" placeholder="Descrição dos documentos">
+              </div>
+
+              <div class="form-group">
+                <label>Data de Expiração (opcional)</label>
+                <input id="bulk-expiry" class="input" type="date">
+              </div>
+
+              <div class="form-group">
+                <label>Selecionar Arquivos (PDF, DOC, IMG)</label>
+                <div class="file-drop-zone" id="bulk-drop-zone">
+                  <input id="bulk-file-input" type="file" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt,.xls,.xlsx" style="display: none;">
+                  <div class="drop-message">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">📄</div>
+                    <p><strong>Arraste arquivos aqui</strong> ou <button type="button" onclick="document.getElementById('bulk-file-input').click()" class="link-button">clique para selecionar</button></p>
+                    <p style="color: #666; font-size: 0.9rem;">Máximo: 100 arquivos por vez, 100MB por arquivo</p>
+                  </div>
+                  <div id="file-preview" class="file-preview hidden"></div>
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button id="bulk-upload-btn" class="btn ok" disabled>
+                  📤 Iniciar Upload em Lote
+                </button>
+                <button id="clear-files-btn" class="btn">
+                  🗑️ Limpar Seleção
+                </button>
+              </div>
+
+              <!-- Progress Section -->
+              <div id="upload-progress" class="progress-section hidden">
+                <h4>📊 Progresso do Upload</h4>
+                <div class="progress-bar">
+                  <div id="progress-fill" class="progress-fill"></div>
+                </div>
+                <div id="progress-info" class="progress-info">
+                  <span id="progress-text">Preparando...</span>
+                  <span id="progress-speed"></span>
+                </div>
+                <div id="upload-results" class="upload-results"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Seção de Monitoramento -->
+          <div class="card">
+            <h3>📈 Estatísticas</h3>
+            <div class="stats-grid">
+              <div class="stat-card">
+                <div class="stat-number" id="total-documents">0</div>
+                <div class="stat-label">Total de Documentos</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-number" id="total-size">0 MB</div>
+                <div class="stat-label">Espaço Utilizado</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-number" id="employees-with-docs">0</div>
+                <div class="stat-label">Funcionários com Docs</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-number" id="pending-uploads">0</div>
+                <div class="stat-label">Uploads Pendentes</div>
+              </div>
+            </div>
+
+            <div class="mt2">
+              <h4>🔍 Busca Rápida</h4>
+              <input id="doc-search" class="input" placeholder="Buscar por nome do funcionário ou documento...">
+              <div id="search-results" class="search-results mt1"></div>
+            </div>
+
+            <div class="mt2">
+              <h4>🏷️ Filtros</h4>
+              <div class="filter-group">
+                <select id="filter-type" class="input" style="width: 48%; margin-right: 4%;">
+                  <option value="">Todos os tipos</option>
+                  <option value="RG">RG</option>
+                  <option value="CPF">CPF</option>
+                  <option value="CONTRATO">Contrato</option>
+                  <option value="DIPLOMA">Diploma</option>
+                  <option value="CERTIFICADO">Certificado</option>
+                  <option value="PRONTUARIO">Prontuário</option>
+                  <option value="EXAME">Exame Médico</option>
+                  <option value="OUTROS">Outros</option>
+                </select>
+                <select id="filter-status" class="input" style="width: 48%;">
+                  <option value="">Todos os status</option>
+                  <option value="valid">Válidos</option>
+                  <option value="expired">Expirados</option>
+                  <option value="expiring">Expirando em 30 dias</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Seção de Listagem -->
+        <div class="card mt2">
+          <div class="card-header">
+            <h3>📋 Documentos Recentes</h3>
+            <div class="toolbar">
+              <button id="export-docs" class="btn">📥 Exportar Lista</button>
+              <button id="bulk-delete" class="btn danger">🗑️ Exclusão em Lote</button>
+              <button id="refresh-docs" class="btn">🔄 Atualizar</button>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th><input type="checkbox" id="select-all-docs"></th>
+                  <th>Funcionário</th>
+                  <th>Documento</th>
+                  <th>Tipo</th>
+                  <th>Tamanho</th>
+                  <th>Upload</th>
+                  <th>Status</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="bulk-docs-list">
+                <!-- Documentos serão carregados aqui -->
+              </tbody>
+            </table>
+          </div>
+
+          <div class="pagination">
+            <button id="prev-page" class="btn">← Anterior</button>
+            <span id="page-info">Página 1 de 1</span>
+            <button id="next-page" class="btn">Próximo →</button>
+          </div>
+        </div>
+
+        <!-- Seção de Importação -->
+        <div class="card mt2">
+          <h3>📂 Importação de Diretório</h3>
+          <p>Para volumes muito grandes (400GB+), use a ferramenta de linha de comando:</p>
+          <div class="code-block">
+            <code>
+              # 1. Organize os arquivos em pastas por funcionário<br>
+              documentos/<br>
+              ├── EMP001/<br>
+              │   ├── contrato.pdf<br>
+              │   └── rg.pdf<br>
+              ├── EMP002/<br>
+              │   └── diploma.pdf<br>
+              <br>
+              # 2. Execute o script de importação<br>
+              node backend/bulk-import.js ./documentos
+            </code>
+          </div>
+          <button id="start-cli-import" class="btn ok mt1">🚀 Iniciar Importação CLI</button>
+        </div>
+      </div>
+
+      <div id="view-reports" class="hidden">
+        <div class="card">
+          <b>Relatórios rápidos</b>
+          <div class="row mt1">
+            <a class="btn" id="dl-employees" href="#">CSV Colaboradores</a>
+            <a class="btn" id="dl-att" href="#">CSV Presenças</a>
+            <a class="btn" id="dl-leaves" href="#">CSV Afastamentos</a>
+            <a class="btn" id="dl-payroll" href="#">CSV Folha</a>
+            <a class="btn" id="dl-reviews" href="#">CSV Avaliações</a>
+            <a class="btn" id="dl-trainings" href="#">CSV Treinamentos</a>
+            <a class="btn" id="dl-jobs" href="#">CSV Vagas</a>
+            <a class="btn" id="dl-candidates" href="#">CSV Candidatos</a>
+          </div>
+        </div>
+      </div>
+
+      <div id="view-protocol" class="hidden">
+        <div class="grid mt2">
+          <!-- Sistema de Protocolo completo -->
+          <div class="card">
+            <b>e-Protocolo</b>
+            <div class="mt1">Sistema de controle de documentos, protocolos e movimentações</div>
+            <div class="mt1">
+              <div class="tabs" id="protocol-tabs">
+                <button class="btn small" data-tab="docs">📄 Documentos</button>
+                <button class="btn small" data-tab="boxes">📦 Caixas</button>
+                <button class="btn small" data-tab="scan">📱 Leitura</button>
+                <button class="btn small" data-tab="protocol-reports">📊 Relatórios</button>
+                <button class="btn small" data-tab="protocol-data">💾 Dados</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Documentos -->
+          <div id="protocol-docs" class="protocol-section">
+            <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="card">
+                <b>Novo Documento</b>
+                <div class="mt1">
+                  <label>Filial</label>
+                  <select id="doc-branch" class="input">
+                    <option value="MATRIZ">MATRIZ — Matriz</option>
+                  </select>
+                </div>
+                <div class="mt1">
+                  <label>Título</label>
+                  <input id="doc-title" class="input" placeholder="Nome do documento">
+                </div>
+                <div class="mt1">
+                  <label>Tipo</label>
+                  <input id="doc-type" class="input" placeholder="PRONTUARIO, CONTRATO, NF...">
+                </div>
+                <div class="mt1">
+                  <label>Referência externa</label>
+                  <input id="doc-ext" class="input" placeholder="Número de referência">
+                </div>
+                <div class="mt1">
+                  <button id="btn-doc-save" class="btn ok">Criar Documento</button>
+                  <button id="btn-doc-reset" class="btn">Limpar</button>
+                </div>
+                <div id="doc-created" class="mt1 note"></div>
+                <div id="doc-label" class="mt1" style="text-align:center;" hidden>
+                  <img id="doc-qr" style="width:164px;height:164px;border:1px solid #ccc;border-radius:8px;" alt="QR Code"/>
+                  <div class="mt1">
+                    <button id="btn-doc-print" class="btn">🖨️ Imprimir etiqueta</button>
+                    <button id="btn-doc-comprovante" class="btn">📄 Comprovante</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card">
+                <b>Lista de Documentos</b>
+                <div class="mt1">
+                  <input id="q-doc" class="input" placeholder="Buscar documentos...">
+                  <button id="btn-doc-search" class="btn">Buscar</button>
+                </div>
+                <div id="list-docs" class="mt1" style="max-height:300px;overflow:auto;border:1px solid #ddd;border-radius:4px;"></div>
+              </div>
+            </div>
+
+            <div class="card mt1">
+              <b>Detalhes & Movimentações</b>
+              <div id="doc-detail" class="mt1 note">Selecione um documento na lista acima.</div>
+              <div class="mt1" style="display:flex;gap:0.5rem;">
+                <select id="move-type" class="input" style="flex:1;">
+                  <option value="TRANSFER">Transferência</option>
+                  <option value="SAIDA">Saída</option>
+                  <option value="DEVOLUCAO">Devolução</option>
+                  <option value="INVENTARIO">Inventário</option>
+                </select>
+                <input id="move-notes" class="input" placeholder="Observações/Local destino" style="flex:2;">
+                <button id="btn-move" class="btn ok">Registrar</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Caixas -->
+          <div id="protocol-boxes" class="card protocol-section hidden">
+            <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div>
+                <b>Nova Caixa</b>
+                <div class="mt1">
+                  <label>Filial</label>
+                  <select id="box-branch" class="input">
+                    <option value="MATRIZ">MATRIZ — Matriz</option>
+                  </select>
+                </div>
+                <div class="mt1">
+                  <label>Código da caixa</label>
+                  <input id="box-code" class="input" placeholder="Código identificador">
+                </div>
+                <div class="mt1">
+                  <button id="btn-box-save" class="btn ok">Criar Caixa</button>
+                  <button id="btn-box-reset" class="btn">Limpar</button>
+                </div>
+                <div id="box-label" class="mt1" style="text-align:center;" hidden>
+                  <img id="box-qr" style="width:164px;height:164px;border:1px solid #ccc;border-radius:8px;" alt="QR Code"/>
+                  <div class="mt1">
+                    <button id="btn-box-print" class="btn">🖨️ Imprimir etiqueta</button>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <b>Lista de Caixas</b>
+                <div id="list-boxes" class="mt1" style="max-height:400px;overflow:auto;border:1px solid #ddd;border-radius:4px;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Scanner -->
+          <div id="protocol-scan" class="card protocol-section hidden">
+            <b>Leitura por Câmera / Scanner</b>
+            <div class="mt1" style="display:flex;gap:0.5rem;">
+              <button id="btn-cam" class="btn ok">📹 Ativar câmera</button>
+              <input id="scan-input" class="input" placeholder="Ou cole/escaneie código aqui..." style="flex:1;">
+            </div>
+            <video id="protocol-video" playsinline muted style="width:100%;max-width:400px;border-radius:8px;margin-top:10px;" hidden></video>
+            <div id="scan-result" class="card mt1" style="min-height:100px;">
+              <div class="note">Escaneie um código QR ou código de barras para ver os detalhes.</div>
+            </div>
+          </div>
+
+          <!-- Relatórios -->
+          <div id="protocol-reports-section" class="protocol-section hidden">
+            <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="card">
+                <b>KPIs por Tipo de Documento</b>
+                <div id="rep-types" class="mt1"></div>
+              </div>
+              <div class="card">
+                <b>Extravios (saídas > 30 dias)</b>
+                <div id="rep-lost" class="mt1"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Import/Export -->
+          <div id="protocol-data-section" class="protocol-section hidden">
+            <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="card">
+                <b>Exportar Dados</b>
+                <div class="mt1">
+                  <button id="btn-export" class="btn ok">📥 Baixar JSON</button>
+                </div>
+                <div class="mt1 note">Salva todos os documentos, caixas e movimentações em arquivo JSON.</div>
+              </div>
+              <div class="card">
+                <b>Importar Dados</b>
+                <div class="mt1">
+                  <input type="file" id="file-import" accept="application/json" class="input" />
+                </div>
+                <div class="mt1 note">Carrega dados de um arquivo JSON exportado anteriormente.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="view-audit" class="hidden">
+        <div class="card"><table id="tbl-logs"><thead><tr><th>Quando</th><th>Quem</th><th>Ação</th><th>Detalhes</th></tr></thead><tbody></tbody></table></div>
+      </div>
+
+      <div id="view-settings" class="hidden">
+        <div class="card">
+          <div class="toolbar mb1"><button id="new-user" class="btn ok">Novo usuário</button></div>
+          <table id="tbl-users"><thead><tr><th>E-mail</th><th>Nome</th><th>Papel</th><th>Status</th><th></th></tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+
+      <!-- Importador de Colaboradores -->
+      <div id="import-colaboradores" class="hidden">
+        <div class="card" style="text-align: center; padding: 3rem; color: #666;">
+          <h2>📥 Importador de Colaboradores</h2>
+          <p>Clique no menu para carregar o importador</p>
+          <div style="margin: 2rem 0; font-size: 2rem;">
+            📊 ➡️ 👥
+          </div>
+          <p style="font-size: 0.9em;">Importe colaboradores diretamente de planilhas Excel ou CSV</p>
+        </div>
+      </div>
+
+      <!-- Limpador de Colaboradores -->
+      <div id="limpar-colaboradores" class="hidden">
+        <div class="card" style="text-align: center; padding: 3rem; color: #666;">
+          <h2>🗑️ Limpador de Colaboradores</h2>
+          <p>Clique no menu para carregar o limpador</p>
+          <div style="margin: 2rem 0; font-size: 2rem;">
+            👥 ➡️ 🗑️
+          </div>
+          <p style="font-size: 0.9em;">Limpe colaboradores de teste em lote com segurança</p>
+        </div>
+      </div>
+    </main>
+  </div>
+</section>
+
+<!-- Employee Details Modal -->
+<div id="employee-modal" class="modal hidden">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 id="modal-title">Detalhes do Colaborador</h3>
+      <button id="close-modal" class="btn-close">×</button>
+    </div>
+    <div class="modal-body">
+      <form id="employee-form">
+        <div class="form-section">
+          <h4>Dados Básicos</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Nome Completo</label>
+              <input id="emp-name" class="input" type="text" required>
+            </div>
+            <div class="form-group">
+              <label>Chapa</label>
+              <input id="emp-chapa" class="input" type="text">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>E-mail</label>
+              <input id="emp-email" class="input" type="email" required>
+            </div>
+            <div class="form-group">
+              <label>CPF</label>
+              <input id="emp-cpf" class="input" type="text">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Telefone</label>
+              <input id="emp-phone" class="input" type="tel">
+            </div>
+            <div class="form-group">
+              <label>Cargo</label>
+              <input id="emp-position" class="input" type="text">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Código do Cargo</label>
+              <input id="emp-cod-cargo" class="input" type="text">
+            </div>
+            <div class="form-group">
+              <label>Nome do Cargo</label>
+              <input id="emp-cargo" class="input" type="text">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Departamento</label>
+              <input id="emp-department" class="input" type="text">
+            </div>
+            <div class="form-group">
+              <label>Local de Trabalho</label>
+              <input id="emp-local" class="input" type="text">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Centro de Custo</label>
+              <input id="emp-centro-custo" class="input" type="text">
+            </div>
+            <div class="form-group">
+              <label>Descrição da Folha</label>
+              <input id="emp-descricao-folha" class="input" type="text">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Código da Situação</label>
+              <input id="emp-cod-situacao" class="input" type="text">
+            </div>
+            <div class="form-group">
+              <label>Situação</label>
+              <input id="emp-situacao" class="input" type="text">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Status</label>
+              <select id="emp-status" class="input">
+                <option value="ATIVO">Ativo</option>
+                <option value="INATIVO">Inativo</option>
+                <option value="AFASTADO">Afastado</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>📅 Data de Admissão (Exibição)</label>
+              <input id="emp-admissao-display" class="input date-display" type="text" readonly>
+            </div>
+            <div class="form-group">
+              <label>📅 Data de Rescisão (Exibição)</label>
+              <input id="emp-rescisao-display" class="input date-display" type="text" readonly>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Data de Admissão (Editar)</label>
+              <input id="emp-hire-date" class="input" type="date">
+            </div>
+            <div class="form-group">
+              <label>Data de Rescisão (Editar)</label>
+              <input id="emp-data-rescisao" class="input" type="date">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Salário</label>
+              <input id="emp-salary" class="input" type="number" step="0.01">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h4>Informações Pessoais</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Data de Nascimento</label>
+              <input id="emp-birth-date" class="input" type="date">
+            </div>
+            <div class="form-group">
+              <label>Estado Civil</label>
+              <select id="emp-marital-status" class="input">
+                <option value="">Selecione...</option>
+                <option value="Solteiro">Solteiro(a)</option>
+                <option value="Casado">Casado(a)</option>
+                <option value="Divorciado">Divorciado(a)</option>
+                <option value="Viúvo">Viúvo(a)</option>
+                <option value="União Estável">União Estável</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Endereço</label>
+            <input id="emp-address" class="input" type="text">
+          </div>
+          <div class="form-group">
+            <label>Contato de Emergência</label>
+            <input id="emp-emergency-contact" class="input" type="text" placeholder="Nome - Telefone">
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h4>Formação e Qualificações</h4>
+          <div class="form-group">
+            <label>Escolaridade</label>
+            <input id="emp-education" class="input" type="text">
+          </div>
+          <div class="form-group">
+            <label>Habilidades</label>
+            <textarea id="emp-skills" class="input" rows="3" placeholder="Liste as principais habilidades separadas por vírgula"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Certificações</label>
+            <textarea id="emp-certifications" class="input" rows="3" placeholder="Liste as certificações separadas por vírgula"></textarea>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h4>Informações Adicionais</h4>
+          <div class="form-group">
+            <label>Gestor Direto</label>
+            <input id="emp-manager" class="input" type="text">
+          </div>
+          <div class="form-group">
+            <label>Observações</label>
+            <textarea id="emp-notes" class="input" rows="4" placeholder="Observações gerais sobre o colaborador"></textarea>
+          </div>
+        </div>
+
+        <div class="form-section" id="documents-section">
+          <h4>Documentos</h4>
+          <div class="documents-upload">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Tipo de Documento</label>
+                <select id="documentType" class="input">
+                  <option value="RG">RG</option>
+                  <option value="CPF">CPF</option>
+                  <option value="CARTEIRA_TRABALHO">Carteira de Trabalho</option>
+                  <option value="DIPLOMA">Diploma</option>
+                  <option value="CERTIFICADO">Certificado</option>
+                  <option value="CONTRATO">Contrato</option>
+                  <option value="ATESTADO">Atestado</option>
+                  <option value="COMPROVANTE_RESIDENCIA">Comprovante de Residência</option>
+                  <option value="OUTRO">Outro</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Data de Validade</label>
+                <input id="documentExpiry" class="input" type="date">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Descrição</label>
+              <input id="documentDescription" class="input" type="text" placeholder="Descrição do documento">
+            </div>
+            <div class="form-group">
+              <label>Arquivo</label>
+              <div class="file-input-container">
+                <input id="documentFile" class="input" type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt,.xls,.xlsx">
+                <button id="upload-doc" class="btn ok" type="button">Adicionar Documento</button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="documents-list">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+              <h5>Documentos do Colaborador</h5>
+              <div class="document-search" style="display: flex; gap: 10px; align-items: center;">
+                <input id="document-search-input" class="input" type="text" placeholder="🔍 Buscar documentos..." style="width: 200px;">
+                <button id="clear-document-search" class="btn small" type="button" style="display: none;">✖</button>
+              </div>
+            </div>
+            <div id="employee-documents" class="documents-container">
+              <!-- Documents will be loaded here -->
+            </div>
+            <div id="document-search-stats" class="note" style="margin-top: 10px; display: none;">
+              <!-- Search stats will be shown heree -->
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button id="save-employee" type="button" class="btn ok">Salvar</button>
+      <button id="cancel-employee" type="button" class="btn">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'https://marhbackend-production.up.railway.app/api';
+let TOKEN = localStorage.getItem('MARH_TOKEN') || null;
+let ROLE = null;
+let WHO = null;
+
+// Cache global para documentos do funcionário atual
+let currentDocuments = [];
+let allDocuments = []; // Para armazenar todos os documentos antes da filtragem
+let documentSearchTerm = ''; // Termo de busca atual
+
+function qs(s){return document.querySelector(s)} function qsa(s){return Array.from(document.querySelectorAll(s))}
+function brl(v){return (v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+async function api(path, method='GET', body=null){
+  const res = await fetch(API+path,{method,headers:{'Content-Type':'application/json', ...(TOKEN? {'Authorization':'Bearer '+TOKEN}:{})},body:body?JSON.stringify(body):null});
+  if(!res.ok){ throw new Error(await res.text()) }
+  const ct = res.headers.get('content-type')||''; return ct.includes('application/json')? res.json(): res.text();
+}
+
+// Login
+qs('#btn-login').onclick = async ()=>{
+  const email = qs('#login-email').value.trim(); const password = qs('#login-pass').value;
+  try{ const r = await api('/login','POST',{email,password});
+    qs('#login-msg').classList.remove('hidden'); qs('#login-msg').textContent = 'Código MFA (demo): '+r.demoCode;
+    qs('#view-login').classList.add('hidden'); qs('#view-mfa').classList.remove('hidden'); qs('#mfa-hint').textContent='Digite o código: ' + r.demoCode; sessionStorage.setItem('MFA_EMAIL', email);
+  }catch(e){ alert('Falha no login'); }
+};
+qs('#btn-verify').onclick = async ()=>{
+  try{
+    const email = sessionStorage.getItem('MFA_EMAIL'); const code = qs('#mfa-code').value.trim();
+    const r = await api('/mfa','POST',{email, code});
+    TOKEN = r.token; ROLE = r.role; WHO = r.name; localStorage.setItem('MARH_TOKEN', TOKEN); initApp();
+  }catch(e){ alert('Código inválido'); }
+};
+
+function initApp(){
+  qs('#view-mfa').classList.add('hidden'); qs('#app').classList.remove('hidden');
+  qs('#user-ctx').textContent = WHO + ' • ' + ROLE;
+  buildMenu(); bindCommon(); openView('view-dashboard');
+}
+function buildMenu(){
+  const NAV = {
+    ADMIN: [['view-dashboard','📊 Dashboard'],['view-employees','👥 Colaboradores'],['import-colaboradores','📥 Importar Colaboradores'],['limpar-colaboradores','🗑️ Limpar Colaboradores'],['view-depts','🏢 Departamentos'],['view-att','🕒 Presenças'],['view-leaves','🏖️ Afastamentos'],['view-payroll','💸 Folha'],['view-reviews','📈 Avaliações'],['view-train','🎓 Treinamentos'],['view-jobs','📋 Vagas'],['view-cand','🧑‍💼 Candidatos'],['view-bulk-documents','📁 Documentos Massa'],['view-protocol','📋 Protocolo'],['view-reports','📑 Relatórios'],['view-audit','🗂️ Logs'],['view-settings','⚙️ Usuários']],
+    RH: [['view-dashboard','📊 Dashboard'],['view-employees','👥 Colaboradores'],['import-colaboradores','📥 Importar Colaboradores'],['limpar-colaboradores','🗑️ Limpar Colaboradores'],['view-depts','🏢 Departamentos'],['view-att','🕒 Presenças'],['view-leaves','🏖️ Afastamentos'],['view-payroll','💸 Folha'],['view-reviews','📈 Avaliações'],['view-train','🎓 Treinamentos'],['view-jobs','📋 Vagas'],['view-cand','🧑‍💼 Candidatos'],['view-bulk-documents','📁 Documentos Massa'],['view-protocol','📋 Protocolo'],['view-reports','📑 Relatórios'],['view-audit','🗂️ Logs']],
+    GESTOR: [['view-dashboard','📊 Dashboard'],['view-employees','👥 Colaboradores'],['view-att','🕒 Presenças'],['view-leaves','🏖️ Afastamentos'],['view-reviews','📈 Avaliações'],['view-protocol','📋 Protocolo'],['view-reports','📑 Relatórios']],
+    COLAB: [['view-dashboard','📊 Dashboard'],['view-att','🕒 Presenças'],['view-leaves','🏖️ Afastamentos'],['view-payroll','💸 Folha'],['view-reviews','📈 Avaliações'],['view-protocol','📋 Protocolo']]
+  };
+  const menu = qs('#menu'); menu.innerHTML='';
+  (NAV[ROLE]||NAV.ADMIN).forEach(([id,label])=>{
+    const a = document.createElement('a'); a.href='#'+id; a.textContent=label; a.onclick=(ev)=>{ev.preventDefault(); openView(id); qsa('nav a').forEach(n=>n.classList.remove('active')); a.classList.add('active');}; menu.appendChild(a);
+  });
+}
+function bindCommon(){
+  qs('#btn-print').onclick = ()=> window.print();
+  qs('#btn-logout').onclick = ()=> { localStorage.removeItem('MARH_TOKEN'); location.reload(); };
+  
+  // Busca global - não interfere com buscas específicas de módulos
+  const globalSearchBtn = qs('#global-search').nextElementSibling;
+  if (globalSearchBtn) {
+    globalSearchBtn.onclick = ()=> alert('Busca global (demo)');
+  }
+  
+  ['employees','attendance','leaves','payroll','reviews','trainings','jobs','candidates'].forEach(ent=>{
+    const a = qs('#dl-'+ent); if(a) a.onclick = (e)=>{e.preventDefault(); window.open(API+`/export/${ent}.csv`,'_blank'); };
+  });
+}
+
+async function openView(id){
+  qsa('main>div').forEach(v=>v.classList.add('hidden')); qs('#'+id).classList.remove('hidden');
+  if(id==='view-dashboard'){
+    const s = await api('/summary'); qs('#kpi-emp').textContent = s.totalEmp; qs('#kpi-ativos').textContent = s.ativos; qs('#kpi-leave').textContent = s.onLeave; qs('#kpi-jobs').textContent = s.openJobs;
+    try{ const logs = await api('/logs'); renderLogs(logs);}catch{ qs('#log-recent').textContent='Logs restritos ao ADMIN/RH'; }
+  }
+  if(id==='view-employees') renderEmployees();
+  if(id==='view-depts') renderDepts();
+  if(id==='view-att') renderAtt();
+  if(id==='view-leaves') renderLeaves();
+  if(id==='view-payroll') renderPayroll();
+  if(id==='view-reviews') renderReviews();
+  if(id==='view-train') renderTrain();
+  if(id==='view-jobs') renderJobs();
+  if(id==='view-cand') renderCandidates();
+  if(id==='view-protocol') renderProtocol();
+  if(id==='view-bulk-documents') { 
+    // Initialize bulk document manager
+    if(typeof BulkDocumentManager !== 'undefined') {
+      window.bulkDocManager = new BulkDocumentManager();
+    }
+  }
+  if(id==='import-colaboradores') {
+    // Carregar importador de colaboradores inline
+    loadImportColaboradores();
+  }
+  if(id==='limpar-colaboradores') {
+    // Carregar limpador de colaboradores inline
+    loadLimparColaboradores();
+  }
+  if(id==='view-audit'){ try{ const logs = await api('/logs'); renderAudit(logs);}catch{ alert('Sem permissão'); openView('view-dashboard'); } }
+  if(id==='view-settings') renderUsers();
+}
+
+function loadImportColaboradores() {
+  const container = document.getElementById('import-colaboradores');
+  
+  // Mostrar loading
+  container.innerHTML = `
+    <div class="card" style="text-align: center; padding: 3rem;">
+      <h2>📥 Importador de Colaboradores</h2>
+      <p>🔄 Carregando importador...</p>
+      <div style="margin: 2rem 0;">
+        <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #007bff; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+      </div>
+      <p style="color: #666;">Aguarde um momento...</p>
+    </div>
+    <style>
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
+  `;
+  
+  // Carregar após um pequeno delay
+  setTimeout(() => {
+    container.innerHTML = `
+      <div style="background: white; border-radius: 8px; overflow: hidden;">
+        <iframe src="import-colaboradores.html" style="width: 100%; height: 85vh; border: none;"></iframe>
+      </div>
+    `;
+  }, 1000);
+}
+
+function loadLimparColaboradores() {
+  const container = document.getElementById('limpar-colaboradores');
+  
+  // Mostrar loading
+  container.innerHTML = `
+    <div class="card" style="text-align: center; padding: 3rem;">
+      <h2>🗑️ Limpador de Colaboradores</h2>
+      <p>🔄 Carregando limpador...</p>
+      <div style="margin: 2rem 0;">
+        <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #dc3545; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+      </div>
+      <p style="color: #666;">Aguarde um momento...</p>
+    </div>
+    <style>
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
+  `;
+  
+  // Carregar após um pequeno delay
+  setTimeout(() => {
+    container.innerHTML = `
+      <div style="background: white; border-radius: 8px; overflow: hidden;">
+        <iframe src="limpar-colaboradores.html" style="width: 100%; height: 85vh; border: none;"></iframe>
+      </div>
+    `;
+  }, 1000);
+}
+function renderLogs(logs){ qs('#log-recent').innerHTML = (logs||[]).slice(0,8).map(l=>`<div class="mb1"><span class="tag">${l.at}</span> — <b>${l.who}</b> • ${l.action} <span class="note" style="display:inline-block;padding:.1rem .3rem">${l.details||''}</span></div>`).join('') || '<i class="muted">Sem registros</i>'; }
+function renderAudit(logs){ qs('#tbl-logs tbody').innerHTML = logs.map(l=> `<tr><td>${l.at}</td><td>${l.who}</td><td>${l.action}</td><td>${l.details||''}</td></tr>`).join(''); }
+
+function btn(label, fn, kind){ const b=document.createElement('button'); b.textContent=label; b.className='btn small'+(kind?' '+kind:''); b.onclick=fn; return b; }
+async function post(path, method='POST', body=null){ return api(path, method, body); }
+async function del(path){ return api(path,'DELETE'); }
+
+let DEPTS = []; let EMPS = [];
+async function refreshLookups(){ DEPTS = await api('/departments'); EMPS = await api('/employees'); }
+
+// Employees
+let currentEmployee = null;
+let viewMode = 'cards'; // 'cards' or 'table'
+let searchTerm = ''; // Para filtrar colaboradores
+
+// Filtrar colaboradores baseado no termo de busca
+function filterEmployees(employees) {
+  if (!searchTerm.trim()) {
+    return employees;
+  }
+  
+  const term = searchTerm.toLowerCase().trim();
+  const filtered = employees.filter(emp => {
+    return (
+      (emp.name && emp.name.toLowerCase().includes(term)) ||
+      (emp.email && emp.email.toLowerCase().includes(term)) ||
+      (emp.roleTitle && emp.roleTitle.toLowerCase().includes(term)) ||
+      (emp.position && emp.position.toLowerCase().includes(term)) ||
+      (emp.cargo && emp.cargo.toLowerCase().includes(term)) ||
+      (emp.deptId && emp.deptId.toLowerCase().includes(term)) ||
+      (emp.department && emp.department.toLowerCase().includes(term)) ||
+      (emp.local && emp.local.toLowerCase().includes(term)) ||
+      (emp.phone && emp.phone.toLowerCase().includes(term)) ||
+      (emp.chapa && emp.chapa.toLowerCase().includes(term)) ||
+      (emp.cpf && emp.cpf.toLowerCase().includes(term)) ||
+      (emp.situacao && emp.situacao.toLowerCase().includes(term))
+    );
+  });
+  
+  console.log(`Busca por "${term}": ${filtered.length} resultados de ${employees.length} total`);
+  return filtered;
+}
+
+async function renderEmployees(){
+  await refreshLookups();
+  
+  if (viewMode === 'cards') {
+    renderEmployeeCards();
+  } else {
+    renderEmployeeTable();
+  }
+  
+  // Update toggle button text
+  qs('#toggle-view').textContent = viewMode === 'cards' ? '📋 Tabela' : '📊 Cards';
+  qs('#toggle-view').onclick = () => {
+    viewMode = viewMode === 'cards' ? 'table' : 'cards';
+    renderEmployees();
+  };
+  
+  qs('#new-emp').onclick = () => openEmployeeModal();
+  qs('#exp-emp').onclick = (e)=>{ e.preventDefault(); window.open(API+'/export/employees.csv','_blank'); };
+  
+  // Configurar busca de colaboradores
+  setupEmployeeSearch();
+}
+
+// Configurar eventos de busca de colaboradores
+function setupEmployeeSearch() {
+  const searchInput = qs('#search-input');
+  const searchBtn = qs('#btn-search-employees');
+  
+  if (!searchInput || !searchBtn) {
+    console.error('Elementos de busca não encontrados');
+    return;
+  }
+  
+  // Função para executar a busca
+  const performSearch = () => {
+    searchTerm = searchInput.value;
+    if (viewMode === 'cards') {
+      renderEmployeeCards();
+    } else {
+      renderEmployeeTable();
+    }
+  };
+  
+  // Busca ao clicar no botão
+  searchBtn.onclick = (e) => {
+    e.preventDefault();
+    performSearch();
+  };
+  
+  // Busca ao pressionar Enter
+  searchInput.onkeyup = (e) => {
+    if (e.key === 'Enter') {
+      performSearch();
+    } else if (searchInput.value.trim() === '' && searchTerm !== '') {
+      searchTerm = '';
+      performSearch();
+    }
+  };
+}
+
+function renderEmployeeCards() {
+  qs('#employees-cards').classList.remove('hidden');
+  qs('#employees-table').classList.add('hidden');
+  
+  const cardsContainer = qs('#employees-cards');
+  cardsContainer.innerHTML = '';
+  
+  const filteredEmployees = filterEmployees(EMPS);
+  
+  if (filteredEmployees.length === 0) {
+    cardsContainer.innerHTML = `
+      <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 2rem;">
+        <div style="font-size: 3rem; margin-bottom: 1rem;">🔍</div>
+        <h3>Nenhum colaborador encontrado</h3>
+        <p>Tente usar outros termos de busca ou verifique se há colaboradores cadastrados.</p>
+        ${searchTerm ? `<button type="button" class="btn" onclick="clearEmployeeSearch()">Limpar Busca</button>` : ''}
+      </div>
+    `;
+    return;
+  }
+  
+  filteredEmployees.forEach(emp => {
+    const card = createEmployeeCard(emp);
+    cardsContainer.appendChild(card);
+  });
+  
+  // Mostrar contador de resultados
+  updateSearchResults(filteredEmployees.length, EMPS.length);
+}
+
+// Atualizar contador de resultados de busca
+function updateSearchResults(found, total) {
+  let resultsDiv = qs('#search-results');
+  
+  // Criar div de resultados se não existe
+  if (!resultsDiv) {
+    resultsDiv = document.createElement('div');
+    resultsDiv.id = 'search-results';
+    resultsDiv.className = 'search-results';
+    
+    const toolbar = qs('#view-employees .toolbar');
+    toolbar.appendChild(resultsDiv);
+  }
+  
+  if (searchTerm.trim()) {
+    resultsDiv.innerHTML = `
+      <div class="note" style="margin: 0; padding: 0.5rem; background: #e3f2fd; border-color: #2196f3; color: #1976d2;">
+        📊 Mostrando <strong>${found}</strong> de <strong>${total}</strong> colaboradores para "${searchTerm}"
+        <button type="button" class="btn small" onclick="clearEmployeeSearch()" style="margin-left: 0.5rem;">✖ Limpar</button>
+      </div>
+    `;
+    resultsDiv.style.display = 'block';
+  } else {
+    resultsDiv.style.display = 'none';
+  }
+}
+
+// Limpar busca de colaboradores
+function clearEmployeeSearch() {
+  searchTerm = '';
+  const searchInput = qs('#search-input');
+  if (searchInput) {
+    searchInput.value = '';
+  }
+  
+  if (viewMode === 'cards') {
+    renderEmployeeCards();
+  } else {
+    renderEmployeeTable();
+  }
+}
+
+function renderEmployeeTable() {
+  qs('#employees-cards').classList.add('hidden');
+  qs('#employees-table').classList.remove('hidden');
+  
+  const body = qs('#tbl-emp tbody');
+  body.innerHTML = '';
+  
+  const deptName = id => (DEPTS.find(d=>d.id===id)||{}).name || '-';
+  const filteredEmployees = filterEmployees(EMPS);
+  
+  if (filteredEmployees.length === 0) {
+    body.innerHTML = `
+      <tr>
+        <td colspan="8" style="text-align: center; padding: 2rem;">
+          <div style="font-size: 2rem; margin-bottom: 1rem;">🔍</div>
+          <div>Nenhum colaborador encontrado</div>
+          ${searchTerm ? `<button type="button" class="btn mt1" onclick="clearEmployeeSearch()">Limpar Busca</button>` : ''}
+        </td>
+      </tr>
+    `;
+    return;
+  }
+  
+  filteredEmployees.forEach(e => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${e.name}</td>
+      <td>${e.chapa || 'N/A'}</td>
+      <td>${e.email}</td>
+      <td>${e.cargo || e.position || 'N/A'}</td>
+      <td>${e.local || e.department || 'N/A'}</td>
+      <td>${e.situacao || e.status || 'N/A'}</td>
+      <td>${brl(e.salary||0)}</td>
+      <td class="right"></td>
+    `;
+    const td = tr.querySelector('td:last-child');
+    if(['ADMIN','RH','GESTOR'].includes(ROLE)){
+      td.append(btn('Ver', () => openEmployeeModal(e)));
+      if(ROLE==='ADMIN') td.append(btn('Excluir', ()=>deleteEmployee(e.id),'bad'));
+    }
+    body.append(tr);
+  });
+  
+  // Mostrar contador de resultados
+  updateSearchResults(filteredEmployees.length, EMPS.length);
+}
+
+function createEmployeeCard(emp) {
+  const card = document.createElement('div');
+  card.className = 'employee-card';
+  
+  // Get initials for avatar
+  const initials = emp.name.split(' ')
+    .map(n => n.charAt(0))
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+  
+  // Format salary
+  const salary = emp.salary ? brl(emp.salary) : 'Não informado';
+  
+  // Format hire date - usar admissionDate do banco ou hireDate como fallback
+  const hireDate = emp.admissionDate ? new Date(emp.admissionDate).toLocaleDateString('pt-BR') : 
+                   emp.hireDate ? new Date(emp.hireDate).toLocaleDateString('pt-BR') : 'Não informado';
+  
+  card.innerHTML = `
+    <div class="employee-avatar">${initials}</div>
+    <div class="employee-name">${emp.name}</div>
+    <div class="employee-position">${emp.roleTitle || emp.cargo || emp.position || 'Cargo não informado'}</div>
+    <div class="employee-department">${emp.local || emp.department || 'Local não informado'}</div>
+    <div class="employee-info">
+      <div>📧 ${emp.email}</div>
+      <div>📱 ${emp.phone || 'Não informado'}</div>
+      <div>🏷️ Chapa: ${emp.chapa || 'Não informado'}</div>
+      <div>💰 ${salary}</div>
+      <div>📅 Admissão: ${hireDate}</div>
+      <div>🏢 Centro de Custo: ${emp.centro_custo || 'Não informado'}</div>
+    </div>
+    <div style="margin-top: 1rem;">
+      <span class="employee-status ${emp.status || 'ATIVO'}">${emp.situacao || emp.status || 'ATIVO'}</span>
+    </div>
+    <div class="employee-actions" style="margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: center;">
+      <button type="button" class="btn small view-btn">👁️ Ver</button>
+      ${ROLE === 'ADMIN' ? `<button type="button" class="btn small bad delete-btn">🗑️ Excluir</button>` : ''}
+    </div>
+  `;
+  
+  // Adicionar event listeners aos botões
+  const viewBtn = card.querySelector('.view-btn');
+  if (viewBtn) {
+    viewBtn.onclick = (e) => {
+      e.stopPropagation();
+      openEmployeeModal(emp);
+    };
+  }
+  
+  const deleteBtn = card.querySelector('.delete-btn');
+  if (deleteBtn) {
+    deleteBtn.onclick = (e) => {
+      e.stopPropagation();
+      deleteEmployee(emp.id);
+    };
+  }
+  
+  // Adicionar click no card (mas não nos botões)
+  card.onclick = (e) => {
+    // Só abre o modal se não clicou em um botão
+    if (!e.target.closest('button')) {
+      openEmployeeModal(emp);
+    }
+  };
+  
+  return card;
+}
+
+function openEmployeeModal(employee = null) {
+  currentEmployee = employee;
+  const modal = qs('#employee-modal');
+  const title = qs('#modal-title');
+  
+  if (employee) {
+    title.textContent = 'Detalhes do Colaborador';
+    populateEmployeeForm(employee);
+    // Load documents for existing employee
+    loadEmployeeDocuments(employee.id);
+  } else {
+    title.textContent = 'Novo Colaborador';
+    clearEmployeeForm();
+    // Clear documents section for new employee
+    qs('#employee-documents').innerHTML = '<div class="no-documents">Salve o colaborador primeiro para adicionar documentos</div>';
+  }
+  
+  modal.classList.remove('hidden');
+  
+  // Bind modal events
+  qs('#close-modal').onclick = closeEmployeeModal;
+  qs('#cancel-employee').onclick = closeEmployeeModal;
+  qs('#save-employee').onclick = (e) => {
+    e.preventDefault();
+    saveEmployee();
+    alert('Colaborador salvo com sucesso!');
+  };
+  qs('#upload-doc').onclick = (e) => {
+    e.preventDefault();
+    uploadDocument();
+  };
+  
+  // Show/hide documents section based on whether it's a new or existing employee
+  const documentsSection = qs('#documents-section');
+  if (employee) {
+    documentsSection.style.display = 'block';
+  } else {
+    documentsSection.style.display = 'none';
+  }
+  
+}
+
+function closeEmployeeModal() {
+  qs('#employee-modal').classList.add('hidden');
+  currentEmployee = null;
+}
+
+// Função para formatar data para exibição
+function formatDateForDisplay(dateStr) {
+  if (!dateStr) return 'Não informado';
+  
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return 'Data inválida';
+    
+    return date.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit', 
+      year: 'numeric'
+    });
+  } catch (error) {
+    return 'Data inválida';
+  }
+}
+
+// Função para formatar data para input type="date" (YYYY-MM-DD)
+function formatDateForInput(dateStr) {
+  if (!dateStr) return '';
+  
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return '';
+    
+    return date.toISOString().split('T')[0];
+  } catch (error) {
+    return '';
+  }
+}
+
+function populateEmployeeForm(emp) {
+  qs('#emp-name').value = emp.name || '';
+  qs('#emp-chapa').value = emp.chapa || '';
+  qs('#emp-email').value = emp.email || '';
+  qs('#emp-cpf').value = emp.cpf || '';
+  qs('#emp-phone').value = emp.phone || '';
+  qs('#emp-position').value = emp.roleTitle || emp.position || '';
+  qs('#emp-cod-cargo').value = emp.cod_cargo || '';
+  qs('#emp-cargo').value = emp.cargo || '';
+  qs('#emp-department').value = emp.deptId || emp.department || '';
+  qs('#emp-local').value = emp.local || '';
+  qs('#emp-centro-custo').value = emp.centro_custo || '';
+  qs('#emp-descricao-folha').value = emp.descricao_folha || '';
+  qs('#emp-cod-situacao').value = emp.cod_situacao || '';
+  qs('#emp-situacao').value = emp.situacao || '';
+  qs('#emp-status').value = emp.status || 'ATIVO';
+  
+  // Campos de exibição das datas (formatados para leitura)
+  qs('#emp-admissao-display').value = formatDateForDisplay(emp.admissionDate || emp.hireDate);
+  qs('#emp-rescisao-display').value = formatDateForDisplay(emp.data_rescisao);
+  
+  // Campos de edição das datas (formato YYYY-MM-DD para input type="date")
+  qs('#emp-hire-date').value = formatDateForInput(emp.admissionDate || emp.hireDate);
+  qs('#emp-data-rescisao').value = formatDateForInput(emp.data_rescisao);
+  qs('#emp-salary').value = emp.salary || '';
+  qs('#emp-birth-date').value = emp.birthDate || '';
+  qs('#emp-marital-status').value = emp.maritalStatus || '';
+  qs('#emp-address').value = emp.address || '';
+  qs('#emp-emergency-contact').value = emp.emergencyContact || '';
+  qs('#emp-education').value = emp.education || '';
+  qs('#emp-skills').value = emp.skills || '';
+  qs('#emp-certifications').value = emp.certifications || '';
+  qs('#emp-manager').value = emp.manager || '';
+  qs('#emp-notes').value = emp.notes || '';
+}
+
+function clearEmployeeForm() {
+  const form = qs('#employee-form');
+  form.querySelectorAll('input, select, textarea').forEach(field => {
+    field.value = '';
+  });
+  qs('#emp-status').value = 'ATIVO';
+}
+
+async function saveEmployee() {
+  const employeeData = {
+    name: qs('#emp-name').value.trim(),
+    chapa: qs('#emp-chapa').value.trim(),
+    email: qs('#emp-email').value.trim(),
+    cpf: qs('#emp-cpf').value.trim(),
+    phone: qs('#emp-phone').value.trim(),
+    position: qs('#emp-position').value.trim(),
+    cod_cargo: qs('#emp-cod-cargo').value.trim(),
+    cargo: qs('#emp-cargo').value.trim(),
+    department: qs('#emp-department').value.trim(),
+    local: qs('#emp-local').value.trim(),
+    centro_custo: qs('#emp-centro-custo').value.trim(),
+    descricao_folha: qs('#emp-descricao-folha').value.trim(),
+    cod_situacao: qs('#emp-cod-situacao').value.trim(),
+    situacao: qs('#emp-situacao').value.trim(),
+    status: qs('#emp-status').value,
+    hireDate: qs('#emp-hire-date').value,
+    data_rescisao: qs('#emp-data-rescisao').value,
+    salary: parseFloat(qs('#emp-salary').value) || 0,
+    birthDate: qs('#emp-birth-date').value,
+    maritalStatus: qs('#emp-marital-status').value,
+    address: qs('#emp-address').value.trim(),
+    emergencyContact: qs('#emp-emergency-contact').value.trim(),
+    education: qs('#emp-education').value.trim(),
+    skills: qs('#emp-skills').value.trim(),
+    certifications: qs('#emp-certifications').value.trim(),
+    manager: qs('#emp-manager').value.trim(),
+    notes: qs('#emp-notes').value.trim()
+  };
+  
+  if (!employeeData.name || !employeeData.email) {
+    alert('Nome e e-mail são obrigatórios!');
+    return;
+  }
+  
+  try {
+    let savedEmployee;
+    if (currentEmployee) {
+      // Update existing employee
+      savedEmployee = await post(`/employees/${currentEmployee.id}`, 'PUT', employeeData);
+      savedEmployee.id = currentEmployee.id; // Ensure ID is preserved
+    } else {
+      // Create new employee
+      savedEmployee = await post('/employees', 'POST', employeeData);
+      currentEmployee = savedEmployee;
+      
+      // Show documents section for newly created employee
+      const documentsSection = qs('#documents-section');
+      documentsSection.style.display = 'block';
+      
+      // Load empty documents list
+      qs('#employee-documents').innerHTML = '<div class="no-documents">Nenhum documento encontrado</div>';
+      
+      // Update modal title
+      qs('#modal-title').textContent = 'Detalhes do Colaborador';
+      
+      alert('Colaborador criado com sucesso! Agora você pode adicionar documentos.');
+    }
+    
+    // Don't close modal, just refresh the employee list in background
+    renderEmployees();
+    
+  } catch (error) {
+    alert('Erro ao salvar colaborador: ' + error.message);
+  }
+}
+
+async function deleteEmployee(employeeId) {
+  if (!confirm('Tem certeza que deseja excluir este colaborador?')) {
+    return;
+  }
+  
+  try {
+    await del(`/employees/${employeeId}`);
+    renderEmployees();
+  } catch (error) {
+    alert('Erro ao excluir colaborador: ' + error.message);
+  }
+}
+
+async function loadEmployeeDocuments(employeeId) {
+  try {
+    const documents = await api(`/employees/${employeeId}/documents`); // Mudança aqui
+    currentDocuments = documents; // Armazenar globalmente
+    allDocuments = documents; // Armazenar cópia completa
+    documentSearchTerm = ''; // Limpar termo de busca
+    renderEmployeeDocuments(documents);
+    setupDocumentSearch(); // Configurar busca de documentos
+  } catch (error) {
+    console.error('Erro ao carregar documentos:', error);
+    currentDocuments = []; // Limpar cache em caso de erro
+    allDocuments = [];
+    qs('#employee-documents').innerHTML = '<div class="no-documents">Erro ao carregar documentos</div>';
+  }
+}
+
+function renderEmployeeDocuments(documents) {
+  const container = qs('#employee-documents');
+  
+  if (!documents || documents.length === 0) {
+    const message = documentSearchTerm ? 
+      `<div class="no-documents">Nenhum documento encontrado para "${documentSearchTerm}"</div>` :
+      '<div class="no-documents">Nenhum documento encontrado</div>';
+    container.innerHTML = message;
+    updateDocumentSearchStats(0, allDocuments.length);
+    return;
+  }
+  
+  container.innerHTML = documents.map(doc => {
+    const expiryInfo = getExpiryInfo(doc.expirationDate);
+    const expiryBadge = doc.expirationDate ? `<span class="expiry-badge ${expiryInfo.status}">${expiryInfo.text}</span>` : '';
+    
+    return `
+      <div class="document-item ${expiryInfo.status ? 'document-' + expiryInfo.status : 'document-valid'}">
+        <div class="document-info">
+          <div class="document-title">${doc.type || 'Documento'} - ${doc.description || doc.fileName}</div>
+          <div class="document-meta">
+            📄 ${doc.fileName} • 
+            👤 ${doc.uploadedBy} • 
+            📅 ${new Date(doc.uploadDate).toLocaleDateString('pt-BR')}
+            ${expiryBadge}
+          </div>
+        </div>
+        <div class="document-actions">
+          <button type="button" class="btn small" onclick="event.preventDefault(); viewDocument('${doc.id}')">👁️ Visualizar</button>
+          <button type="button" class="btn small" onclick="event.preventDefault(); downloadDocument('${doc.id}')">📥 Baixar</button>
+          ${(['ADMIN', 'RH'].includes(ROLE)) ? `<button type="button" class="btn small bad" onclick="event.preventDefault(); deleteDocument('${doc.id}')">🗑️ Excluir</button>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+  
+  updateDocumentSearchStats(documents.length, allDocuments.length);
+}
+
+// Configurar eventos de busca de documentos
+function setupDocumentSearch() {
+  const searchInput = qs('#document-search-input');
+  const clearBtn = qs('#clear-document-search');
+  
+  if (!searchInput || !clearBtn) return;
+  
+  // Limpar valores iniciais
+  searchInput.value = '';
+  clearBtn.style.display = 'none';
+  
+  // Função para executar a busca
+  const performDocumentSearch = () => {
+    documentSearchTerm = searchInput.value.trim();
+    
+    if (documentSearchTerm === '') {
+      // Se não há termo de busca, mostrar todos
+      currentDocuments = allDocuments;
+      clearBtn.style.display = 'none';
+    } else {
+      // Filtrar documentos
+      currentDocuments = filterDocuments(allDocuments, documentSearchTerm);
+      clearBtn.style.display = 'inline-block';
+    }
+    
+    renderEmployeeDocuments(currentDocuments);
+  };
+  
+  // Busca em tempo real enquanto digita
+  searchInput.oninput = performDocumentSearch;
+  
+  // Limpar busca
+  clearBtn.onclick = () => {
+    searchInput.value = '';
+    documentSearchTerm = '';
+    currentDocuments = allDocuments;
+    clearBtn.style.display = 'none';
+    renderEmployeeDocuments(currentDocuments);
+    searchInput.focus();
+  };
+}
+
+// Filtrar documentos baseado no termo de busca
+function filterDocuments(documents, searchTerm) {
+  if (!searchTerm.trim()) {
+    return documents;
+  }
+  
+  const term = searchTerm.toLowerCase().trim();
+  
+  return documents.filter(doc => {
+    return (
+      (doc.fileName && doc.fileName.toLowerCase().includes(term)) ||
+      (doc.description && doc.description.toLowerCase().includes(term)) ||
+      (doc.type && doc.type.toLowerCase().includes(term)) ||
+      (doc.notes && doc.notes.toLowerCase().includes(term)) ||
+      (doc.uploadedBy && doc.uploadedBy.toLowerCase().includes(term))
+    );
+  });
+}
+
+// Atualizar estatísticas de busca
+function updateDocumentSearchStats(found, total) {
+  const statsDiv = qs('#document-search-stats');
+  
+  if (!statsDiv) return;
+  
+  if (documentSearchTerm.trim()) {
+    statsDiv.innerHTML = `📊 Mostrando <strong>${found}</strong> de <strong>${total}</strong> documentos para "${documentSearchTerm}"`;
+    statsDiv.style.display = 'block';
+  } else {
+    statsDiv.style.display = 'none';
+  }
+}
+
+// Recarregar documentos mantendo o termo de busca atual
+async function reloadEmployeeDocuments() {
+  if (!currentEmployee) return;
+  
+  const savedSearchTerm = documentSearchTerm;
+  await loadEmployeeDocuments(currentEmployee.id);
+  
+  // Restaurar busca se havia uma
+  if (savedSearchTerm) {
+    const searchInput = qs('#document-search-input');
+    if (searchInput) {
+      searchInput.value = savedSearchTerm;
+      documentSearchTerm = savedSearchTerm;
+      currentDocuments = filterDocuments(allDocuments, savedSearchTerm);
+      renderEmployeeDocuments(currentDocuments);
+      qs('#clear-document-search').style.display = 'inline-block';
+    }
+  }
+}
+
+function getExpiryInfo(expirationDate) {
+  if (!expirationDate) {
+    return { status: 'valid', text: '' };
+  }
+  
+  const now = new Date();
+  const expiry = new Date(expirationDate);
+  const diffTime = expiry - now;
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  if (diffDays < 0) {
+    return { status: 'expired', text: 'Vencido' };
+  } else if (diffDays <= 30) {
+    return { status: 'expiring', text: `Vence em ${diffDays} dias` };
+  } else {
+    return { status: 'valid', text: `Válido até ${expiry.toLocaleDateString('pt-BR')}` };
+  }
+}
+
+function downloadDocument(documentId) {
+  console.log('📥 Iniciando download simplificado para documento:', documentId);
+  
+  // Verificar se tem token válido
+  if (!TOKEN) {
+    alert('Sessão expirada. Faça login novamente.');
+    return;
+  }
+  
+  // Primeiro, verificar se temos os dados do documento no cache
+  const cachedDoc = currentDocuments.find(doc => doc.id === documentId);
+  
+  if (cachedDoc && cachedDoc.fileUrl) {
+    // Se tem fileUrl (documento no FTP), baixar diretamente
+    console.log('📥 Baixando documento FTP diretamente:', cachedDoc.fileUrl);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = cachedDoc.fileUrl;
+    a.download = cachedDoc.fileName || 'documento';
+    a.target = '_blank'; // Abrir em nova aba se download falhar
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    console.log('✅ Download iniciado!', cachedDoc.fileName);
+    return;
+  }
+  
+  // Se não tem fileUrl, usar o método tradicional (BLOB)
+  fetch(`${API}/documents/${documentId}/download`, {
+    headers: {
+      'Authorization': 'Bearer ' + TOKEN
+    }
+  })
+  .then(response => {
+    console.log('📡 Response status:', response.status);
+    
+    if (!response.ok) {
+      if (response.status === 401) {
+        alert('Sessão expirada. Faça login novamente.');
+        return;
+      }
+      throw new Error(`HTTP ${response.status}`);
+    }
+    
+    // Pegar o nome do arquivo do header Content-Disposition
+    const contentDisposition = response.headers.get('Content-Disposition');
+    let filename = 'documento';
+    if (contentDisposition) {
+      const matches = contentDisposition.match(/filename="?(.+)"?/);
+      if (matches && matches[1]) {
+        filename = matches[1];
+      }
+    }
+    
+    return response.blob().then(blob => ({ blob, filename }));
+  })
+  .then(({ blob, filename }) => {
+    // Criar URL temporária e fazer download
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    console.log('✅ Download iniciado!', filename);
+  })
+  .catch(error => {
+    console.error('❌ Erro no download:', error);
+    alert('Erro no download: ' + error.message);
+  });
+}
+
+function viewDocument(documentId) {
+  console.log('👁️ Abrindo visualização do documento:', documentId);
+  
+  // Verificar se tem token válido
+  if (!TOKEN) {
+    alert('Sessão expirada. Faça login novamente.');
+    return;
+  }
+  
+  // Primeiro, verificar se temos os dados do documento no cache
+  const cachedDoc = currentDocuments.find(doc => doc.id === documentId);
+  
+  if (cachedDoc && cachedDoc.fileUrl) {
+    // Se tem fileUrl (documento no FTP), abrir diretamente
+    console.log('📄 Abrindo documento FTP diretamente:', cachedDoc.fileUrl);
+    window.open(cachedDoc.fileUrl, '_blank');
+    return;
+  }
+  
+  // Se não tem fileUrl, usar o método tradicional (BLOB)
+  fetch(`${API}/documents/${documentId}/data`, {
+    headers: {
+      'Authorization': 'Bearer ' + TOKEN
+    }
+  })
+  .then(response => {
+    console.log('📡 Response status:', response.status);
+    
+    if (!response.ok) {
+      if (response.status === 401) {
+        alert('Sessão expirada. Faça login novamente.');
+        return;
+      }
+      throw new Error(`HTTP ${response.status}`);
+    }
+    return response.json();
+  })
+  .then(data => {
+    if (!data) return; // Se não tem dados, sair
+    
+    console.log('📄 Dados recebidos para visualização:', data.fileName);
+    
+    // Convert base64 to blob
+    const byteCharacters = atob(data.fileData);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: data.mimeType });
+    
+    // Create blob URL and open in new tab
+    const url = URL.createObjectURL(blob);
+    const newWindow = window.open(url, '_blank');
+    
+    // Verificar se a janela foi aberta (pode ser bloqueada por popup blocker)
+    if (!newWindow) {
+      alert('Pop-up foi bloqueado! Permita pop-ups para visualizar documentos.');
+      URL.revokeObjectURL(url);
+      return;
+    }
+    
+    // Clean up URL after a delay to allow the window to load
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 1000);
+    
+    console.log('✅ Documento aberto para visualização!');
+  })
+  .catch(error => {
+    console.error('❌ Erro ao visualizar:', error);
+    alert('Erro ao visualizar documento: ' + error.message);
+  });
+}
+
+async function deleteDocument(documentId) {
+  if (!confirm('Tem certeza que deseja excluir este documento?')) {
+    return;
+  }
+  
+  try {
+    await del(`/documents/${documentId}`);
+    await reloadEmployeeDocuments(); // Usar função que mantém busca
+    alert('Documento excluído com sucesso!');
+  } catch (error) {
+    alert('Erro ao excluir documento: ' + error.message);
+  }
+}
+
+async function uploadDocument() {
+  const fileInput = document.getElementById('documentFile');
+  const typeSelect = document.getElementById('documentType');
+  const descriptionInput = document.getElementById('documentDescription');
+  const expiryInput = document.getElementById('documentExpiry');
+  
+  if (!fileInput.files[0]) {
+    alert('Selecione um arquivo');
+    return;
+  }
+  
+  if (!currentEmployee) {
+    alert('Nenhum colaborador selecionado');
+    return;
+  }
+  
+  const file = fileInput.files[0];
+  
+  try {
+    // Convert file to base64 - MUITO MAIS SIMPLES!
+    const fileData = await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]); // Remove data:type;base64, prefix
+      reader.readAsDataURL(file);
+    });
+    
+    // Agora é só JSON simples, igual criar colaborador!
+    const payload = {
+      fileName: file.name,
+      fileData: fileData,
+      type: typeSelect.value,
+      description: descriptionInput.value,
+      expirationDate: expiryInput.value,
+      notes: ''
+    };
+    
+    const result = await api(`/employees/${currentEmployee.id}/documents`, 'POST', payload);
+    
+    alert('Documento enviado com sucesso!');
+    
+    // Limpar formulário
+    fileInput.value = '';
+    descriptionInput.value = '';
+    expiryInput.value = '';
+    typeSelect.value = 'RG';
+    
+    // Recarregar lista de documentos
+    reloadEmployeeDocuments(); // Usar função que mantém busca
+    
+  } catch (error) {
+    console.error('Erro ao fazer upload:', error);
+    alert('Erro ao enviar documento: ' + error.message);
+  }
+}
+
+// Departments
+async function renderDepts(){
+  const data = await api('/departments'); const body = qs('#tbl-dept tbody'); body.innerHTML='';
+  data.forEach(d=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${d.name}</td><td>${d.costCenter}</td><td class="right"></td>`;
+    const td = tr.querySelector('td:last-child');
+    if(['ADMIN','RH'].includes(ROLE)){
+      td.append(btn('Editar', ()=>editDept(d))); if(ROLE==='ADMIN') td.append(btn('Excluir', ()=>del(`/departments/${d.id}`).then(renderDepts),'bad'));
+    }
+    body.append(tr);
+  });
+  qs('#new-dept').onclick = async ()=>{
+    const name = prompt('Nome:'); if(!name) return;
+    const costCenter = prompt('Centro de custo:','0000');
+    await post('/departments','POST',{name,costCenter}); renderDepts();
+  };
+  qs('#exp-dept').onclick = (e)=>{ e.preventDefault(); window.open(API+'/export/departments.csv','_blank'); };
+}
+async function editDept(d){
+  const name = prompt('Nome:', d.name)||d.name;
+  const costCenter = prompt('Centro de custo:', d.costCenter)||d.costCenter;
+  await post(`/departments/${d.id}`,'PUT',{name,costCenter}); renderDepts();
+}
+
+// Attendance
+async function renderAtt(){
+  await refreshLookups();
+  const data = await api('/attendance'); const body = qs('#tbl-att tbody'); body.innerHTML='';
+  const empName = id=> (EMPS.find(e=>e.id===id)||{}).name || '-';
+  data.forEach(a=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${empName(a.empId)}</td><td>${a.date}</td><td>${a.clockIn||''}</td><td>${a.clockOut||''}</td><td>${a.status||''}</td><td class="right"></td>`;
+    const td = tr.querySelector('td:last-child');
+    if(['ADMIN','RH','GESTOR'].includes(ROLE)) td.append(btn('Editar', ()=>editAtt(a)));
+    if(ROLE==='ADMIN') td.append(btn('Excluir', ()=>del(`/attendance/${a.id}`).then(renderAtt),'bad'));
+    body.append(tr);
+  });
+  qs('#new-att').onclick = async ()=>{
+    const empId = prompt('EmpID (ex.: E1):',(EMPS[0]||{}).id||'E1');
+    const date = prompt('Data (YYYY-MM-DD):', new Date().toISOString().slice(0,10));
+    const clockIn = prompt('Entrada (HH:MM):','09:00');
+    const clockOut = prompt('Saída (HH:MM):','18:00');
+    const status = 'OK';
+    await post('/attendance','POST',{empId,date,clockIn,clockOut,status}); renderAtt();
+  };
+  qs('#exp-att').onclick = (e)=>{ e.preventDefault(); window.open(API+'/export/attendance.csv','_blank'); };
+}
+async function editAtt(a){
+  const clockIn = prompt('Entrada (HH:MM):', a.clockIn||'')||a.clockIn;
+  const clockOut = prompt('Saída (HH:MM):', a.clockOut||'')||a.clockOut;
+  const status = prompt('Status:', a.status||'OK')||a.status||'OK';
+  await post(`/attendance/${a.id}`,'PUT',{clockIn,clockOut,status}); renderAtt();
+}
+
+// Leaves
+async function renderLeaves(){
+  await refreshLookups();
+  const data = await api('/leaves'); const body = qs('#tbl-leave tbody'); body.innerHTML='';
+  const empName = id=> (EMPS.find(e=>e.id===id)||{}).name || '-';
+  data.forEach(l=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${empName(l.empId)}</td><td>${l.type}</td><td>${l.start}</td><td>${l.end}</td><td>${l.status}</td><td class="right"></td>`;
+    const td = tr.querySelector('td:last-child');
+    if(['ADMIN','RH','GESTOR'].includes(ROLE)) td.append(btn('Editar', ()=>editLeave(l)));
+    if(ROLE==='ADMIN') td.append(btn('Excluir', ()=>del(`/leaves/${l.id}`).then(renderLeaves),'bad'));
+    body.append(tr);
+  });
+  qs('#new-leave').onclick = async ()=>{
+    const empId = prompt('EmpID (ex.: E1):',(EMPS[0]||{}).id||'E1');
+    const type = prompt('Tipo (FÉRIAS/ATESTADO/OUTROS):','FÉRIAS');
+    const start = prompt('Início (YYYY-MM-DD):','2025-09-01');
+    const end = prompt('Fim (YYYY-MM-DD):','2025-09-15');
+    await post('/leaves','POST',{empId,type,start,end,status:'EM ANÁLISE'}); renderLeaves();
+  };
+  qs('#exp-leave').onclick = (e)=>{ e.preventDefault(); window.open(API+'/export/leaves.csv','_blank'); };
+}
+async function editLeave(l){
+  const status = prompt('Status (EM ANÁLISE/APROVADO/NEGADO):', l.status||'EM ANÁLISE')||l.status||'EM ANÁLISE';
+  await post(`/leaves/${l.id}`,'PUT',{status}); renderLeaves();
+}
+
+// Payroll
+async function renderPayroll(){
+  await refreshLookups();
+  const data = await api('/payroll'); const body = qs('#tbl-pay tbody'); body.innerHTML='';
+  const empName = id=> (EMPS.find(e=>e.id===id)||{}).name || '-';
+  data.forEach(p=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${empName(p.empId)}</td><td>${p.refMonth}</td><td>${brl(p.gross||0)}</td><td>${brl(p.deductions||0)}</td><td>${brl(p.net||0)}</td><td class="right"></td>`;
+    const td = tr.querySelector('td:last-child');
+    if(['ADMIN','RH'].includes(ROLE)) td.append(btn('Editar', ()=>editPay(p)));
+    if(ROLE==='ADMIN') td.append(btn('Excluir', ()=>del(`/payroll/${p.id}`).then(renderPayroll),'bad'));
+    body.append(tr);
+  });
+  qs('#new-pay').onclick = async ()=>{
+    const empId = prompt('EmpID (ex.: E1):',(EMPS[0]||{}).id||'E1');
+    const refMonth = prompt('Referência (YYYY-MM):','2025-08');
+    const gross = parseFloat(prompt('Bruto:','5000')||'0'); const deductions = parseFloat(prompt('Descontos:','1000')||'0'); const net = gross - deductions;
+    await post('/payroll','POST',{empId,refMonth,gross,deductions,net,items:[{"type":"PROVENTO","desc":"Salário","amount":gross},{"type":"DESCONTO","desc":"Descontos","amount":deductions}]}); renderPayroll();
+  };
+  qs('#exp-pay').onclick = (e)=>{ e.preventDefault(); window.open(API+'/export/payroll.csv','_blank'); };
+}
+async function editPay(p){
+  const gross = parseFloat(prompt('Bruto:', p.gross||0)||p.gross||0);
+  const deductions = parseFloat(prompt('Descontos:', p.deductions||0)||p.deductions||0);
+  const net = gross - deductions;
+  await post(`/payroll/${p.id}`,'PUT',{gross,deductions,net}); renderPayroll();
+}
+
+// Reviews
+async function renderReviews(){
+  await refreshLookups();
+  const data = await api('/reviews'); const body = qs('#tbl-review tbody'); body.innerHTML='';
+  const empName = id=> (EMPS.find(e=>e.id===id)||{}).name || '-';
+  data.forEach(r=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${empName(r.empId)}</td><td>${r.period}</td><td>${r.score}</td><td>${r.notes||''}</td><td class="right"></td>`;
+    const td = tr.querySelector('td:last-child');
+    if(['ADMIN','RH','GESTOR'].includes(ROLE)) td.append(btn('Editar', ()=>editReview(r)));
+    if(ROLE==='ADMIN') td.append(btn('Excluir', ()=>del(`/reviews/${r.id}`).then(renderReviews),'bad'));
+    body.append(tr);
+  });
+  qs('#new-review').onclick = async ()=>{
+    const empId = prompt('EmpID (ex.: E1):',(EMPS[0]||{}).id||'E1');
+    const period = prompt('Período (ex.: 2025-S2):','2025-S2');
+    const score = parseFloat(prompt('Score (0–5):','4.0')||'0');
+    const notes = prompt('Notas:','');
+    await post('/reviews','POST',{empId,period,score,notes}); renderReviews();
+  };
+  qs('#exp-review').onclick = (e)=>{ e.preventDefault(); window.open(API+'/export/reviews.csv','_blank'); };
+}
+async function editReview(r){
+  const score = parseFloat(prompt('Score:', r.score||0)||r.score||0);
+  const notes = prompt('Notas:', r.notes||'')||r.notes||'';
+  await post(`/reviews/${r.id}`,'PUT',{score,notes}); renderReviews();
+}
+
+// Trainings
+async function renderTrain(){
+  const data = await api('/trainings'); const body = qs('#tbl-train tbody'); body.innerHTML='';
+  data.forEach(t=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${t.title}</td><td>${t.date}</td><td>${t.seats}</td><td>${(t.enrolled||[]).length}</td><td class="right"></td>`;
+    const td = tr.querySelector('td:last-child');
+    if(['ADMIN','RH','GESTOR'].includes(ROLE)) td.append(btn('Editar', ()=>editTrain(t)));
+    if(ROLE==='ADMIN') td.append(btn('Excluir', ()=>del(`/trainings/${t.id}`).then(renderTrain),'bad'));
+    body.append(tr);
+  });
+  qs('#new-train').onclick = async ()=>{
+    const title = prompt('Título:'); if(!title) return;
+    const date = prompt('Data (YYYY-MM-DD):','2025-09-10');
+    const seats = parseInt(prompt('Vagas:','20')||'0',10);
+    await post('/trainings','POST',{title,date,seats,enrolled:[]}); renderTrain();
+  };
+  qs('#exp-train').onclick = (e)=>{ e.preventDefault(); window.open(API+'/export/trainings.csv','_blank'); };
+}
+async function editTrain(t){
+  const title = prompt('Título:', t.title)||t.title;
+  const date = prompt('Data (YYYY-MM-DD):', t.date)||t.date;
+  const seats = parseInt(prompt('Vagas:', t.seats)||t.seats,10);
+  await post(`/trainings/${t.id}`,'PUT',{title,date,seats}); renderTrain();
+}
+
+// Jobs
+async function renderJobs(){
+  await refreshLookups();
+  const data = await api('/jobs'); const body = qs('#tbl-job tbody'); body.innerHTML='';
+  const deptName = id=> (DEPTS.find(d=>d.id===id)||{}).name || '-';
+  data.forEach(j=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${j.title}</td><td>${deptName(j.deptId)}</td><td>${j.openings}</td><td>${j.status}</td><td class="right"></td>`;
+    const td = tr.querySelector('td:last-child');
+    if(['ADMIN','RH'].includes(ROLE)) td.append(btn('Editar', ()=>editJob(j)));
+    if(ROLE==='ADMIN') td.append(btn('Excluir', ()=>del(`/jobs/${j.id}`).then(renderJobs),'bad'));
+    body.append(tr);
+  });
+  qs('#new-job').onclick = async ()=>{
+    const title = prompt('Título:'); if(!title) return;
+    const deptId = prompt('DeptId:','D2');
+    const openings = parseInt(prompt('Vagas:','1')||'0',10);
+    await post('/jobs','POST',{title,deptId,openings,status:'ABERTA'}); renderJobs();
+  };
+  qs('#exp-job').onclick = (e)=>{ e.preventDefault(); window.open(API+'/export/jobs.csv','_blank'); };
+}
+async function editJob(j){
+  const title = prompt('Título:', j.title)||j.title;
+  const openings = parseInt(prompt('Vagas:', j.openings)||j.openings,10);
+  const status = prompt('Status (ABERTA/FECHADA):', j.status)||j.status;
+  await post(`/jobs/${j.id}`,'PUT',{title,openings,status}); renderJobs();
+}
+
+// Candidates
+async function renderCandidates(){
+  await refreshLookups(); const jobs = await api('/jobs');
+  const jobTitle = id=> (jobs.find(j=>j.id===id)||{}).title || '-';
+  const data = await api('/candidates'); const body = qs('#tbl-cand tbody'); body.innerHTML='';
+  data.forEach(c=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${c.name}</td><td>${c.email}</td><td>${jobTitle(c.jobId)}</td><td>${c.stage}</td><td class="right"></td>`;
+    const td = tr.querySelector('td:last-child');
+    if(['ADMIN','RH'].includes(ROLE)) td.append(btn('Editar', ()=>editCand(c)));
+    if(ROLE==='ADMIN') td.append(btn('Excluir', ()=>del(`/candidates/${c.id}`).then(renderCandidates),'bad'));
+    body.append(tr);
+  });
+  qs('#new-cand').onclick = async ()=>{
+    const name = prompt('Nome:'); if(!name) return;
+    const email = prompt('E-mail:','');
+    const jobId = prompt('JobId (ex.: J1):','J1');
+    await post('/candidates','POST',{name,email,jobId,stage:'TRIAGEM',notes:''}); renderCandidates();
+  };
+  qs('#exp-cand').onclick = (e)=>{ e.preventDefault(); window.open(API+'/export/candidates.csv','_blank'); };
+}
+async function editCand(c){
+  const stage = prompt('Etapa (TRIAGEM/ENTREVISTA/PROPOSTA/RECUSADO):', c.stage)||c.stage;
+  const notes = prompt('Notas:', c.notes||'')||c.notes||'';
+  await post(`/candidates/${c.id}`,'PUT',{stage,notes}); renderCandidates();
+}
+
+// Users
+async function renderUsers(){
+  if(ROLE!=='ADMIN'){ qs('#view-settings').innerHTML='<div class="card">Apenas ADMIN</div>'; return; }
+  const data = await api('/users'); const body = qs('#tbl-users tbody'); body.innerHTML='';
+  data.forEach(u=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${u.email}</td><td>${u.name}</td><td>${u.role}</td><td>${u.active?'Ativo':'Inativo'}</td><td class="right"></td>`;
+    const td = tr.querySelector('td:last-child');
+    td.append(btn('Editar', async ()=>{
+      const name = prompt('Nome:', u.name)||u.name;
+      const role = prompt('Papel (ADMIN/RH/GESTOR/COLAB):', u.role)||u.role;
+      const active = confirm('Ativo? (OK=Sim, Cancel=Não)');
+      await post(`/users/${u.id}`,'PUT',{name,role,active}); renderUsers();
+    }));
+    td.append(btn('Excluir', ()=>del(`/users/${u.id}`).then(renderUsers),'bad'));
+    body.append(tr);
+  });
+  qs('#new-user').onclick = async ()=>{
+    const email = prompt('E-mail:'); if(!email) return;
+    const name = prompt('Nome:','Usuário');
+    const role = prompt('Papel (ADMIN/RH/GESTOR/COLAB):','RH');
+    const pass = prompt('Senha:','123');
+    await post('/users','POST',{email,name,role,pass,active:true}); renderUsers();
+  };
+}
+
+// ===== PROTOCOLO COMPLETO =====
+let protocolDB = JSON.parse(localStorage.getItem('marh_protocol') || '{"documents":[],"boxes":[],"movements":[],"branches":[{"id":"MATRIZ","code":"MATRIZ","name":"Matriz"}]}');
+function saveProtocolDB(){ localStorage.setItem('marh_protocol', JSON.stringify(protocolDB)); }
+function uid_protocol(){ return 'P_' + Math.random().toString(36).slice(2,8).toUpperCase(); }
+function payloadFor(kind, id){ return `urn:${kind}:${id}`; }
+
+let currentDoc = null;
+let currentBox = null;
+
+// QR Code generation
+async function makeQrDataUrl(text, size=164){
+  try{
+    const url = `https://quickchart.io/qr?text=${encodeURIComponent(text)}&size=${size}&margin=1&format=png`;
+    const res = await fetch(url, {mode:'cors'});
+    if(res.ok){
+      const blob = await res.blob();
+      return await new Promise(resolve=>{ const r=new FileReader(); r.onload=()=>resolve(r.result); r.readAsDataURL(blob); });
+    }
+  }catch(e){ }
+  
+  // Fallback: create simple placeholder
+  const canvas = document.createElement('canvas'); 
+  canvas.width=size; canvas.height=size;
+  const ctx = canvas.getContext('2d'); 
+  ctx.fillStyle='#f0f0f0'; ctx.fillRect(0,0,size,size);
+  ctx.fillStyle='#333'; ctx.font='12px monospace'; 
+  ctx.fillText('QR CODE', 10, 20);
+  const lines=[]; for(let i=0;i<text.length;i+=16) lines.push(text.slice(i,i+16));
+  lines.forEach((ln,i)=>ctx.fillText(ln, 6, 40+i*12));
+  return canvas.toDataURL('image/png');
+}
+
+function renderProtocol(){
+  // Inicializar tabs do protocolo
+  const tabs = qs('#protocol-tabs');
+  const sections = qsa('.protocol-section');
+  
+  tabs.querySelectorAll('button').forEach(btn => {
+    btn.onclick = ()=>{
+      tabs.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      sections.forEach(s => s.classList.add('hidden'));
+      
+      const tabName = btn.dataset.tab;
+      if(tabName === 'docs'){
+        qs('#protocol-docs').classList.remove('hidden');
+        listProtocolDocs();
+      } else if(tabName === 'boxes'){
+        qs('#protocol-boxes').classList.remove('hidden');
+        listProtocolBoxes();
+      } else if(tabName === 'scan'){
+        qs('#protocol-scan').classList.remove('hidden');
+      } else if(tabName === 'protocol-reports'){
+        qs('#protocol-reports-section').classList.remove('hidden');
+        renderProtocolReports();
+      } else if(tabName === 'protocol-data'){
+        qs('#protocol-data-section').classList.remove('hidden');
+      }
+    };
+  });
+  
+  // Ativar primeira tab por padrão
+  tabs.querySelector('button').click();
+  
+  // Bind events
+  qs('#btn-doc-save').onclick = createProtocolDoc;
+  qs('#btn-doc-reset').onclick = resetDocForm;
+  qs('#btn-doc-search').onclick = ()=> listProtocolDocs(qs('#q-doc').value);
+  qs('#btn-doc-print').onclick = printDocLabel;
+  qs('#btn-doc-comprovante').onclick = printDocReceipt;
+  qs('#btn-move').onclick = registerMovement;
+  
+  qs('#btn-box-save').onclick = createProtocolBox;
+  qs('#btn-box-reset').onclick = resetBoxForm;
+  qs('#btn-box-print').onclick = printBoxLabel;
+  
+  // Scanner events
+  qs('#btn-cam').onclick = activateCamera;
+  qs('#scan-input').onchange = ()=> handleScan(qs('#scan-input').value);
+  
+  // Import/Export events
+  qs('#btn-export').onclick = exportData;
+  qs('#file-import').onchange = importData;
+}
+
+// === DOCUMENTOS ===
+async function createProtocolDoc(){
+  const doc = {
+    id: uid_protocol(),
+    branchId: qs('#doc-branch').value,
+    title: qs('#doc-title').value || 'Documento sem título',
+    docType: qs('#doc-type').value || 'GERAL',
+    externalRef: qs('#doc-ext').value || '',
+    status: 'ATIVO',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    createdBy: WHO || 'Sistema'
+  };
+  
+  protocolDB.documents.push(doc);
+  saveProtocolDB();
+  listProtocolDocs();
+  
+  qs('#doc-created').textContent = `✅ Documento "${doc.title}" criado! ID: ${doc.id}`;
+  
+  // Generate QR
+  const qrData = await makeQrDataUrl(payloadFor('doc', doc.id));
+  qs('#doc-qr').src = qrData;
+  qs('#doc-label').hidden = false;
+  currentDoc = doc;
+}
+
+function resetDocForm(){
+  ['doc-title','doc-type','doc-ext'].forEach(id => qs('#'+id).value = '');
+  qs('#doc-created').textContent = '';
+  qs('#doc-label').hidden = true;
+  currentDoc = null;
+}
+
+function listProtocolDocs(search = ''){
+  const list = qs('#list-docs');
+  const docs = protocolDB.documents.filter(d => 
+    !search || 
+    d.title.toLowerCase().includes(search.toLowerCase()) ||
+    d.docType.toLowerCase().includes(search.toLowerCase()) ||
+    d.externalRef.toLowerCase().includes(search.toLowerCase())
+  );
+  
+  list.innerHTML = docs.map(d => `
+    <div class="item" data-id="${d.id}" style="padding:8px;border-bottom:1px solid #ddd;cursor:pointer;">
+      <div><strong>${d.title}</strong> <span style="background:#e9ecef;padding:2px 6px;border-radius:12px;font-size:11px;">${d.docType}</span></div>
+      <div style="color:#666;font-size:12px;">${d.externalRef || '—'} • ${payloadFor('doc', d.id)}</div>
+    </div>
+  `).join('') || '<div style="padding:20px;color:#666;text-align:center;">Nenhum documento encontrado</div>';
+  
+  list.querySelectorAll('.item').forEach(el => {
+    el.onclick = ()=> selectProtocolDoc(el.dataset.id);
+  });
+}
+
+async function selectProtocolDoc(id){
+  currentDoc = protocolDB.documents.find(d=>d.id===id);
+  const payload = payloadFor('doc', id);
+  qs('#doc-detail').innerHTML = `
+    <div><strong>Documento:</strong> ${currentDoc.title}</div>
+    <div><strong>Tipo:</strong> ${currentDoc.docType}</div>
+    <div><strong>Payload:</strong> <code>${payload}</code></div>
+    <div><strong>Criado:</strong> ${new Date(currentDoc.createdAt).toLocaleString()}</div>
+  `;
+  
+  const qrData = await makeQrDataUrl(payload);
+  qs('#doc-qr').src = qrData;
+  qs('#doc-label').hidden = false;
+}
+
+function registerMovement(){
+  if(!currentDoc) return alert('Selecione um documento primeiro.');
+  const type = qs('#move-type').value;
+  const notes = qs('#move-notes').value;
+  
+  const movement = {
+    id: Date.now(),
+    documentId: currentDoc.id,
+    type,
+    notes,
+    createdAt: new Date().toISOString(),
+    createdBy: WHO || 'Sistema'
+  };
+  
+  protocolDB.movements.push(movement);
+  saveProtocolDB();
+  
+  alert(`✅ Movimentação "${type}" registrada com sucesso!`);
+  qs('#move-notes').value = '';
+}
+
+// === CAIXAS ===
+async function createProtocolBox(){
+  const box = {
+    id: uid_protocol(),
+    branchId: qs('#box-branch').value,
+    code: qs('#box-code').value || 'CX-' + Math.floor(Math.random()*9999),
+    sealed: false,
+    status: 'ATIVA',
+    createdAt: new Date().toISOString(),
+    createdBy: WHO || 'Sistema'
+  };
+  
+  protocolDB.boxes.push(box);
+  saveProtocolDB();
+  listProtocolBoxes();
+  
+  // Generate QR
+  const qrData = await makeQrDataUrl(payloadFor('box', box.id));
+  qs('#box-qr').src = qrData;
+  qs('#box-label').hidden = false;
+  currentBox = box;
+  
+  alert(`✅ Caixa "${box.code}" criada com sucesso!`);
+}
+
+function resetBoxForm(){
+  qs('#box-code').value = '';
+  qs('#box-label').hidden = true;
+  currentBox = null;
+}
+
+function listProtocolBoxes(){
+  const list = qs('#list-boxes');
+  const boxes = protocolDB.boxes;
+  
+  list.innerHTML = boxes.map(b => `
+    <div class="item" data-id="${b.id}" style="padding:8px;border-bottom:1px solid #ddd;cursor:pointer;">
+      <div><strong>${b.code}</strong> <span style="background:#e9ecef;padding:2px 6px;border-radius:12px;font-size:11px;">${b.status}</span></div>
+      <div style="color:#666;font-size:12px;">ID: ${b.id} • Por: ${b.createdBy}</div>
+      <div style="color:#666;font-size:12px;">Criada: ${new Date(b.createdAt).toLocaleString()}</div>
+    </div>
+  `).join('') || '<div style="padding:20px;color:#666;text-align:center;">Nenhuma caixa encontrada</div>';
+  
+  list.querySelectorAll('.item').forEach(el => {
+    el.onclick = ()=> selectProtocolBox(el.dataset.id);
+  });
+}
+
+async function selectProtocolBox(id){
+  currentBox = protocolDB.boxes.find(b=>b.id===id);
+  const payload = payloadFor('box', id);
+  
+  const qrData = await makeQrDataUrl(payload);
+  qs('#box-qr').src = qrData;
+  qs('#box-label').hidden = false;
+}
+
+// === SCANNER ===
+async function activateCamera(){
+  const video = qs('#protocol-video');
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    video.srcObject = stream;
+    video.hidden = false;
+    await video.play();
+    
+    if('BarcodeDetector' in window){
+      const detector = new window.BarcodeDetector({ formats:['qr_code','code_128','ean_13'] });
+      const tick = async ()=>{
+        try{ 
+          const bmp = await createImageBitmap(video); 
+          const codes = await detector.detect(bmp); 
+          if(codes[0]?.rawValue){ 
+            handleScan(codes[0].rawValue); 
+          } 
+        }catch(e){} 
+        requestAnimationFrame(tick);
+      }; 
+      tick();
+    } else { 
+      alert('BarcodeDetector não suportado. Use o campo de texto para inserir códigos.'); 
+    }
+  }catch(e){ 
+    alert('Erro ao acessar câmera: ' + e.message); 
+  }
+}
+
+function handleScan(text){
+  const parts = String(text).split(':');
+  if(parts.length < 3) {
+    qs('#scan-result').innerHTML = '<div class="note">❌ Código não reconhecido</div>';
+    return;
+  }
+  
+  const kind = parts[1]; 
+  const id = parts[2];
+  
+  if(kind === 'doc'){ 
+    const doc = protocolDB.documents.find(x=>x.id===id); 
+    qs('#scan-result').innerHTML = doc ? 
+      `<div><strong>📄 Documento Encontrado</strong></div>
+       <div><strong>Título:</strong> ${doc.title}</div>
+       <div><strong>Tipo:</strong> ${doc.docType}</div>
+       <div><strong>Ref:</strong> ${doc.externalRef || '—'}</div>` : 
+      '<div class="note">❌ Documento não encontrado</div>'; 
+  }
+  else if(kind === 'box'){ 
+    const box = protocolDB.boxes.find(x=>x.id===id); 
+    qs('#scan-result').innerHTML = box ? 
+      `<div><strong>📦 Caixa Encontrada</strong></div>
+       <div><strong>Código:</strong> ${box.code}</div>
+       <div><strong>Status:</strong> ${box.status}</div>` : 
+      '<div class="note">❌ Caixa não encontrada</div>'; 
+  }
+  else {
+    qs('#scan-result').innerHTML = '<div class="note">❌ Tipo de payload não reconhecido</div>';
+  }
+}
+
+// === RELATÓRIOS ===
+function renderProtocolReports(){
+  // KPIs por tipo
+  const byType = {};
+  protocolDB.documents.forEach(d => {
+    byType[d.docType] = (byType[d.docType] || 0) + 1;
+  });
+  
+  qs('#rep-types').innerHTML = Object.entries(byType).map(([type, count]) => `
+    <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #eee;">
+      <span>${type}</span>
+      <span style="background:#e9ecef;padding:2px 8px;border-radius:12px;font-size:12px;">${count}</span>
+    </div>
+  `).join('') || '<div class="note">Nenhum documento encontrado</div>';
+  
+  // Extravios (saídas > 30 dias)
+  const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+  const lost = protocolDB.movements.filter(m => 
+    m.type === 'SAIDA' && new Date(m.createdAt).getTime() < thirtyDaysAgo
+  );
+  
+  qs('#rep-lost').innerHTML = lost.map(m => {
+    const doc = protocolDB.documents.find(d => d.id === m.documentId);
+    return `
+      <div style="padding:4px 0;border-bottom:1px solid #eee;">
+        <div><strong>${doc ? doc.title : 'Doc ' + m.documentId}</strong></div>
+        <div style="color:#666;font-size:12px;">Saída: ${new Date(m.createdAt).toLocaleString()}</div>
+        <div style="color:#666;font-size:12px;">Obs: ${m.notes || '—'}</div>
+      </div>
+    `;
+  }).join('') || '<div class="note">✅ Nenhum extravio encontrado</div>';
+}
+
+// === IMPORT/EXPORT ===
+function exportData(){
+  const blob = new Blob([JSON.stringify(protocolDB, null, 2)], {type: 'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `marh-protocolo-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+}
+
+async function importData(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  
+  try {
+    const data = JSON.parse(await file.text());
+    protocolDB = Object.assign(protocolDB, data);
+    saveProtocolDB();
+    alert('✅ Dados importados com sucesso!');
+    
+    // Refresh current view
+    if(!qs('#protocol-docs').classList.contains('hidden')) listProtocolDocs();
+    if(!qs('#protocol-boxes').classList.contains('hidden')) listProtocolBoxes();
+  } catch(err) {
+    alert('❌ Erro ao importar: ' + err.message);
+  }
+}
+
+// === IMPRESSÃO ===
+function printDocLabel(){
+  if(!currentDoc) return alert('Selecione um documento primeiro.');
+  alert('Função de impressão de etiqueta - ' + currentDoc.title);
+}
+
+function printBoxLabel(){
+  if(!currentBox) return alert('Selecione uma caixa primeiro.');
+  alert('Função de impressão de etiqueta - ' + currentBox.code);
+}
+
+function printDocReceipt(){
+  if(!currentDoc) return alert('Selecione um documento primeiro.');
+  alert('Função de comprovante - ' + currentDoc.title);
+}
+
+// Bootstrap
+if(TOKEN){
+  fetch(API+'/summary',{headers:{'Authorization':'Bearer '+TOKEN}}).then(r=>{ if(r.ok){ ROLE='ADMIN'; WHO='Sessão'; initApp(); } }).catch(()=>{});
+}
+</script>
+
+<!-- Bulk Documents JavaScript -->
+<script src="bulk-documents.js"></script>
+
+</body>
+</html>
