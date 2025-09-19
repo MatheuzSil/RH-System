@@ -1823,18 +1823,18 @@ async function downloadAllDocuments() {
           const fileName = doc.fileName || `documento_${doc.id}.pdf`;
           zip.file(fileName, fileBlob);
           successCount++;
-          console.log(\`✅ Adicionado ao ZIP: \${fileName}\`);
+          console.log(`✅ Adicionado ao ZIP: ${fileName}`);
         } else {
           throw new Error('Blob vazio');
         }
         
       } catch (error) {
         errorCount++;
-        console.error(\`❌ Erro ao processar \${doc.fileName}:\`, error);
+        console.error(`❌ Erro ao processar ${doc.fileName}:`, error);
         
         // Adicionar arquivo de erro no ZIP para referência
-        const errorFileName = \`ERRO_\${doc.fileName || \`documento_\${doc.id}\`}.txt\`;
-        const errorContent = \`Erro ao baixar arquivo: \${error.message}\\nURL: \${doc.fileUrl || 'Via API'}\\nID: \${doc.id}\`;
+        const errorFileName = `ERRO_${doc.fileName || `documento_${doc.id}`}.txt`;
+        const errorContent = `Erro ao baixar arquivo: ${error.message}\nURL: ${doc.fileUrl || 'Via API'}\nID: ${doc.id}`;
         zip.file(errorFileName, errorContent);
       }
       
@@ -1846,7 +1846,7 @@ async function downloadAllDocuments() {
       downloadBtn.textContent = '📦 Gerando arquivo ZIP...';
     }
     
-    console.log(\`📊 Processamento concluído: \${successCount} sucessos, \${errorCount} erros\`);
+    console.log(`📊 Processamento concluído: ${successCount} sucessos, ${errorCount} erros`);
     
     // Gerar e baixar o ZIP
     const zipBlob = await zip.generateAsync({
@@ -1857,7 +1857,7 @@ async function downloadAllDocuments() {
     
     // Criar nome do arquivo ZIP
     const sanitizedName = employeeName.replace(/[^a-zA-Z0-9\\s]/g, '').trim();
-    const zipFileName = \`documentos_\${sanitizedName}_\${new Date().toISOString().slice(0, 10)}.zip\`;
+    const zipFileName = `documentos_${sanitizedName}_${new Date().toISOString().slice(0, 10)}.zip`;
     
     // Fazer download do ZIP
     const url = URL.createObjectURL(zipBlob);
@@ -1874,9 +1874,9 @@ async function downloadAllDocuments() {
     
     // Mostrar resultado
     if (errorCount === 0) {
-      alert(\`✅ ZIP criado com sucesso!\\n\\nArquivo: \${zipFileName}\\nDocumentos: \${successCount}/\${totalDocs}\\n\\nVerifique sua pasta de downloads.\`);
+      alert(`✅ ZIP criado com sucesso!\n\nArquivo: ${zipFileName}\nDocumentos: ${successCount}/${totalDocs}\n\nVerifique sua pasta de downloads.`);
     } else {
-      alert(\`⚠️ ZIP criado com avisos!\\n\\nArquivo: \${zipFileName}\\nSucessos: \${successCount}\\nErros: \${errorCount}\\n\\nOs erros estão documentados no ZIP.\\nVerifique sua pasta de downloads.\`);
+      alert(`⚠️ ZIP criado com avisos!\n\nArquivo: ${zipFileName}\nSucessos: ${successCount}\nErros: ${errorCount}\n\nOs erros estão documentados no ZIP.\nVerifique sua pasta de downloads.`);
     }
     
   } catch (error) {
@@ -1890,31 +1890,18 @@ async function downloadAllDocuments() {
     }
   }
 }
+
+function viewDocument(documentId) {
+  console.log('👁️ Abrindo visualização do documento:', documentId);
   
-  if (!currentDocuments || currentDocuments.length === 0) {
-    console.log('❌ Nenhum documento encontrado no cache');
-    alert('Nenhum documento disponível para download.');
+  // Verificar se tem token válido
+  if (!TOKEN) {
+    alert('Sessão expirada. Faça login novamente.');
     return;
   }
-
-  // Confirmar ação
-  const employeeName = qs('#edit-emp-name').value || 'funcionário';
-  const totalDocs = currentDocuments.length;
   
-  console.log('📊 Preparando download:', { employeeName, totalDocs });
-  
-  if (!confirm(`Deseja baixar todos os ${totalDocs} documentos de ${employeeName}?\n\nOs downloads serão iniciados em sequência.`)) {
-    return;
-  }
-
-  console.log('📦 Iniciando download em massa de', totalDocs, 'documentos');
-  
-  // Mostrar progresso
-  const downloadBtn = qs('#download-all-documents');
-  if (!downloadBtn) {
-    console.error('❌ Botão de download não encontrado');
-    alert('Erro: Botão de download não encontrado');
-    return;
+  // Primeiro, verificar se temos os dados do documento no cache
+  const cachedDoc = currentDocuments.find(doc => doc.id === documentId);
   }
   
   const originalText = downloadBtn.textContent;
@@ -1971,7 +1958,7 @@ async function downloadAllDocuments() {
     downloadBtn.textContent = originalText;
     downloadBtn.disabled = false;
   }
-}
+
 
 function viewDocument(documentId) {
   console.log('👁️ Abrindo visualização do documento:', documentId);
