@@ -1898,73 +1898,7 @@ async function downloadAllDocuments() {
   }
 }
 
-function viewDocument(documentId) {
-  console.log('👁️ Abrindo visualização do documento:', documentId);
-  
-  // Verificar se tem token válido
-  if (!TOKEN) {
-    alert('Sessão expirada. Faça login novamente.');
-    return;
-  }
-  
-  // Primeiro, verificar se temos os dados do documento no cache
-  const cachedDoc = currentDocuments.find(doc => doc.id === documentId);
-  }
-  
-  const originalText = downloadBtn.textContent;
-  downloadBtn.textContent = `📦 Baixando ${totalDocs} docs...`;
-  downloadBtn.disabled = true;
-  
-  try {
-    let downloaded = 0;
-    let failed = 0;
-    
-    // Download sequencial com delay maior
-    for (let i = 0; i < currentDocuments.length; i++) {
-      const doc = currentDocuments[i];
-      
-      try {
-        console.log(`📥 Baixando documento ${i + 1}/${totalDocs}:`, doc.fileName);
-        downloadBtn.textContent = `📦 ${i + 1}/${totalDocs}: ${doc.fileName.substring(0, 20)}...`;
-        
-        // Usar sempre a função de download individual que já funciona
-        if (doc.fileUrl) {
-          // Download direto do FTP (funciona melhor)
-          console.log('📡 Download via FTP:', doc.fileUrl);
-          window.open(doc.fileUrl, '_blank');
-        } else {
-          // Usar a função downloadDocument que já existe e funciona
-          console.log('� Chamando downloadDocument para:', doc.id);
-          downloadDocument(doc.id);
-        }
-        
-        downloaded++;
-        
-        // Delay maior entre downloads para dar tempo do browser processar
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-      } catch (error) {
-        console.error(`❌ Erro ao baixar documento ${doc.fileName}:`, error);
-        failed++;
-      }
-    }
-    
-    console.log('✅ Download em massa concluído!', downloaded, 'sucesso,', failed, 'falhas');
-    
-    if (failed === 0) {
-      alert(`✅ Todos os ${downloaded} documentos foram baixados com sucesso!`);
-    } else {
-      alert(`⚠️ Download concluído!\n\nSucesso: ${downloaded}\nFalhas: ${failed}\n\nVerifique a pasta de downloads.`);
-    }
-    
-  } catch (error) {
-    console.error('❌ Erro geral no download em massa:', error);
-    alert('❌ Erro durante o download: ' + error.message);
-  } finally {
-    // Restaurar botão
-    downloadBtn.textContent = originalText;
-    downloadBtn.disabled = false;
-  }
+
 
 
 function viewDocument(documentId) {
