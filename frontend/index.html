@@ -806,6 +806,7 @@
 </div>
 
 <script>
+console.log('🔍 TESTE: Script iniciando...');
 const API = 'https://marhbackend-production.up.railway.app/api';
 let TOKEN = localStorage.getItem('MARH_TOKEN') || null;
 let ROLE = null;
@@ -824,13 +825,21 @@ async function api(path, method='GET', body=null){
   const ct = res.headers.get('content-type')||''; return ct.includes('application/json')? res.json(): res.text();
 }
 
+console.log('✅ TESTE: Funções básicas carregadas');
+
 // Login
 qs('#btn-login').onclick = async ()=>{
+  console.log('🔑 TESTE: Botão login clicado!');
   const email = qs('#login-email').value.trim(); const password = qs('#login-pass').value;
+  console.log('📧 Email:', email, '🔒 Password:', password ? '***' : 'VAZIO');
   try{ const r = await api('/login','POST',{email,password});
+    console.log('✅ Login sucesso:', r);
     qs('#login-msg').classList.remove('hidden'); qs('#login-msg').textContent = 'Código MFA (demo): '+r.demoCode;
     qs('#view-login').classList.add('hidden'); qs('#view-mfa').classList.remove('hidden'); qs('#mfa-hint').textContent='Digite o código: ' + r.demoCode; sessionStorage.setItem('MFA_EMAIL', email);
-  }catch(e){ alert('Falha no login'); }
+  }catch(e){ 
+    console.error('❌ Erro no login:', e);
+    alert('Falha no login: ' + e.message); 
+  }
 };
 qs('#btn-verify').onclick = async ()=>{
   try{
